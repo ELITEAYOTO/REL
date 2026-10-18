@@ -16,7 +16,9 @@ fn invalid(message: &'static str) -> io::Error {
 pub(crate) fn read_binary(path: &Path) -> io::Result<Vec<u8>> {
     let preflight = fs::symlink_metadata(path)?;
     if !preflight.file_type().is_file() {
-        return Err(invalid("input must be a regular file; symlinks are unsupported"));
+        return Err(invalid(
+            "input must be a regular file; symlinks are unsupported",
+        ));
     }
 
     let mut file = File::open(path)?;
@@ -48,7 +50,9 @@ fn read_open_file(file: &mut File, before: &Metadata, limit: u64) -> io::Result<
 
     if let (Ok(start), Ok(end)) = (before.modified(), after.modified()) {
         if start != end {
-            return Err(invalid("input file modification time changed during analysis"));
+            return Err(invalid(
+                "input file modification time changed during analysis",
+            ));
         }
     }
 
@@ -68,10 +72,7 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_nanos();
-        std::env::temp_dir().join(format!(
-            "rel-input-{label}-{}-{nanos}",
-            std::process::id()
-        ))
+        std::env::temp_dir().join(format!("rel-input-{label}-{}-{nanos}", std::process::id()))
     }
 
     #[test]
@@ -100,6 +101,7 @@ mod tests {
         file.rewind().unwrap();
         let before = file.metadata().unwrap();
         let result = read_open_file(&mut file, &before, 8);
+        drop(file);
         fs::remove_file(&path).unwrap();
         assert!(result.is_err());
     }

@@ -1,6 +1,6 @@
 # P1.5-A — Conservative structural PE preflight
 
-**Status:** implementation on a PR, CI and libFuzzer confirmation pending. This is **not** a parser sandbox.
+**Status:** header preflight verified in [PR #20](https://github.com/ELITEAYOTO/REL/pull/20), [CI #39105600717](https://github.com/ELITEAYOTO/REL/actions/runs/39105600717) (Ubuntu/Windows) and [libFuzzer #39105600726](https://github.com/ELITEAYOTO/REL/actions/runs/39105600726). **P1.5-A remains incomplete.** This is **not** a parser sandbox.
 
 ## Goal
 
@@ -24,6 +24,12 @@ All slice regions use checked offset/length arithmetic. The `inspect` entry poin
 - No new dependencies, network activity, file execution, new crate or major refactor.
 - The alpha-policy limits can reject some technically parseable, unusual or nonstandard PE files. Documented limits require reevaluation against a diverse licensed corpus before claiming broad support.
 - The file input size limit of 512 MiB and output JSON limit of 16 MiB remain independent.
+
+## Verified evidence
+
+- [Standard CI #39105600717](https://github.com/ELITEAYOTO/REL/actions/runs/39105600717): Ubuntu and Windows SUCCESS, including PE32/PE32+, public-API limits, previously saved F001, schema and native Windows executable oracle.
+- [Instrumented libFuzzer #39105600726](https://github.com/ELITEAYOTO/REL/actions/runs/39105600726): SUCCESS; 642,364 executions in 31 seconds and 492 MiB tool-reported peak RSS on the hosted Ubuntu job. These are job-specific observations, **not** general parser safety guarantees.
+- Header field/layout definitions and the Windows 96-section loader limit: [Microsoft PE/COFF format specification](https://learn.microsoft.com/en-us/windows/win32/debug/pe-format). The NT-offset and optional-header size caps are REL alpha policy rather than universal file-format requirements.
 
 ## Verification scope
 

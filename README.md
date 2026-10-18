@@ -49,6 +49,10 @@ Read [AGENTS.md](AGENTS.md), [architecture](docs/ARCHITECTURE.md), [frozen decis
 - Never label untested functionality as complete; keep unsupported facts isolated.
 - Imported executables are **not executed implicitly**; runtime research is opt-in, sandboxed and authorized.
 
+## Alpha input policy (P1.5-A update pending validation)
+
+The standalone CLI now uses a focused input-reading module with an actual-read cap of 512 MiB and rejects symlinks/non-regular paths; it still cannot guarantee a coherent snapshot if a file is modified while read. See [bounded input security notes](docs/security/P15A_BOUNDED_INPUT.md). This is **not** a general sandbox or overall RAM/CPU budget. The change is subject to Windows/Linux CI validation.
+
 ## Project maturity / risks
 
 - Two synthetic fixtures are insufficient to infer quality on complex modern Windows binaries.

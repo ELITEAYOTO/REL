@@ -1,4 +1,5 @@
 mod input;
+mod report;
 
 use rel_contracts::{BinaryManifest, MANIFEST_SCHEMA};
 use sha2::{Digest, Sha256};
@@ -53,7 +54,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 exports: inspection.exports,
                 warnings: inspection.warnings,
             };
-            let serialized = serde_json::to_vec_pretty(&manifest)?;
+            let serialized = report::serialize_manifest(&manifest, report::MAX_REPORT_BYTES)?;
             match output {
                 Some(path) => {
                     // Refuse implicit overwrite.

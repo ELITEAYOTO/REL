@@ -16,7 +16,7 @@
 7. Do not attempt to execute or bypass protection on current online games; use authorized offline fixtures.
 
 ## Immediate priorities
-1. Generate and commit Cargo.lock for reproducible builds.
+1. Cargo.lock is now tracked; keep it updated only with deliberate dependency changes and green `--locked` CI.
 2. Expand known-good PE reference corpus and independently verify each sample.
 3. Add malformed-input fuzzing and edge-case tests.
 4. Establish reproducible microbenchmarks.

@@ -11,6 +11,8 @@
 - Linux and Windows GitHub Actions gates; source formatting brought into compliance.
 - Governance: decision baseline, refactor thresholds, evidence log, handoff instructions.
 
+- Added tracked `Cargo.lock` and strict `--locked` Rust CI execution (verification pending current PR).
+
 ### Verified
 - [PR #1](https://github.com/ELITEAYOTO/REL/pull/1) merged as `58ddb71d25c3d9698ee6acbb5446c9b5cc1b497a`.
 - [Actions run 39096882395](https://github.com/ELITEAYOTO/REL/actions/runs/39096882395) succeeded on Ubuntu and Windows: `cargo fmt`, `clippy -D warnings`, unit/integration tests, release build, JSON-schema-backed CLI smoke tests.

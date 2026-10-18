@@ -2,11 +2,11 @@
 
 ## [Unreleased] — 2026-10-18
 
-### P1.5-A — Linux per-process native CPU-time limit (candidate; CI pending)
+### P1.5-A — Linux per-process native CPU-time limit (PR CI verified)
 
 - Add opt-in Linux-only `--max-cpu-seconds` to the Python watchdog, with RLIMIT_CPU soft=N and hard=N+1 installed alongside optional RLIMIT_AS before exec.
 - Add Linux tests for effective limits and kernel SIGXCPU termination of a CPU-bound child, argument validation/Windows rejection, and real REL PE64 manifest smoke under both CPU and virtual-address-space ceilings.
-- No new dependencies, Rust/PE-parser or binary-manifest v1.0.0 changes. This is a per-process cumulative CPU-time limit, **not** descendant-wide accounting, a wall-clock limit or hostile-process sandbox.
+- [Windows/Linux CI #39152737826](https://github.com/ELITEAYOTO/REL/actions/runs/39152737826) passed the Linux RLIMIT_CPU/manifest regressions and Windows unsupported-option checks. Earlier CI attempts failed on diagnostic-message compatibility, corrected without bypassing the native limit. No new dependencies, Rust/PE-parser or binary-manifest v1.0.0 changes. This is a per-process cumulative CPU-time limit, **not** descendant-wide accounting, a wall-clock limit or hostile-process sandbox.
 
 
 

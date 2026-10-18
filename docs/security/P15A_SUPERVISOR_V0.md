@@ -69,7 +69,7 @@ Windows tests exercise assignment before user code, native memory allocation ref
 Microsoft references: [Job Objects](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects), [AssignProcessToJobObject](https://learn.microsoft.com/en-us/windows/win32/api/jobapi2/nf-jobapi2-assignprocesstojobobject), [Job Object limits](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-jobobject_extended_limit_information).
 
 
-## Linux opt-in per-process CPU-time ceiling (PR candidate, CI pending)
+## Linux opt-in per-process CPU-time ceiling (PR CI verified)
 
 The Python watchdog can additionally accept `--max-cpu-seconds N` on Linux (`1..300`, disabled by default). Combined with optional RLIMIT_AS, the wrapper installs `resource.RLIMIT_CPU` *before exec* with **soft limit N seconds** and **hard limit N+1 seconds**. A CPU-bound child crossing the soft limit receives SIGXCPU (usually terminating it, e.g. subprocess exit `-SIGXCPU`); if caught/ignored, the hard limit is a kernel backstop. Ordinary successful REL inspection continues unchanged under a 10-second CPU budget. Other errors/terminations are reported as ordinary child failures; the wrapper does not falsely call all nonzero exit statuses proven CPU-limit breaches.
 
@@ -77,4 +77,4 @@ Reproduce on a controlled Linux fixture:
 
     python scripts/run_bounded_inspection.py --binary target/release/rel-inspect --input fixtures/pe64-basic.exe --max-address-space-mib 2048 --max-cpu-seconds 10
 
-**This is a per-process accumulated user+system CPU-time ceiling, not a wall-time limit, aggregate descendant CPU quota, job-wide accounting, scheduler quota, RSS bound or sandbox.** A forked descendant has its own RLIMIT_CPU counter, so processes collectively can consume more CPU than the requested budget. Windows explicitly rejects the option. Regressions assert the kernel's soft/hard values before exec, test that a busy child dies by SIGXCPU, test unsupported/invalid flags, and preserve the PE64 manifest under the configured CPU/address-space limits. CI verification remains required.
+**This is a per-process accumulated user+system CPU-time ceiling, not a wall-time limit, aggregate descendant CPU quota, job-wide accounting, scheduler quota, RSS bound or sandbox.** A forked descendant has its own RLIMIT_CPU counter, so processes collectively can consume more CPU than the requested budget. Windows explicitly rejects the option. Regressions assert the kernel's soft/hard values before exec, test that a busy child dies by SIGXCPU, test unsupported/invalid flags, and preserve the PE64 manifest under the configured CPU/address-space limits. The kernel-limit, SIGXCPU, invalid-option and real-PE64 regressions passed [Windows/Linux CI #39152737826](https://github.com/ELITEAYOTO/REL/actions/runs/39152737826); the final PR head and post-merge `main` CI must still be checked independently.

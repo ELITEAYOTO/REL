@@ -1,6 +1,6 @@
 # P1.5-A — Opt-in direct-child watchdog (v0)
 
-**Status: candidate pending Windows/Linux CI.** This is an optional controlled-input runner, not a sandbox or a hard memory/CPU cap.
+**Status: bounded direct-child supervision tested on [Windows/Linux PR CI #39147845060](https://github.com/ELITEAYOTO/REL/actions/runs/39147845060), main integration pending.** This is an optional controlled-input runner, not a sandbox or a hard memory/CPU cap.
 
 ## Scope
 
@@ -23,6 +23,10 @@ Use target/release/rel-inspect.exe under Windows. Output is the unchanged JSON m
 ## Tests
 
 The cross-platform suite exercises exact successful stdout bytes, withholding partial stdout on a nonzero exit, killing a sleeping process on timeout, killing a synthetic Python allocation when its **sampled** RSS breaches a threshold, a test-only small stdout cap, invalid budget rejection, and an actual REL PE64 fixture with manifest schema/hash/size assertions. Run tests after the existing CI psutil installation on Windows and Ubuntu.
+
+## Validation evidence
+
+[CI #39147845060](https://github.com/ELITEAYOTO/REL/actions/runs/39147845060) completed successfully on Windows and Ubuntu. Dedicated watchdog regressions (including real REL PE64 fixture manifest/hash/size) passed alongside existing Rust tests, Release, CLI smoke and Windows PE oracle. This does not validate arbitrary hostile-file or process-tree safety.
 
 ## Important limitations
 

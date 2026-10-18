@@ -38,6 +38,14 @@ rel-inspect --version
 
 Omit `--output` to emit JSON to stdout. Existing report paths are rejected rather than overwritten. Output contract: `contracts/schemas/binary-manifest.schema.json` (v1.0.0).
 
+## Optional bounded analyzer runner (P1.5-A experimental)
+
+For controlled authorized PE inputs, the independent Python watchdog can launch the REL CLI as one supervised child (requires psutil==7.0.0):
+
+    python scripts/run_bounded_inspection.py --binary target/release/rel-inspect --input fixtures/pe64-basic.exe
+
+Use rel-inspect.exe on Windows. It applies an opt-in wall-time kill and a **sampled**, not OS-enforced, RSS threshold. It does not replace the standard CLI, provide a CPU-time limit, guarantee a RAM ceiling or create a security sandbox. Read [scope, failure modes and reproducibility](docs/security/P15A_SUPERVISOR_V0.md).
+
 ## Principles frozen for contributors and AI assistants
 
 Read [AGENTS.md](AGENTS.md), [architecture](docs/ARCHITECTURE.md), [frozen decisions](docs/governance/DECISIONS_FIGEES.md), [code quality](docs/governance/CODE_QUALITY.md) and [roadmap](ROADMAP.md) before changes.

@@ -1,0 +1,24 @@
+name: Temporary REL lockfile update
+on:
+  pull_request:
+    paths:
+      - 'Cargo.toml'
+      - '.github/workflows/temp-lockfile-upgrade.yml'
+permissions:
+  contents: read
+jobs:
+  lockfile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve pinned goblin
+        run: cargo update -p goblin --precise 0.10.7
+      - name: Emit lockfile (for reviewed commit)
+        run: |
+          python - <<'PY'
+          import base64
+          from pathlib import Path
+          print("REL_LOCK_UPDATE_BEGIN")
+          print(base64.b64encode(Path("Cargo.lock").read_bytes()).decode("ascii"))
+          print("REL_LOCK_UPDATE_END")
+          PY

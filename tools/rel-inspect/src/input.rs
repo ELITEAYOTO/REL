@@ -1,4 +1,7 @@
 //! Bounded, static input acquisition. No parsing or execution belongs here.
+
+#[cfg(unix)]
+mod unix_open;
 use std::{
     fs::{self, File, Metadata},
     io::{self, Read, Seek},
@@ -12,19 +15,15 @@ fn invalid(message: &'static str) -> io::Error {
 }
 
 /// Open the candidate descriptor with platform-specific safeguards.
-/// On Unix, no-follow is checked by the kernel on the final path component
-/// at open time, and nonblocking open avoids hanging on a swapped-in FIFO.
+/// On Unix, each ancestor and the leaf are opened with no-follow checks;
+/// a nonblocking leaf open avoids hanging on a swapped-in FIFO.
 /// On Windows, open the final reparse point itself, reject the handle,
 /// and share only read access for the lifetime of the descriptor.
 /// Ancestor symlinks, special devices and concurrent writes remain out of scope.
 fn open_candidate(path: &Path) -> io::Result<File> {
     #[cfg(unix)]
     {
-        use std::os::unix::fs::OpenOptionsExt;
-        let mut options = fs::OpenOptions::new();
-        options.read(true);
-        options.custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK);
-        options.open(path)
+        unix_open::open(path)
     }
     #[cfg(windows)]
     {
@@ -68,8 +67,8 @@ fn verify_preopen_identity(preflight: &Metadata, opened: &Metadata) -> io::Resul
 
 /// Open a regular file only; symbolic links are rejected by alpha policy.
 /// The pre-open path check is still racy; the last component is protected
-/// at open time on Unix and Windows. Unix also detects regular-file swaps
-/// between path inspection and descriptor acquisition. Not a sandbox.
+/// at open time on Unix and Windows. Unix additionally rejects ancestor
+/// symlinks and detects regular-file swaps. This is not a sandbox.
 pub(crate) fn read_binary(path: &Path) -> io::Result<Vec<u8>> {
     let preflight = fs::symlink_metadata(path)?;
     if !preflight.file_type().is_file() {

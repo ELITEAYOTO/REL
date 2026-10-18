@@ -50,7 +50,10 @@ def measure(binary: Path, target: Path, count: int, warmup: int) -> dict:
     }
 
 
-def run(binary: Path, count: int, warmup: int) -> dict:
+def run(
+    binary: Path, count: int, warmup: int, *,
+    windows_msvc_probe: Path | None = None,
+) -> dict:
     metadata = {
         "kind": "rel-cli-benchmark-v1",
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
@@ -69,6 +72,7 @@ def run(binary: Path, count: int, warmup: int) -> dict:
         cases = prepare_cases(
             ROOT / "fixtures", Path(directory), binary,
             include_windows_executable=os.name == "nt",
+            windows_msvc_probe=windows_msvc_probe,
         )
         for case in cases:
             results.append({
@@ -84,12 +88,21 @@ def main() -> None:
     parser.add_argument("--output", type=Path)
     parser.add_argument("--samples", type=int, default=9)
     parser.add_argument("--warmup", type=int, default=2)
+    parser.add_argument("--windows-msvc-probe", type=Path)
     args = parser.parse_args()
+    if args.windows_msvc_probe is not None and os.name != "nt":
+        parser.error("--windows-msvc-probe is Windows only")
     if not 3 <= args.samples <= 200:
         parser.error("--samples must be between 3 and 200")
     if not 0 <= args.warmup <= 50:
         parser.error("--warmup must be between 0 and 50")
-    report = run(args.binary.resolve(strict=True), args.samples, args.warmup)
+    report = run(
+        args.binary.resolve(strict=True), args.samples, args.warmup,
+        windows_msvc_probe=(
+            args.windows_msvc_probe.resolve(strict=True)
+            if args.windows_msvc_probe is not None else None
+        ),
+    )
     document = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
     if args.output:
         with args.output.open("x", encoding="utf-8") as output:

@@ -58,6 +58,42 @@ class CorpusCaseTests(unittest.TestCase):
                 else:
                     self.assertEqual(case.kind, "synthetic-fixture")
 
+    def test_compiler_probe_requires_windows_mode_and_existing_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            missing = folder / "missing.exe"
+            with self.assertRaisesRegex(ValueError, "Windows corpus"):
+                prepare_cases(
+                    ROOT / "fixtures", folder, folder / "unused",
+                    include_windows_executable=False, windows_msvc_probe=missing,
+                )
+            with self.assertRaises(FileNotFoundError):
+                prepare_cases(
+                    ROOT / "fixtures", folder, ROOT / "fixtures" / FIXTURE_NAMES[0],
+                    include_windows_executable=True, windows_msvc_probe=missing,
+                )
+
+    def test_compiler_probe_provenance_never_implies_license(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            native = folder / "rel-inspect.exe"
+            compiler_probe = folder / "msvc-probe.exe"
+            native.write_bytes(b"local-test-native-placeholder")
+            compiler_probe.write_bytes(b"MZnot-an-actual-PE-for-case-metadata-test")
+            cases = prepare_cases(
+                ROOT / "fixtures", folder, native,
+                include_windows_executable=True, windows_msvc_probe=compiler_probe,
+            )
+            self.assertEqual(len(cases), 8)
+            assert cases[-1].path == compiler_probe
+            meta = cases[-1].report_fields()
+            self.assertEqual(meta["case_id"], "msvc-x64-local-build")
+            self.assertEqual(meta["kind"], "ci-built-msvc-x64-pe")
+            self.assertEqual(meta["redistribution_status"], REDISTRIBUTION_STATUS)
+            self.assertEqual(meta["source_fixture"], "fixtures/probes/msvc_probe.c")
+            source = ROOT / meta["source_fixture"]
+            self.assertEqual(meta["source_sha256"], hashlib.sha256(source.read_bytes()).hexdigest())
+
     def test_native_build_case_does_not_claim_redistribution(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             folder = Path(tmp)

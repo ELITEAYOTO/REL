@@ -1,0 +1,10 @@
+[package]
+name = "rel-pe"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+rel-contracts = { path = "../rel-contracts" }
+goblin.workspace = true

@@ -33,6 +33,6 @@ Windows and Ubuntu CI run a short benchmark after the main parser/CLI gates. A b
 
 Windows CI can measure two more controlled source-built PE32+ files using independent MSVC and Clang-cl frontends plus a shared RC asset. A separate pinned pefile oracle checks RCDATA and DIR64 relocation entries without executing them. In the benchmark output, the two case IDs are `msvc-x64-structured` and `clang-cl-x64-structured`, with independent C/RC source hashes. These increase structural variety but still do not define representative CPU/RAM performance or license-cleared redistribution rights. See [corpus provenance](security/P15A_CORPUS_PROVENANCE.md).
 
-## Paired timing/resource quality check (candidate)
+## Paired timing/resource quality check (PR CI verified)
 
 CI cross-checks the five timing observations for each benchmark case against the corresponding sampled-resource case of the same OS job. The independent `rel-measurement-evidence-v1` output checks manifest identity, sample consistency and aggregate median/p95, and reports the **relative spread within the timing sample** `(max - min) / median`. This is an observational quality indicator, not a performance threshold or a reliable cross-run speed-up estimate. See [resource evidence policy](P15_RESOURCE_PROFILING.md).

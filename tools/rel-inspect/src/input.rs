@@ -88,7 +88,7 @@ fn verify_second_pass(file: &mut File, initial: &[u8]) -> io::Result<()> {
             }
             Err(error) => return Err(error),
         }
-        if scratch[..original.len()] != *original {
+        if &scratch[..original.len()] != original {
             return Err(invalid("input file changed during verification"));
         }
     }
@@ -181,7 +181,8 @@ mod tests {
         let mut payload = vec![0_u8; 64 * 1024 * 2 + 17];
         payload[0] = b'M';
         payload[64 * 1024] = b'Z';
-        payload[payload.len() - 1] = b'!';
+        let end = payload.len() - 1;
+        payload[end] = b'!';
         fs::write(&path, &payload).unwrap();
         let mut reader = File::open(&path).unwrap();
         verify_second_pass(&mut reader, &payload).unwrap();

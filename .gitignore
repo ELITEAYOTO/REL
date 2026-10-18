@@ -9,6 +9,6 @@
 
 # Ephemeral controlled compiler artifacts; only tracked source is committed
 /compiler-probes/
-*.obj
-*.exp
-*.lib
+/msvc_probe.obj
+/msvc_probe.exp
+/msvc_probe.lib

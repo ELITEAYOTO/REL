@@ -28,6 +28,12 @@ def check(analyzer: Path, probe: Path) -> None:
     assert ".text" in section_names and ".rdata" in section_names, section_names
     assert len(section_names) >= 3, section_names
     assert hasattr(independent, "DIRECTORY_ENTRY_IMPORT"), "probe has no imports"
+    imported_symbols = {
+        symbol.name.decode("ascii", errors="replace")
+        for directory in independent.DIRECTORY_ENTRY_IMPORT
+        for symbol in directory.imports if symbol.name
+    }
+    assert "GetTickCount64" in imported_symbols, imported_symbols
     assert hasattr(independent, "DIRECTORY_ENTRY_EXPORT"), "probe has no exports"
     export_names = {
         symbol.name.decode("ascii", errors="replace")
@@ -49,7 +55,9 @@ def check(analyzer: Path, probe: Path) -> None:
     assert ".text" in {x["name"] for x in manifest["sections"]}
     assert ".rdata" in {x["name"] for x in manifest["sections"]}
     assert "rel_probe_transform" in manifest["exports"]
-    assert manifest["imports"], "REL unexpectedly reported no imports"
+    assert any("GetTickCount64" in item for item in manifest["imports"]), (
+        "REL missing the independently verified GetTickCount64 import"
+    )
     print("PASS MSVC x64 probe analyzed without running; sha256=" + expected_sha)
 
 

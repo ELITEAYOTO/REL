@@ -52,3 +52,8 @@ A small P1.5-A increment asks Windows to share only read access while REL holds 
 ## P1.5-A opt-in direct-child watchdog (PR CI verified)
 
 The Python wrapper scripts/run_bounded_inspection.py launches REL as one direct child, kills it when wall-clock time exceeds the configured limit, and kills when a polled RSS observation exceeds a threshold. It withholds stdout until a successful exit and bounds the returned JSON bytes. This is **not** a strict OS RAM or CPU budget: fast transient spikes can be missed; child descendants and temp disk usage remain uncontrolled; the native REL CLI still runs without a worker boundary unless explicitly launched through the wrapper. The narrow watchdog and test suite passed [Windows/Linux PR CI #39147845060](https://github.com/ELITEAYOTO/REL/actions/runs/39147845060); no native memory isolation claim. See [supervisor v0](P15A_SUPERVISOR_V0.md).
+
+
+## Linux native per-process address-space option (scoped PR CI verified)
+
+The optional Python supervisor may install `RLIMIT_AS` in the Linux analyzer child before exec. This limits that process's virtual address space (including reserved mappings), not its physical memory/RSS or aggregate descendant memory. Windows mode and direct `rel-inspect` remain unchanged. Under-memory behavior can lead to ordinary parse/launch errors; reporting it as confirmed RSS exhaustion would be misleading. Installation and denied-allocation tests passed [Windows/Linux PR CI #39149771201](https://github.com/ELITEAYOTO/REL/actions/runs/39149771201). Final PR head and post-merge validation must still be checked before marking integrated. [Supervisor scope](P15A_SUPERVISOR_V0.md).

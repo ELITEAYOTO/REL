@@ -156,6 +156,13 @@ mod tests {
         let coff = coff_offset(PE32);
         let mut padded = with_u16(PE32, coff + 2, MAX_SECTIONS as u16);
         padded.resize(16 * 1024, 0);
+        // The original two sections are followed by file content, not 94
+        // initialized section headers. Explicitly construct empty headers.
+        let section_table = first_section(&padded);
+        for index in 2..MAX_SECTIONS {
+            let start = section_table + index * SECTION_HEADER_SIZE;
+            padded[start..start + SECTION_HEADER_SIZE].fill(0);
+        }
         assert_eq!(validate(&padded), Ok(()));
     }
 

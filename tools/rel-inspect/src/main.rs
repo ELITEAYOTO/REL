@@ -1,3 +1,5 @@
+mod input;
+
 use rel_contracts::{BinaryManifest, MANIFEST_SCHEMA};
 use sha2::{Digest, Sha256};
 use std::{
@@ -5,8 +7,6 @@ use std::{
     io::{self, Write},
     path::Path,
 };
-
-const MAX_SIZE: u64 = 512 * 1024 * 1024;
 
 fn main() {
     if let Err(error) = run() {
@@ -40,14 +40,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                     return Err("output must not overwrite the analyzed binary".into());
                 }
             }
-            let metadata = fs::metadata(&input)?;
-            if metadata.len() > MAX_SIZE {
-                return Err("file exceeds 512 MiB input limit".into());
-            }
-            let bytes = fs::read(&input)?;
-            if bytes.len() as u64 > MAX_SIZE {
-                return Err("file exceeds 512 MiB input limit".into());
-            }
+            let bytes = input::read_binary(Path::new(&input))?;
             let inspection = rel_pe::inspect(&bytes)?;
             let manifest = BinaryManifest {
                 schema_version: MANIFEST_SCHEMA.to_owned(),

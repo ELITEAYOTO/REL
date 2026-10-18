@@ -97,6 +97,34 @@ fn rejects_oversized_export_count_via_public_inspect_api() {
 }
 
 #[test]
+fn rejects_unrepresentable_directory_count_at_public_inspect_api() {
+    for fixture in [PE32, PE64] {
+        let mut bytes = fixture.to_vec();
+        let nt = u32::from_le_bytes(bytes[0x3c..0x40].try_into().unwrap()) as usize;
+        let coff = nt + 4;
+        let opt = coff + 20;
+        let size = u16::from_le_bytes(bytes[coff + 16..coff + 18].try_into().unwrap()) as usize;
+        let dir_start = match u16::from_le_bytes(bytes[opt..opt + 2].try_into().unwrap()) {
+            0x10b => 96,
+            0x20b => 112,
+            _ => panic!("unexpected fixture optional header"),
+        };
+        let slots = (size - dir_start) / 8;
+        assert!(slots >= 2);
+        bytes[opt + dir_start - 4..opt + dir_start]
+            .copy_from_slice(&(slots as u32 + 1).to_le_bytes());
+
+        let failure = inspect(&bytes)
+            .err()
+            .expect("unrepresentable data-directory declaration must be rejected");
+        assert!(matches!(
+            failure,
+            PeError::Parse(ref message) if message.contains("declared PE data directories exceed optional header")
+        ));
+    }
+}
+
+#[test]
 fn rejects_out_of_file_raw_section_via_public_inspect_api() {
     for fixture in [PE32, PE64] {
         let mut bytes = fixture.to_vec();

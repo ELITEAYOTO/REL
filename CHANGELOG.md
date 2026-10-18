@@ -2,6 +2,12 @@
 
 ## [Unreleased] — 2026-10-18
 
+### P1.5-A — Entire declared PE data-directory slot consistency (candidate; CI pending)
+
+- Reject a PE32/PE32+ `NumberOfRvaAndSizes` larger than the number of complete 8-byte data-directory records physically represented by `SizeOfOptionalHeader`. Previously REL checked only the first two when declared, allowing inconsistent higher counts into the backend.
+- Add both-architecture exact boundary/rejection tests and a public `rel_pe::inspect` regression. Preserve zero-count handling, valid fixtures, existing error class, `binary-manifest` v1.0.0, and dependency pins.
+- This conservative alpha rule is **not** complete PE validation, an import-thunk bound, or a parser CPU/RSS/sandbox guarantee. Tests and compatibility evidence beyond controlled fixtures remain necessary.
+
 ### P1.5-A — Windows 128-bit opened-handle identity check (PR #45 merged, CI verified)
 
 - Query `GetFileInformationByHandleEx(FileIdInfo)` on the already-opened guarded Windows input handle and a second guarded open of the same path; reject mismatched volume+128-bit identifiers or missing/unsupported identities. Only the controlled-input reader changes; no new dependency, parser change or `binary-manifest v1.0.0` change.

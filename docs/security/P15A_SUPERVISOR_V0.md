@@ -38,3 +38,12 @@ The cross-platform suite exercises exact successful stdout bytes, withholding pa
 - Thresholds are provisional engineering defaults, not validated production resource ceilings. OS-native containment and enforceable RAM/CPU controls remain future P1.5-A/B work.
 
 Keep issue #9 open. See resource profiling, threat model, ADR-0013 and ROADMAP.
+
+
+## Linux native virtual address-space cap (candidate — CI pending)
+
+The optional `--max-address-space-mib N` argument (Linux only, `128 <= N <= 8192`) installs a **kernel-enforced RLIMIT_AS soft and hard limit** in the analyzer child *before* `exec` using Python `resource.setrlimit`. Existing watchdog usage stays unchanged unless this new flag is supplied; Windows rejects the flag before spawning the analyzer. The flag limits the child process's **virtual address space**, which includes mapped and reserved address ranges, **not physical RAM/RSS**. On a denied allocation the analyzer may return an ordinary nonzero exit or fail to start; no universal "limit exceeded" status can be deduced from an exit code. The prior sampled RSS guard and wall timeout remain separate checks.
+
+Proposed dedicated Linux tests inspect `resource.getrlimit(RLIMIT_AS)` from the subprocess and cause a Python allocation larger than its enforced limit, expecting `MemoryError`/a known exit status. The standard REL PE64 manifest smoke also runs with a 2048 MiB address-space ceiling on Linux. Existing Windows tests and the ordinary CLI are unaffected.
+
+This is **not** a cgroup aggregate RAM cap, a strict RSS threshold, a CPU-time limit, process-tree isolation or a sandbox. Each process has its own address-space limit; the test wrapper is single-threaded because Python's `preexec_fn` is unsafe in a multithreaded parent. Settings below a binary's required mappings may cause legitimate failures. Boundaries on other Unix platforms, Windows Job Objects, descendants and disk-output quotas remain future work.

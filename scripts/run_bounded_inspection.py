@@ -2,7 +2,8 @@
 """Opt-in REL CLI watchdog; this runs the analyzer, never the inspected PE.
 
 It kills the direct child after a wall-time breach and checks sampled RSS.
-Neither sampling nor direct-child termination is an OS memory limit or sandbox.
+On Linux, an optional RLIMIT_AS limit constrains virtual address space at exec.
+It is not a resident-memory or process-tree limit, nor a sandbox.
 """
 from __future__ import annotations
 
@@ -37,6 +38,7 @@ def supervise(
     *,
     wall_seconds: float,
     max_sampled_rss_bytes: int,
+    max_address_space_bytes: int | None = None,
     poll_seconds: float = POLL_SECONDS,
     max_stdout_bytes: int = MAX_STDOUT_BYTES,
 ) -> bytes:
@@ -46,9 +48,28 @@ def supervise(
     if max_sampled_rss_bytes <= 0 or max_stdout_bytes <= 0:
         raise ValueError("limits must be positive")
 
+    child_options = {}
+    if max_address_space_bytes is not None:
+        if max_address_space_bytes <= 0:
+            raise ValueError("address-space limit must be positive")
+        if not sys.platform.startswith("linux"):
+            raise ValueError("RLIMIT_AS option requires Linux")
+        import resource
+
+        # Applied by the kernel to the direct child BEFORE exec. preexec_fn
+        # is used only in this intentionally single-threaded CLI wrapper.
+        def apply_address_space_limit() -> None:
+            resource.setrlimit(
+                resource.RLIMIT_AS,
+                (max_address_space_bytes, max_address_space_bytes),
+            )
+
+        child_options["preexec_fn"] = apply_address_space_limit
+
     with tempfile.TemporaryFile() as stdout, tempfile.TemporaryFile() as stderr:
         child = psutil.Popen(
-            list(command), stdin=subprocess.DEVNULL, stdout=stdout, stderr=stderr
+            list(command), stdin=subprocess.DEVNULL, stdout=stdout, stderr=stderr,
+            **child_options,
         )
         started = time.monotonic()
         try:
@@ -94,11 +115,20 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--input", required=True, type=Path)
     parser.add_argument("--wall-seconds", type=float, default=DEFAULT_WALL_SECONDS)
     parser.add_argument("--max-sampled-rss-mib", type=int, default=DEFAULT_SAMPLED_RSS_MIB)
+    parser.add_argument(
+        "--max-address-space-mib", type=int,
+        help="Linux only: optional RLIMIT_AS virtual address-space cap (MiB)",
+    )
     args = parser.parse_args(argv)
     if not 0 < args.wall_seconds <= 600:
         parser.error("--wall-seconds must be > 0 and <= 600")
     if not 16 <= args.max_sampled_rss_mib <= 4096:
         parser.error("--max-sampled-rss-mib must be between 16 and 4096")
+    if args.max_address_space_mib is not None:
+        if not sys.platform.startswith("linux"):
+            parser.error("--max-address-space-mib is supported only on Linux")
+        if not 128 <= args.max_address_space_mib <= 8192:
+            parser.error("--max-address-space-mib must be between 128 and 8192")
 
     try:
         # The PE is data passed to REL, never executed as a program.
@@ -106,11 +136,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             [str(args.binary.resolve(strict=True)), "analyze", str(args.input)],
             wall_seconds=args.wall_seconds,
             max_sampled_rss_bytes=args.max_sampled_rss_mib * 1024 * 1024,
+            max_address_space_bytes=(
+                args.max_address_space_mib * 1024 * 1024
+                if args.max_address_space_mib is not None else None
+            ),
         )
     except LimitExceeded as error:
         print(f"rel-watchdog: {error}", file=sys.stderr)
         return 124 if error.kind == "wall" else 125
-    except (WorkerFailed, OSError) as error:
+    except (WorkerFailed, OSError, subprocess.SubprocessError) as error:
         print(f"rel-watchdog: {error}", file=sys.stderr)
         return 1
 

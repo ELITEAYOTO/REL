@@ -60,6 +60,39 @@ def load_verified_seeds(fixtures: Path) -> list[tuple[str, bytes, str]]:
     return seeds
 
 
+
+def append_structured_cases(
+    cases: list[CorpusCase],
+    msvc_probe: Path | None,
+    clang_probe: Path | None,
+    clang_version: str | None,
+) -> None:
+    """Append source-verified Windows structured cases after input validation."""
+    if msvc_probe is None and clang_probe is None:
+        return
+    source = ROOT / "fixtures" / "probes" / "structured_probe.c"
+    asset = ROOT / "fixtures" / "probes" / "structured_probe.rc"
+    source_hash = hashlib.sha256(source.read_bytes()).hexdigest()
+    asset_hash = hashlib.sha256(asset.read_bytes()).hexdigest()
+    for compiler, probe, version in (
+        ("msvc", msvc_probe, None),
+        ("clang-cl", clang_probe, clang_version),
+    ):
+        if probe is None:
+            continue
+        cases.append(CorpusCase(
+            case_id=f"{compiler}-x64-structured",
+            path=probe,
+            kind=f"ci-built-{compiler}-x64-structured-pe",
+            source_fixture="fixtures/probes/structured_probe.c",
+            source_sha256=source_hash,
+            provenance=f"built-on-runner-{compiler}-x64-with-rc",
+            toolchain_version=version,
+            resource_source="fixtures/probes/structured_probe.rc",
+            resource_sha256=asset_hash,
+        ))
+
+
 def prepare_cases(
     fixtures: Path, workdir: Path, binary: Path, *, include_windows_executable: bool,
     windows_msvc_probe: Path | None = None,
@@ -130,23 +163,7 @@ def prepare_cases(
             hashlib.sha256(source.read_bytes()).hexdigest(),
             "built-on-runner-clang-cl-x64", clang_version,
         ))
-    for compiler, probe, version in (
-        ("msvc", windows_msvc_structured, None),
-        ("clang-cl", windows_clang_structured, clang_version),
-    ):
-        if probe is None:
-            continue
-        source = ROOT / "fixtures" / "probes" / "structured_probe.c"
-        resource = ROOT / "fixtures" / "probes" / "structured_probe.rc"
-        cases.append(CorpusCase(
-            case_id=f"{compiler}-x64-structured",
-            path=probe,
-            kind=f"ci-built-{compiler}-x64-structured-pe",
-            source_fixture="fixtures/probes/structured_probe.c",
-            source_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
-            provenance=f"built-on-runner-{compiler}-x64-with-rc",
-            toolchain_version=version,
-            resource_source="fixtures/probes/structured_probe.rc",
-            resource_sha256=hashlib.sha256(resource.read_bytes()).hexdigest(),
-        ))
+    append_structured_cases(
+        cases, windows_msvc_structured, windows_clang_structured, clang_version
+    )
     return cases

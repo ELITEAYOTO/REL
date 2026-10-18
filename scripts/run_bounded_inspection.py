@@ -1,0 +1,122 @@
+#!/usr/bin/env python3
+"""Opt-in REL CLI watchdog; this runs the analyzer, never the inspected PE.
+
+It kills the direct child after a wall-time breach and checks sampled RSS.
+Neither sampling nor direct-child termination is an OS memory limit or sandbox.
+"""
+from __future__ import annotations
+
+import argparse
+import subprocess
+import sys
+import tempfile
+import time
+from pathlib import Path
+from typing import Sequence
+
+import psutil
+
+DEFAULT_WALL_SECONDS = 30.0
+DEFAULT_SAMPLED_RSS_MIB = 512
+POLL_SECONDS = 0.01
+MAX_STDOUT_BYTES = 16 * 1024 * 1024 + 1
+
+
+class LimitExceeded(RuntimeError):
+    def __init__(self, kind: str, message: str) -> None:
+        super().__init__(message)
+        self.kind = kind
+
+
+class WorkerFailed(RuntimeError):
+    """Child failure or unavailable observation."""
+
+
+def supervise(
+    command: Sequence[str],
+    *,
+    wall_seconds: float,
+    max_sampled_rss_bytes: int,
+    poll_seconds: float = POLL_SECONDS,
+    max_stdout_bytes: int = MAX_STDOUT_BYTES,
+) -> bytes:
+    """Return complete stdout only after a successful direct-child exit."""
+    if not command or not 0 < wall_seconds <= 600 or not 0 < poll_seconds <= 1:
+        raise ValueError("invalid command or watchdog timing")
+    if max_sampled_rss_bytes <= 0 or max_stdout_bytes <= 0:
+        raise ValueError("limits must be positive")
+
+    with tempfile.TemporaryFile() as stdout, tempfile.TemporaryFile() as stderr:
+        child = psutil.Popen(
+            list(command), stdin=subprocess.DEVNULL, stdout=stdout, stderr=stderr
+        )
+        started = time.monotonic()
+        try:
+            while child.poll() is None:
+                elapsed = time.monotonic() - started
+                if elapsed >= wall_seconds:
+                    raise LimitExceeded("wall", f"wall time exceeded {wall_seconds:g}s")
+                try:
+                    rss = child.memory_info().rss
+                except psutil.NoSuchProcess:
+                    continue
+                except psutil.AccessDenied as error:
+                    raise WorkerFailed("unable to monitor child RSS") from error
+                if rss > max_sampled_rss_bytes:
+                    raise LimitExceeded(
+                        "rss", f"sampled child RSS exceeded {max_sampled_rss_bytes} bytes"
+                    )
+                time.sleep(min(poll_seconds, max(0.0, wall_seconds - elapsed)))
+
+            status = child.wait()
+            if status:
+                stderr.seek(0)
+                detail = stderr.read(512).decode("utf-8", errors="replace").strip()
+                raise WorkerFailed(f"analyzer exited with status {status}: {detail}")
+            stdout.seek(0)
+            result = stdout.read(max_stdout_bytes + 1)
+            if len(result) > max_stdout_bytes:
+                raise WorkerFailed("analyzer stdout exceeded bounded JSON size")
+            return result
+        except BaseException:
+            if child.poll() is None:
+                try:
+                    child.kill()
+                except psutil.NoSuchProcess:
+                    pass
+            child.wait(timeout=5)
+            raise
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--binary", required=True, type=Path)
+    parser.add_argument("--input", required=True, type=Path)
+    parser.add_argument("--wall-seconds", type=float, default=DEFAULT_WALL_SECONDS)
+    parser.add_argument("--max-sampled-rss-mib", type=int, default=DEFAULT_SAMPLED_RSS_MIB)
+    args = parser.parse_args(argv)
+    if not 0 < args.wall_seconds <= 600:
+        parser.error("--wall-seconds must be > 0 and <= 600")
+    if not 16 <= args.max_sampled_rss_mib <= 4096:
+        parser.error("--max-sampled-rss-mib must be between 16 and 4096")
+
+    try:
+        # The PE is data passed to REL, never executed as a program.
+        result = supervise(
+            [str(args.binary.resolve(strict=True)), "analyze", str(args.input)],
+            wall_seconds=args.wall_seconds,
+            max_sampled_rss_bytes=args.max_sampled_rss_mib * 1024 * 1024,
+        )
+    except LimitExceeded as error:
+        print(f"rel-watchdog: {error}", file=sys.stderr)
+        return 124 if error.kind == "wall" else 125
+    except (WorkerFailed, OSError) as error:
+        print(f"rel-watchdog: {error}", file=sys.stderr)
+        return 1
+
+    sys.stdout.buffer.write(result)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

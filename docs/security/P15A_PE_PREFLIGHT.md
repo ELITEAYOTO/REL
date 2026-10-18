@@ -47,3 +47,10 @@ Validation gates: Rust fmt/Clippy/test/release CLI on Windows and Ubuntu; indepe
 Further work: resource budgets covering imports/exports and allocations, real-world corpus validation, hostile-input worker isolation, controlled parsing timeouts, no-follow opens, and same-size file-change races.
 
 See [threat model](THREAT_MODEL_ALPHA.md), [ROADMAP](../../ROADMAP.md), [F001 finding](../findings/F001_GOBLIN_TLS_PANIC.md), and [issue #9](https://github.com/ELITEAYOTO/REL/issues/9).
+
+
+## Candidate follow-up: section raw-byte range validation (PR CI pending)
+
+Before invoking goblin, the section-table preflight now checks that every section with `SizeOfRawData > 0` has a `PointerToRawData + SizeOfRawData` range wholly contained in the input. Checked indexing rejects overflows and out-of-file ranges. Zero-sized raw sections remain accepted irrespective of raw pointer (virtual-only sections). No raw section bytes are copied or read by this gate; complexity is O(sections), capped at 96 by the existing alpha policy.
+
+Added unit boundary cases (both PE32 and PE32+, just-past-EOF, enormous declarations, exact EOF, zero-sized) plus the public `rel_pe::inspect` error regression. Validation on real Windows and Linux PE binaries, fuzz and `--locked` CI is **pending**. This is not a complete specification of PE section semantics: overlapping/noncanonical/virtual ranges and section permissions remain unexamined. Legitimate unusual PEs with short raw data may now be rejected; quantify compatibility against the licensed corpus before expanding claims. No CPU/RSS cap, process sandbox or manifest v1 change is implied.

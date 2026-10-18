@@ -69,6 +69,10 @@ The standalone CLI now has a **provisional 16 MiB JSON report budget** enforced 
 
 The paired benchmark/profile observations now also record an explicit reported host and toolchain context and exact release analyzer SHA-256. A canonical fingerprint prevents combining reports from different GitHub jobs or binaries while retaining missing RSS/CPU sample flags. This improves **same-job evidence traceability**, not cross-run performance comparability or hardware attestation. See [P1.5 measurement notes](docs/P15_RESOURCE_PROFILING.md).
 
+## Comparing independent measurement campaigns (P1.5-A pilot)
+
+The offline [campaign-comparison tool](docs/P15_CROSS_RUN_COMPARISON.md) can check two complete timing/RSS report pairs collected in different GitHub runs, rejecting mismatched hardware/toolchain/REL binaries, input hashes or sampling policies. It produces **descriptive** median timings only when the evidence is compatible, and otherwise refuses to display numeric ratios. This is not a controlled performance benchmark or a production CPU/RAM budget.
+
 ## Paired benchmark/resource evidence quality (P1.5-A PR CI verified)
 
 Windows and Linux CI also validate that both JSON measurement tools observed the same input cases and file hashes, and verify their sampled statistics without inventing missing RAM/CPU values. An additional `rel-measurement-evidence.json` artifact describes the internal consistency and sampling coverage. See [measurement scope](docs/P15_RESOURCE_PROFILING.md). This does **not** establish a production performance threshold or security isolation.

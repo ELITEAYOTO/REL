@@ -1,6 +1,6 @@
 # P1.5-A — Controlled PE measurement corpus and provenance
 
-**Status:** PR candidate, Windows/Linux CI validation pending. This is a controlled measurement corpus, not a licensed or representative public binary collection. No new third-party executables are committed.
+**Status:** controlled case inventory and measurement gates verified by [Windows/Linux CI #39153900290](https://github.com/ELITEAYOTO/REL/actions/runs/39153900290) and [CI #39153927673](https://github.com/ELITEAYOTO/REL/actions/runs/39153927673); post-merge `main` CI must still be verified. This is a controlled measurement corpus, not a licensed or representative public binary collection. No new third-party executables are committed.
 
 ## Sources and rights
 

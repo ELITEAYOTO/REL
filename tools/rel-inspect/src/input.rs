@@ -324,7 +324,10 @@ mod tests {
 
         let first = open_candidate(&path).unwrap();
         let second = open_candidate(&path).unwrap();
-        assert_eq!(first.metadata().unwrap().len(), second.metadata().unwrap().len());
+        assert_eq!(
+            first.metadata().unwrap().len(),
+            second.metadata().unwrap().len()
+        );
 
         assert!(
             fs::OpenOptions::new().write(true).open(&path).is_err(),

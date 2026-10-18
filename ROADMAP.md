@@ -65,7 +65,7 @@ Every item requires test evidence before the checkbox is marked complete. ADRs g
 
 ## EX-01 — Experimental evidence/coverage envelope — AFTER CRITICAL P1.5-A
 
-- [ ] **EX-01 contract pilot (candidate; CI pending):** independent experimental JSON Schema 0.1.0, standalone semantic validator and synthetic golden present/absent_in_scope/partial/failed/unsupported examples. Not an extractor; no v1 contract changes. Requires final-head CI and post-merge verification before promotion.
+- [x] **EX-01 contract-only pilot (scoped CI verified):** independent experimental JSON Schema 0.1.0, standalone semantic validator, five controlled PE32 golden examples and explicit invalid-case tests; [PR #49](https://github.com/ELITEAYOTO/REL/pull/49), [Windows/Linux PR CI #39176105548](https://github.com/ELITEAYOTO/REL/actions/runs/39176105548), and [post-merge CI #39176279141](https://github.com/ELITEAYOTO/REL/actions/runs/39176279141) passed. This is **not** an extractor or complete EX-01; no v1 contract changes.
 - [ ] Separate versioned observation schema: source hash, extractor/version/config, exact domain coverage, diagnostics and unknown states ([issue #14](https://github.com/ELITEAYOTO/REL/issues/14)).
 - [ ] Golden tests for present/absent-in-scope/partial/failed/unsupported, invalid byte offsets, repeatability and v1 compatibility.
 - [ ] Do not change `binary-manifest.schema.json` v1.0.0 or create speculative crates.

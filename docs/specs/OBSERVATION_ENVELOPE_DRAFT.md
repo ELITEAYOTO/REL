@@ -31,7 +31,9 @@ Le v1 contient `imports: Vec<String>`, `exports: Vec<String>`, `warnings: Vec<St
 
 Schéma indépendant sous `contracts/experimental/` avec golden examples `present, absent_in_scope, partial, failed, unsupported`; tests JSON Schema invalides, champs incohérents, offset hors bornes, configurations/version, déterminisme et compatibilité v1. Une PR de contrat ne rend pas ce moteur fonctionnel tant qu'aucun extracteur ne peut produire ses observations fiables.
 
-## First contract-only prototype (candidate, Windows/Linux CI pending)
+## First contract-only prototype (PR #49 merged; scoped Windows/Linux CI verified)
+
+[PR #49](https://github.com/ELITEAYOTO/REL/pull/49) merged at `bbbec20`; [post-merge main CI #39176279141](https://github.com/ELITEAYOTO/REL/actions/runs/39176279141) passed on Windows/Linux. This validates schema and semantic test coverage, **not** any producer's factual correctness.
 
 The separate `contracts/experimental/observation-envelope.schema.json` uses
 `0.1.0-experimental`. Its validator is

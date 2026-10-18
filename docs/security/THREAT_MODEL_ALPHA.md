@@ -40,3 +40,7 @@ The PE preflight is being extended to reject non-empty section raw ranges extend
 ## P1.5-A Unix input-open follow-up (PR CI verified)
 
 A targeted Unix-only change requests kernel `O_NOFOLLOW` for the final input path component at open time and `O_NONBLOCK` to avoid blocked opening of a swapped FIFO; it retains the single-descriptor regular-file and size checks. No cross-platform or hostile-filesystem guarantee: Windows and ancestor symlinks, concurrent same-length modifications, devices and CPU/RSS/worker isolation remain open. Read [bounded input policy](P15A_BOUNDED_INPUT.md); [PR #24 CI #39109205165](https://github.com/ELITEAYOTO/REL/actions/runs/39109205165) succeeded Windows/Linux in the narrow described scope; post-merge verification and all remaining risks still apply.
+
+## Windows final-component reparse-point guard (candidate, CI pending)
+
+The CLI now proposes opening the final Windows input component with `FILE_FLAG_OPEN_REPARSE_POINT` and rejecting reparse-point attributes from the opened handle. This narrows the path preflight/open race for the *leaf* only; ancestor junction/reparse paths, other devices, hard links, content changes, resource limits and sandboxing remain open. Windows symbolic-link regression requires creation rights; log skipped setup without claiming coverage. See [bounded input policy](P15A_BOUNDED_INPUT.md).

@@ -2,6 +2,13 @@
 
 ## [Unreleased] — 2026-10-18
 
+### P1.5-A — Windows final-component reparse-point opening (candidate, CI pending)
+
+- Windows CLI opens the final input path component without following reparse points, rejects reparse attributes from the opened descriptor and preserves the 512 MiB cap.
+- Adds Windows regular-file, deterministic symlink-swap (privilege-dependent) and directory-substitution tests; no new dependency, no schema v1.0.0 change.
+- No ancestor junction/path protection, coherent snapshot, Windows redirector guarantee or CPU/RSS isolation. Tests and compatibility validation pending: [bounded input policy](docs/security/P15A_BOUNDED_INPUT.md).
+
+
 ### P1.5-A — Unix no-follow descriptor open (PR CI verified)
 
 - Unix CLI input acquisition requests `O_NOFOLLOW | O_NONBLOCK` when opening the candidate path; exact Unix `libc` dependency is recorded in Cargo.lock.

@@ -55,3 +55,13 @@ Scope and non-goals:
 - `libc = "=0.2.191"` is added as an exact direct dependency on Unix only; it was already present in the tracked lockfile, and `Cargo.lock` adds it to the CLI dependency list.
 
 **Validated for controlled cases:** [PR #24 Windows/Linux CI #39109205165](https://github.com/ELITEAYOTO/REL/actions/runs/39109205165) succeeded on the implementation and documentation candidate. Post-merge `main` run must be checked separately. These checks do not demonstrate protection against hostile path trees, Windows reparse-point races, concurrent content changes, or arbitrary device I/O.
+
+## Windows final-component reparse-point guard (candidate, CI pending)
+
+The Windows CLI path now calls `OpenOptionsExt::custom_flags(FILE_FLAG_OPEN_REPARSE_POINT)` (`0x00200000`). The final path component is opened as a reparse point rather than followed. After successful opening, `File::metadata()` is queried on the **opened handle**, and the descriptor is refused if its `MetadataExt::file_attributes()` contains `FILE_ATTRIBUTE_REPARSE_POINT` (`0x00000400`). This happens before handing the handle to the existing regular-file and 512 MiB bounded reader.
+
+References: [Microsoft CreateFileW](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew), [Windows reparse-point operations](https://learn.microsoft.com/en-us/windows/win32/fileio/reparse-point-operations).
+
+Proposed regression cases: Windows regular file opens unchanged; deterministic path swap to a final-component symbolic link is rejected if symlink creation is permitted on the CI runner; an ordinary directory substituted into the path is not accepted. Windows symlink creation may require Developer Mode or privilege; the unit test explicitly logs `SKIP` rather than treating a denied symlink-creation attempt as evidence of mitigation. The existing compiled Windows CLI smoke/pefile oracle must also pass.
+
+**Scope:** only the final path component, not ancestor symlinks/junctions, network filesystem/redirector behavior, changes to reparse tags after open, path-hardlink aliases or concurrent file writes. Any final reparse point is deliberately unsupported in this controlled-input alpha policy, including cloud-placeholder files, which can reduce compatibility. This is not arbitrary-hostile-filesystem safety, a snapshot, a sandbox or a CPU/RAM limit. No additional dependency is needed; the public manifest v1.0.0 is unchanged. Verify CI and post-merge `main` before marking this increment complete.

@@ -24,7 +24,8 @@ Every item requires test evidence before the checkbox is marked complete. ADRs g
 - [ ] Evaluate dependency MSRV, known advisories and license inventory.
 - [ ] Expand corpus: real redistributable Windows binaries with independent reference oracle; PE edge cases.
 - [ ] Fuzz malformed/truncated headers and import/export tables, establish crash-free behavior.
-- [ ] Benchmark input size, memory and runtime with a reproducible methodology.
+- [ ] Establish representative runtime **and memory** benchmarks across complex PE files.
+- [ ] Verify the initial CLI timing harness on Windows and Linux CI (synthetic size-overlay samples).
 - [ ] Add deterministic limits for expensive PE structures, test input symlinks and path edge cases.
 - [ ] Establish release/archive provenance and binary integrity checks.
 

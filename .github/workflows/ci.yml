@@ -34,6 +34,8 @@ jobs:
         run: cargo build --locked --release --workspace
       - name: Corpus source hashes and overlay reproducibility
         run: python scripts/test_corpus_cases.py
+      - name: Paired measurement evidence unit regressions
+        run: python scripts/test_measurement_evidence.py
       - name: JSON Schema validator
         run: python -m pip install 'jsonschema>=4,<5'
       - name: End-to-end CLI test (Windows)
@@ -83,6 +85,18 @@ jobs:
       - name: Profile PE memory and CPU (Linux)
         if: runner.os == 'Linux'
         run: python scripts/profile_resources.py --binary target/release/rel-inspect --samples 5 --warmup 1 --output rel-resources.json
+      - name: Validate paired measurement integrity and sampling coverage (Windows)
+        if: runner.os == 'Windows'
+        run: python scripts/check_measurement_evidence.py --benchmark rel-benchmark.json --resources rel-resources.json --expected-cases 11 --output rel-measurement-evidence.json
+      - name: Validate paired measurement integrity and sampling coverage (Linux)
+        if: runner.os == 'Linux'
+        run: python scripts/check_measurement_evidence.py --benchmark rel-benchmark.json --resources rel-resources.json --expected-cases 6 --output rel-measurement-evidence.json
+      - name: Upload paired measurement evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: rel-measurement-evidence-${{ matrix.os }}
+          path: rel-measurement-evidence.json
+          if-no-files-found: error
       - name: Upload resource observations
         uses: actions/upload-artifact@v4
         with:

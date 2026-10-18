@@ -9,7 +9,11 @@ fn reports_pe32_sections_import_and_export() {
     let output = inspect(PE32).expect("PE32 fixture must parse");
     assert_eq!(output.arch, "x86");
     assert_eq!(
-        output.sections.iter().map(|s| s.name.as_str()).collect::<Vec<_>>(),
+        output
+            .sections
+            .iter()
+            .map(|s| s.name.as_str())
+            .collect::<Vec<_>>(),
         [".text", ".rdata"]
     );
     assert_eq!(output.imports, ["KERNEL32.dll!GetTickCount"]);
@@ -21,7 +25,11 @@ fn reports_pe64_sections_import_and_export() {
     let output = inspect(PE64).expect("PE32+ fixture must parse");
     assert_eq!(output.arch, "x86_64");
     assert_eq!(
-        output.sections.iter().map(|s| s.name.as_str()).collect::<Vec<_>>(),
+        output
+            .sections
+            .iter()
+            .map(|s| s.name.as_str())
+            .collect::<Vec<_>>(),
         [".text", ".rdata"]
     );
     assert_eq!(output.imports, ["KERNEL32.dll!GetTickCount64"]);

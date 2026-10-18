@@ -5,7 +5,7 @@
 ### P1.5-A — Windows observable ancestor reparse-point guard (candidate; CI pending)
 
 - Before the initial leaf preflight and again immediately after acquiring its guarded handle, inspect every Windows parent path with `symlink_metadata` and reject directories bearing `FILE_ATTRIBUTE_REPARSE_POINT`, including junctions. Ordinary nested paths still work; the final-component guard and `FILE_SHARE_READ` behavior remain.
-- Three focused Windows regressions cover a normal nested file, a real `mklink /J` ancestor junction and a deterministic junction substitution after initial file metadata. CI runs these with visible output; a missing junction cannot silently skip.
+- Three focused Windows regressions cover a normal nested file, a real `mklink /J` ancestor junction and a deterministic junction substitution after initial file metadata. The default locked workspace test stage executes these as regular Rust unit tests and fails if junction creation is unavailable.
 - **No atomicity claim:** these are repeated path lookups rather than descriptor-relative Windows opens. Concurrent attackers can swap/restore ancestors or substitute ordinary directories; network/device namespace semantics and hard links are not covered. Rejecting pre-existing parent reparse points intentionally tightens compatibility. No parser, dependency, resource cap or `binary-manifest v1.0.0` change. CI evidence must be recorded before declaring this implemented gate verified.
 
 ### P1.5-A — Unix no-follow ancestor path traversal (PR #40 merged; CI verified)

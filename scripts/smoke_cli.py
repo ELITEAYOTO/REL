@@ -71,6 +71,24 @@ def main() -> None:
         rejected = call(binary, "analyze", str(malformed))
         assert rejected.returncode != 0 and rejected.stderr, "TLS reproducer must be rejected"
 
+        directory_result = call(binary, "analyze", str(Path(directory)))
+        assert directory_result.returncode != 0 and directory_result.stderr, (
+            "a directory is not an input binary"
+        )
+
+        # Link creation on Windows requires particular OS settings, so a
+        # denied creation skips only this link-specific check.
+        link = Path(directory) / "alias.exe"
+        try:
+            link.symlink_to(source)
+        except (OSError, NotImplementedError):
+            print("SKIP symlink test (creation unsupported or denied)")
+        else:
+            link_result = call(binary, "analyze", str(link))
+            assert link_result.returncode != 0 and link_result.stderr, (
+                "symbolic-link input must be rejected"
+            )
+
         same_path = call(binary, "analyze", str(source), "--output", str(source))
         assert same_path.returncode != 0, "input must not be overwritten"
     print("PASS CLI failure and overwrite guard scenarios")

@@ -2,11 +2,11 @@
 
 ## [Unreleased] — 2026-10-18
 
-### P1.5-A — Optional CI-built Clang-cl x64 PE case (PR candidate, CI pending)
+### P1.5-A — Optional CI-built Clang-cl x64 PE case (PR CI verified)
 
 - Build the same tracked C PE probe with runner-installed LLVM Clang-cl in addition to MSVC, via the Windows SDK. Compare imports, named exports and PE32+ architecture independently through pinned pefile; no inspected PE is executed.
 - Record a ninth Windows corpus case in both measurement harnesses, its checked C source SHA-256, binary SHA-256 and the observed Clang version string. Fail if the compiler, compiled PE or version record is absent. Linux remains at six cases.
-- This measures a second compiler **frontend** but may share the Microsoft linker and SDK. The hosted compiler/toolchain remains unpinned, rights to redistribute generated binaries are not established, and no JSON binary-manifest v1.0.0 changes occur.
+- The independent oracles, source-hash/version checks, resource profiles and benchmarks passed [Windows/Linux CI #39156574382](https://github.com/ELITEAYOTO/REL/actions/runs/39156574382) and [CI #39156578707](https://github.com/ELITEAYOTO/REL/actions/runs/39156578707) on Windows/Linux. This measures a second compiler **frontend** but may share the Microsoft linker and SDK. The hosted compiler/toolchain remains unpinned, rights to redistribute generated binaries are not established, and no JSON binary-manifest v1.0.0 changes occur.
 
 
 

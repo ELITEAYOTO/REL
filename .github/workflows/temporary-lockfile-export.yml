@@ -1,5 +1,6 @@
 name: Temporary Cargo lockfile export
 on:
+  pull_request:
   push:
     branches: [chore/p15-reproducible-lockfile]
 permissions:

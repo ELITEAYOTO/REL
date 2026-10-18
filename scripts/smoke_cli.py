@@ -67,6 +67,10 @@ def main() -> None:
             result = call(binary, "analyze", str(invalid))
             assert result.returncode != 0 and result.stderr, name
 
+        malformed = ROOT / "fixtures/regressions/goblin-0.9.3-tls-oob.bin"
+        rejected = call(binary, "analyze", str(malformed))
+        assert rejected.returncode != 0 and rejected.stderr, "TLS reproducer must be rejected"
+
         same_path = call(binary, "analyze", str(source), "--output", str(source))
         assert same_path.returncode != 0, "input must not be overwritten"
     print("PASS CLI failure and overwrite guard scenarios")

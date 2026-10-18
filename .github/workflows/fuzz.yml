@@ -1,0 +1,39 @@
+name: REL PE Fuzz Smoke
+
+on:
+  pull_request:
+    paths:
+      - 'crates/rel-pe/**'
+      - 'fuzz/**'
+      - '.github/workflows/fuzz.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pe-libfuzzer:
+    name: PE libFuzzer (bounded)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CARGO_FUZZ_VERSION: '0.13.2'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust nightly
+        run: rustup toolchain install nightly --profile minimal
+      - name: Install pinned cargo-fuzz
+        run: cargo +nightly install cargo-fuzz --version "$CARGO_FUZZ_VERSION" --locked
+      - name: Build instrumented PE fuzz target
+        run: cargo +nightly fuzz build pe_inspect
+      - name: Fuzz seeded PE parser for bounded time
+        run: |
+          mkdir -p fuzz/artifacts/pe_inspect
+          cargo +nightly fuzz run pe_inspect -- -max_total_time=30 -timeout=4 -rss_limit_mb=1500 -max_len=65536 -seed=20261018 -print_final_stats=1
+      - name: Preserve any failing input for investigation
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rel-pe-fuzz-artifacts-${{ github.sha }}
+          path: fuzz/artifacts/
+          if-no-files-found: ignore

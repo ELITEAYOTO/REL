@@ -1,0 +1,6 @@
+/target/
+/artifacts/
+# Local fuzz-generated corpus entries stay untracked, original seeds are kept.
+/corpus/pe_inspect/*
+!/corpus/pe_inspect/pe32-basic.exe
+!/corpus/pe_inspect/pe64-basic.exe

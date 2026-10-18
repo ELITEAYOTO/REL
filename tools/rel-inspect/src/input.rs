@@ -14,6 +14,7 @@ fn invalid(message: &'static str) -> io::Error {
 /// Open the candidate descriptor with platform-specific safeguards.
 /// On Unix, no-follow is checked by the kernel on the final path component
 /// at open time, and nonblocking open avoids hanging on a swapped-in FIFO.
+/// On Windows, open the final reparse point itself and reject the handle.
 /// Ancestor symlinks, special devices and concurrent writes remain out of scope.
 fn open_candidate(path: &Path) -> io::Result<File> {
     #[cfg(unix)]
@@ -24,15 +25,35 @@ fn open_candidate(path: &Path) -> io::Result<File> {
         options.custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK);
         options.open(path)
     }
-    #[cfg(not(unix))]
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::{MetadataExt, OpenOptionsExt};
+
+        // CreateFileW: FILE_FLAG_OPEN_REPARSE_POINT (0x0020_0000) returns
+        // a handle to the final reparse point rather than following it.
+        // Check attributes on THAT HANDLE, not through a fresh path lookup.
+        const FILE_FLAG_OPEN_REPARSE_POINT: u32 = 0x0020_0000;
+        const FILE_ATTRIBUTE_REPARSE_POINT: u32 = 0x0000_0400;
+
+        let mut options = fs::OpenOptions::new();
+        let file = options
+            .read(true)
+            .custom_flags(FILE_FLAG_OPEN_REPARSE_POINT)
+            .open(path)?;
+        if file.metadata()?.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT != 0 {
+            return Err(invalid("input reparse points are unsupported"));
+        }
+        Ok(file)
+    }
+    #[cfg(not(any(unix, windows)))]
     {
         File::open(path)
     }
 }
 
 /// Open a regular file only; symbolic links are rejected by alpha policy.
-/// The pre-open path check is still racy; on Unix, the final component is
-/// additionally checked at open time. This is not a security sandbox.
+/// The pre-open path check is still racy; the last component is protected
+/// at open time on Unix and Windows. This is not a security sandbox.
 pub(crate) fn read_binary(path: &Path) -> io::Result<Vec<u8>> {
     let preflight = fs::symlink_metadata(path)?;
     if !preflight.file_type().is_file() {
@@ -217,5 +238,75 @@ mod tests {
         drop(descriptor);
         assert!(read_binary(&fifo).is_err());
         fs::remove_file(&fifo).unwrap();
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn opens_regular_file_through_windows_candidate_policy() {
+        let path = test_path("windows-regular");
+        fs::write(&path, b"MZ regular").unwrap();
+        let mut file = open_candidate(&path).unwrap();
+        let mut bytes = Vec::new();
+        file.read_to_end(&mut bytes).unwrap();
+        assert_eq!(bytes, b"MZ regular");
+        drop(file);
+        fs::remove_file(&path).unwrap();
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn refuses_final_component_symlink_after_preflight_swap() {
+        use std::os::windows::fs::symlink_file;
+
+        let candidate = test_path("windows-swap-candidate");
+        let destination = test_path("windows-swap-target");
+        fs::write(&candidate, b"MZ original").unwrap();
+        fs::write(&destination, b"MZ target").unwrap();
+
+        // Model the TOCTOU window deterministically, without a racing thread.
+        assert!(fs::symlink_metadata(&candidate)
+            .unwrap()
+            .file_type()
+            .is_file());
+        fs::remove_file(&candidate).unwrap();
+
+        match symlink_file(&destination, &candidate) {
+            Ok(()) => {
+                assert!(
+                    open_candidate(&candidate).is_err(),
+                    "a final-component reparse point must not be followed"
+                );
+                assert_eq!(fs::read(&destination).unwrap(), b"MZ target");
+                println!("PASS Windows final-component symlink was created and refused");
+                fs::remove_file(&candidate).unwrap();
+            }
+            Err(error) => {
+                // Developer Mode/SeCreateSymbolicLinkPrivilege may be unavailable.
+                // Require this regression to exercise a real link on hosted CI,
+                // while allowing unsupported local developer environments to skip.
+                if std::env::var_os("GITHUB_ACTIONS").is_some() {
+                    panic!("Windows CI must create a symbolic link for this test: {error}");
+                }
+                println!("SKIP Windows symlink swap scenario: {error}");
+            }
+        }
+        fs::remove_file(&destination).unwrap();
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn refuses_replaced_directory_as_candidate() {
+        let candidate = test_path("windows-swapped-directory");
+        fs::write(&candidate, b"MZ original").unwrap();
+        assert!(fs::symlink_metadata(&candidate).unwrap().is_file());
+        fs::remove_file(&candidate).unwrap();
+        fs::create_dir(&candidate).unwrap();
+
+        if let Ok(file) = open_candidate(&candidate) {
+            assert!(!file.metadata().unwrap().is_file());
+            drop(file);
+        }
+        assert!(read_binary(&candidate).is_err());
+        fs::remove_dir(&candidate).unwrap();
     }
 }

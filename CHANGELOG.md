@@ -2,6 +2,12 @@
 
 ## [Unreleased] — 2026-10-18
 
+### P1.5-A — Unix no-follow ancestor path traversal (candidate; CI pending)
+
+- Replace the Unix leaf-only open with descriptor-relative `openat` for each ancestor and the leaf, applying `O_NOFOLLOW` to both. This rejects an ancestor symlink at its own open point, while keeping the original inode gate, 512 MiB actual-read budget, bounded second pass and static-only PE inspection.
+- Add Unix regressions for nested regular files, ancestor symlink rejection and a deterministic parent substitution after path preflight. Keep Windows reparse/sharing logic and `binary-manifest v1.0.0` unchanged.
+- Compatibility tradeoff: input paths passing through ancestor symlinks or unreadable-but-searchable directories may now fail on Unix. No trusted-root confinement, immutable snapshot, network filesystem guarantee or hostile-input sandbox. Candidate CI validation and post-merge checks remain pending.
+
 ### P1.5-A — Unix opened-file identity verification (PR #39 candidate)
 
 - Add an additional Unix-only `(st_dev, st_ino)` check comparing the preflight path metadata with the metadata from the *already-opened input handle*. Reject detectable regular-file replacement during the path-check/open interval before reading bytes; both observations must identify the same inode.

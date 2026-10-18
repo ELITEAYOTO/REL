@@ -164,15 +164,8 @@ Branch `fix/p15a-second-pass-input-check` updates `tools/rel-inspect/src/input.r
 
 **Do not overclaim:** this is a post-open observation; original `symlink_metadata` is not bound to that identity. Fast/privileged swaps, mutable file contents and Windows ancestor path races remain possible; unsupported filesystem IDs cause compatibility failures. A second open adds unmeasured I/O overhead. Keep issue #9 open and resume critical hardening or the evidence/coverage pilot only according to ADR-0013 gates.
 
-## Candidate: full declared PE data-directory slot check (CI pending)
+## P1.5-A complete declared PE directory record coverage — MERGED, CI VERIFIED
 
-Branch `fix/p15a-declared-directory-slot-budget` makes a targeted,
-allocation-free preflight change in `crates/rel-pe/src/preflight/directories.rs`:
-`NumberOfRvaAndSizes` must be no greater than the number of complete 8-byte
-records actually present in the declared optional-header size. Existing checks
-looked only at the first two slots, even if the declaration said more.
-PE32/PE32+ boundary tests and public `rel_pe::inspect` regression added;
-the legacy `binary-manifest` v1.0.0 and architecture are unchanged.
-Do not mark done until final Windows/Linux CI and post-merge `main` are
-verified. This is not a parser RSS/CPU bound, complete PE validation, or a
-general hostile-file guarantee. [Issue #9](https://github.com/ELITEAYOTO/REL/issues/9) remains open.
+[PR #47](https://github.com/ELITEAYOTO/REL/pull/47) merged as [`f26b34d`](https://github.com/ELITEAYOTO/REL/commit/f26b34d557e5bd892a7855bc253a6b07880c9709). The allocation-free preflight check `crates/rel-pe/src/preflight/directories.rs` rejects `NumberOfRvaAndSizes` that claims more 8-byte records than fit in the optional header. Earlier code checked only the first one/two slots. Exact-capacity and over-capacity regressions exercise PE32 and PE32+, plus a public `rel_pe::inspect` failure; Windows job logs showed the new tests as `ok`. [Final PR CI #39173751519](https://github.com/ELITEAYOTO/REL/actions/runs/39173751519), [bounded fuzz CI #39173751518](https://github.com/ELITEAYOTO/REL/actions/runs/39173751518) and [post-merge main #39173973900](https://github.com/ELITEAYOTO/REL/actions/runs/39173973900) succeeded on their respective environments. No parser, ABI, manifest v1.0.0 or dependency change.
+
+**Scope:** declaration inconsistency only, not an import-thunk bound, parse-time CPU/RSS isolation, universal PE validation or arbitrary hostile-binary sandbox. Preserve the existing roadmap order P1.5 critical → EX-01 → EX-02, and leave [issue #9](https://github.com/ELITEAYOTO/REL/issues/9) open.

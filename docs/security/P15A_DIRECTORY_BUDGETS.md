@@ -49,7 +49,7 @@ This does **not** enforce a parser RSS/CPU/time budget, cap all generated string
 
 See [ADR-0013](../adr/ADR-0013-vision-evidence-evolution.md), [security model](THREAT_MODEL_ALPHA.md) and [preflight stage 1](P15A_PE_PREFLIGHT.md).
 
-## Additional candidate: complete declared-directory record coverage (CI pending)
+## Additional verified check: complete declared-directory record coverage (PR #47)
 
 A `NumberOfRvaAndSizes` declaration can claim more entries than physically
 fit into `SizeOfOptionalHeader`. The original preflight checked only the
@@ -66,5 +66,4 @@ capacity, the exact capacity boundary, both golden PE formats and the public
 `binary-manifest` v1.0.0 change. It may reject unconventional binaries that
 advertise more records than they contain; this is an explicit conservative
 alpha policy. **It does not cap import thunk traversal or parser CPU/RSS,
-prove PE validity, or safely isolate hostile input.** Record Windows/Linux
-CI (and optionally fuzz evidence) before considering the increment verified.
+prove PE validity, or safely isolate hostile input.** [PR #47](https://github.com/ELITEAYOTO/REL/pull/47) merged with [final Windows/Linux PR CI #39173751519](https://github.com/ELITEAYOTO/REL/actions/runs/39173751519), [bounded PE fuzz CI #39173751518](https://github.com/ELITEAYOTO/REL/actions/runs/39173751518) and [post-merge main CI #39173973900](https://github.com/ELITEAYOTO/REL/actions/runs/39173973900) all successful. These checks verify only the stated cases, not parser RSS/CPU or security against arbitrary hostile PE inputs.

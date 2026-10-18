@@ -1,6 +1,6 @@
 # P1.5-A — Atomic publication of complete CLI report files
 
-**Status: candidate implementation pending Windows/Linux CI.** This does not make PE parsing or filesystem path resolution secure.
+**Status: verified on controlled Windows/Linux CI in [run #39107936412](https://github.com/ELITEAYOTO/REL/actions/runs/39107936412) (PR #22); P1.5-A remains open.** This does not make PE parsing or filesystem path resolution secure.
 
 ## Problem and boundary
 
@@ -25,6 +25,6 @@ A failed write or sync before linking does not create a partial **destination**.
 - The caller's file name might be the input binary via unusual hard-link aliases. Existing `canonicalize` checks do not reliably detect separate hard links. This remains an open correctness/safety gap needing file-identity validation; use controlled inputs.
 - No runtime CPU/RSS/parser limits, no process sandbox, and no arbitrary malicious filesystem support are provided.
 
-## Evidence required
+## Evidence and verification
 
-Rust tests: exact bytes, existing-file rejection, existing-directory rejection, Unix symlink destination refusal, temporary cleanup; CLI smoke collision tests; `cargo fmt`, Clippy, workspace tests, Windows/Linux release + smoke. Record actual CI URL before declaring verified.
+[Windows/Linux PR CI run #39107936412](https://github.com/ELITEAYOTO/REL/actions/runs/39107936412) completed successfully for both OS matrix jobs. The following checks passed in that run: Rust tests: exact bytes, existing-file rejection, existing-directory rejection, Unix symlink destination refusal, temporary cleanup; CLI smoke collision tests; `cargo fmt`, Clippy, workspace tests, Windows/Linux release + smoke. This validates controlled cases only, not arbitrary hostile paths or crash durability.

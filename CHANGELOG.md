@@ -2,6 +2,14 @@
 
 ## [Unreleased] — 2026-10-18
 
+### P1.5-A — Controlled PE measurement corpus metadata (candidate, CI pending)
+
+- Shared deterministic, SHA-256-validated PE32 and PE64 seed/overlay inventory for benchmarking and RSS/CPU profiling; add case IDs, derivation details and explicit unverified redistribution status to observations.
+- Both tools now include six controlled PE cases per OS (two original 2 KiB synthetic fixtures, 1/4 MiB overlay per architecture), plus a locally built Windows REL EXE in Windows CI. CI tests reject tampered fixtures and validate generated overlay bytes.
+- No third-party binaries or license assertions; no binary-manifest v1.0.0, parser, memory policy or safety guarantee changes. An independently licensed, representative PE corpus remains open; see [scope](docs/security/P15A_CORPUS_PROVENANCE.md).
+
+
+
 ### P1.5-A — Linux per-process native CPU-time limit (PR CI verified)
 
 - Add opt-in Linux-only `--max-cpu-seconds` to the Python watchdog, with RLIMIT_CPU soft=N and hard=N+1 installed alongside optional RLIMIT_AS before exec.

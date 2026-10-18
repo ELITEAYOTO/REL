@@ -26,8 +26,8 @@ fn le_u32(data: &[u8], offset: usize) -> Option<u32> {
 /// Reject implausibly expensive or out-of-bounds PE header layouts before
 /// goblin allocates structures. No section contents or imports are inspected.
 pub(crate) fn validate(data: &[u8]) -> Result<(), &'static str> {
-    let nt_offset = le_u32(data, DOS_NT_POINTER_OFFSET)
-        .ok_or("DOS header missing NT pointer")? as usize;
+    let nt_offset =
+        le_u32(data, DOS_NT_POINTER_OFFSET).ok_or("DOS header missing NT pointer")? as usize;
     if nt_offset > MAX_NT_HEADER_OFFSET {
         return Err("PE header offset exceeds alpha limit");
     }
@@ -42,8 +42,7 @@ pub(crate) fn validate(data: &[u8]) -> Result<(), &'static str> {
     if count == 0 || count > MAX_SECTIONS {
         return Err("section count outside alpha policy");
     }
-    let optional_size =
-        le_u16(data, coff + 16).ok_or("missing optional header size")? as usize;
+    let optional_size = le_u16(data, coff + 16).ok_or("missing optional header size")? as usize;
     if !(2..=MAX_OPTIONAL_HEADER_SIZE).contains(&optional_size) {
         return Err("optional header size outside alpha policy");
     }
@@ -174,9 +173,6 @@ mod tests {
     fn rejects_truncated_section_table() {
         let coff = coff_offset(PE32);
         let bad = with_u16(PE32, coff + 2, 64);
-        assert_eq!(
-            validate(&bad),
-            Err("section table extends beyond input")
-        );
+        assert_eq!(validate(&bad), Err("section table extends beyond input"));
     }
 }

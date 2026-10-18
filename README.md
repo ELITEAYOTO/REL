@@ -57,6 +57,10 @@ The standalone CLI now uses a focused input-reading module with an actual-read c
 
 The standalone CLI now has a **provisional 16 MiB JSON report budget** enforced while serializing. Reports exceeding that limit are rejected before the CLI opens an output file or writes stdout. The report v1.0.0 schema and normal output format are unchanged. The [Windows/Linux CI #39104382262](https://github.com/ELITEAYOTO/REL/actions/runs/39104382262) passed with the new report serializer; the limit remains provisional pending representative measurements. This budget does **not** cap parser allocations, memory usage or CPU time. See [bounded JSON report notes](docs/security/P15A_BOUNDED_OUTPUT.md).
 
+## P1.5-A resource measurements (validation pending)
+
+A separate [resource profiler](docs/P15_RESOURCE_PROFILING.md) records observed child-process RSS, CPU time and wall time on synthetic PE samples and on REL's compiled Windows EXE. The profiler uses a 30-second test timeout but **does not impose a production runtime limit**. Sampling cannot establish actual peak memory. Result artifacts and verified CI run IDs are recorded after completion.
+
 ## Project maturity / risks
 
 - Two synthetic fixtures are insufficient to infer quality on complex modern Windows binaries.

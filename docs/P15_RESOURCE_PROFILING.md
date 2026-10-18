@@ -1,6 +1,6 @@
 # P1.5-A — First cross-platform RSS/CPU observations
 
-**Status:** resource profiling tool committed on PR, CI validation pending. This is a **measurement only**, not a resource limit or a sandbox.
+**Status:** sampling harness verified on Windows/Ubuntu in [PR #19](https://github.com/ELITEAYOTO/REL/pull/19) and [CI #39104870706](https://github.com/ELITEAYOTO/REL/actions/runs/39104870706). This is a **measurement only**, not a resource limit or sandbox. This is a **measurement only**, not a resource limit or a sandbox.
 
 ## Why this step
 
@@ -40,7 +40,7 @@ Windows binary: `target/release/rel-inspect.exe`. Output-file creation refuses s
 
 ## Next engineering gates
 
-1. Validate this profiler on both runner OSes, download artifacts and record the actual run and peak observations.
+1. Compare [per-platform resource artifacts from CI #39104870706](https://github.com/ELITEAYOTO/REL/actions/runs/39104870706) against future runs, noting runner hardware and short-lifetime sampling gaps.
 2. Expand independent licensed PE corpus with meaningful structural complexity; measure resource percentiles/variance on stable hardware.
 3. Define a justified policy for maximum input bytes, PE structural counts, output, and RAM/CPU budgets before enforcing numbers.
 4. Evaluate worker-process boundaries with OS-specific limits and tests before accepting arbitrary hostile files.

@@ -1,14 +1,45 @@
-# REL roadmap
+# REL roadmap and acceptance gates
 
-- [x] P0 — research, scoped design and architecture decisions.
-- [ ] P1 — PE Binary Inspector: code, reference fixtures and CI submitted; PASS requires verified Linux and Windows CI, schema checks and failure-case review.
-- [ ] P1.5 — fuzzing, broader malformed PE corpus, benchmarking, reproducible Cargo.lock and legal/license review.
-- [ ] P2 — independently test Ghidra headless adapter.
-- [ ] P3 — version matcher compared against ground-truth source changes.
-- [ ] P4 — persistent evidence/provenance store.
-- [ ] P5 — calibrated function classifier with an explicit UNKNOWN result.
-- [ ] P6 — opt-in behavior lab for isolated, authorized test targets.
-- [ ] P7 — desktop UI only after stable CLI integration.
-- [ ] P8 — portability, packaging and release hardening.
+Every item requires test evidence before the checkbox is marked complete. ADRs govern architecture changes.
 
-Architecture principle: independent crates and CLI tools, stable JSON contracts, no monolithic refactor. Changes to stack or contract require an ADR.
+## P0 — Foundational architecture — DONE
+
+- [x] CLI-first modular workspace; separate contracts, parser and CLI.
+- [x] Rust core; Python for future adapters; desktop postponed.
+- [x] Initial security and provenance principles.
+
+## P1 — Binary Inspector alpha — DONE within narrow scope
+
+- [x] PE32 and PE32+ reading without executing inputs.
+- [x] Sections, imports, exports, SHA-256 and JSON schema v1.0.0.
+- [x] Corpus of two synthetic reference PEs, corruption tests and CLI overwrite guard.
+- [x] Rust formatting, Clippy, unit/integration tests and release builds on Windows and Ubuntu.
+- [x] CLI smoke test matches reference fixtures and validates JSON Schema.
+
+**Evidence:** [PR #1](https://github.com/ELITEAYOTO/REL/pull/1) and [CI run 39096882395](https://github.com/ELITEAYOTO/REL/actions/runs/39096882395). **Do not interpret this as production readiness or universal PE correctness.**
+
+## P1.5 — Binary Inspector hardening — NEXT
+
+- [ ] Commit and pin `Cargo.lock`; evaluate dependency MSRV and license inventory.
+- [ ] Expand corpus: real redistributable Windows binaries with independent reference oracle; PE edge cases.
+- [ ] Fuzz malformed/truncated headers and import/export tables, establish crash-free behavior.
+- [ ] Benchmark input size, memory and runtime with a reproducible methodology.
+- [ ] Add deterministic limits for expensive PE structures, test input symlinks and path edge cases.
+- [ ] Establish release/archive provenance and binary integrity checks.
+
+## P2 — Ghidra adapter
+
+- [ ] Independent Python CLI; pinned Ghidra version and documented Java requirements.
+- [ ] Headless function/call graph export into a dedicated schema; benchmark on known-source samples.
+- [ ] Graceful timeout, memory/error isolation and proof record; no embedded decompiler fork.
+
+## Later
+
+- [ ] P3 — Version matcher with ground-truth comparisons.
+- [ ] P4 — Provenance and evidence storage.
+- [ ] P5 — Function classifier with confidence calibration and UNKNOWN class.
+- [ ] P6 — Optional isolated/authorized behavior lab.
+- [ ] P7 — Desktop UI only after stable headless workflows.
+- [ ] P8 — Release hardening, portability and packaging.
+
+**Scope control:** Apex/R5Flowstate is a future optional case study, not a dependency or an excuse for anti-cheat bypass.

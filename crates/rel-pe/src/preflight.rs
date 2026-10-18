@@ -1,5 +1,6 @@
 //! Conservative, allocation-free bounds checks before invoking a PE backend.
-//! These checks cover header layout only, not the entire PE grammar.
+//! These checks cover declared header/directory budgets, not the whole PE grammar.
+mod directories;
 const DOS_NT_POINTER_OFFSET: usize = 0x3c;
 const COFF_HEADER_SIZE: usize = 20;
 const SECTION_HEADER_SIZE: usize = 40;
@@ -64,6 +65,7 @@ pub(crate) fn validate(data: &[u8]) -> Result<(), &'static str> {
         .checked_mul(SECTION_HEADER_SIZE)
         .ok_or("section table size overflow")?;
     region(data, sections_start, table_size).ok_or("section table extends beyond input")?;
+    directories::validate(data, optional_start, optional_size, sections_start, count)?;
 
     Ok(())
 }

@@ -298,12 +298,9 @@ mod tests {
         fs::remove_file(&candidate).unwrap();
         fs::create_dir(&candidate).unwrap();
 
-        match open_candidate(&candidate) {
-            Ok(file) => {
-                assert!(!file.metadata().unwrap().is_file());
-                drop(file);
-            }
-            Err(_) => {}
+        if let Ok(file) = open_candidate(&candidate) {
+            assert!(!file.metadata().unwrap().is_file());
+            drop(file);
         }
         assert!(read_binary(&candidate).is_err());
         fs::remove_dir(&candidate).unwrap();

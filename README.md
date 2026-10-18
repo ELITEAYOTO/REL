@@ -63,9 +63,9 @@ On Unix, [PR #39](https://github.com/ELITEAYOTO/REL/pull/39) adds a descriptor i
 
 The standalone CLI uses a focused input-reading module with an actual-read cap of 512 MiB and rejects symlinks/non-regular paths. A second bounded pass over the same opened descriptor can detect additional same-size modifications at the cost of another file read. It **still cannot guarantee a coherent atomic snapshot** if a file is modified while read. See [bounded input security notes](docs/security/P15A_BOUNDED_INPUT.md). This is **not** a general sandbox or overall RAM/CPU budget. The reader's unit and CLI integration gates passed [Windows/Linux CI #39103698604](https://github.com/ELITEAYOTO/REL/actions/runs/39103698604).
 
-### Windows parent reparse points (P1.5-A candidate)
+### Windows parent reparse points (P1.5-A, scoped CI-verified)
 
-A narrow Windows input-path check rejects observable ancestor reparse points, such as directory junctions, before and just after acquiring the input handle. This is **not race-free**; it does not prevent ordinary directory swaps or make paths an atomic snapshot. Previously supported inputs behind a junction may now be rejected. The unchanged leaf reparse and read-sharing policies still apply. See [bounded input notes](docs/security/P15A_BOUNDED_INPUT.md). Validation pending.
+A narrow Windows input-path check rejects observable ancestor reparse points, such as directory junctions, before and just after acquiring the input handle. This is **not race-free**; it does not prevent ordinary directory swaps or make paths an atomic snapshot. Previously supported inputs behind a junction may now be rejected. The unchanged leaf reparse and read-sharing policies still apply. See [bounded input notes](docs/security/P15A_BOUNDED_INPUT.md). [PR #42](https://github.com/ELITEAYOTO/REL/pull/42) and [post-merge Windows/Linux CI #39167703067](https://github.com/ELITEAYOTO/REL/actions/runs/39167703067) are verified in their limited scope.
 
 ## Alpha JSON output policy (P1.5-A, verified on Windows/Linux)
 

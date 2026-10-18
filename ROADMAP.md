@@ -20,7 +20,7 @@ Every item requires test evidence before the checkbox is marked complete. ADRs g
 
 ## P1.5 — Binary Inspector hardening — IN PROGRESS (critical scope before pilot)
 
-- [ ] **P1.5-A Windows ancestor junction check (candidate):** reject currently observable reparse-point parents before and immediately after leaf open; validate real directory-junction and deterministic swap tests on Windows CI. Does not provide race-free descriptor-relative traversal or snapshot. See [bounded-input policy](docs/security/P15A_BOUNDED_INPUT.md).
+- [x] **P1.5-A Windows observable ancestor junction check (narrow CI-verified gate):** reject currently observable reparse-point parents before and immediately after leaf open; validate real directory-junction and deterministic swap tests on Windows CI. Does not provide race-free descriptor-relative traversal or snapshot; [PR #42](https://github.com/ELITEAYOTO/REL/pull/42) and [post-merge CI #39167703067](https://github.com/ELITEAYOTO/REL/actions/runs/39167703067) passed Windows/Linux. See [bounded-input policy](docs/security/P15A_BOUNDED_INPUT.md).
 - [x] **P1.5-A Unix path mitigations (scoped, Windows/Linux CI verified):** opened-file `(dev, ino)` consistency check ([PR #39](https://github.com/ELITEAYOTO/REL/pull/39), post-merge CI 39165446361) and descriptor-relative no-follow ancestor traversal ([PR #40](https://github.com/ELITEAYOTO/REL/pull/40), post-merge CI 39165928503). Not an atomic snapshot, Windows ancestor protection, sandbox or hostile-file guarantee; issue #9 still open.
 - [x] Commit and pin `Cargo.lock`; enforce `--locked` in Linux/Windows CI.
 - [ ] Evaluate dependency MSRV, known advisories and license inventory.

@@ -1,24 +1,17 @@
 # Changelog
 
-## [Unreleased]
+## [Unreleased] - 2026-10-18
 
-### Added — 2026-10-18
-- Modular Rust workspace: `rel-contracts`, `rel-pe`, `rel-inspect`.
-- Static PE32/PE32+ inspection and JSON manifests with SHA-256.
-- Synthetic PE32 and PE32+ fixtures with known imports/exports and expected hashes.
-- Parser integration tests, negative test cases and executable CLI smoke test.
-- Draft 2020-12 JSON Schema validation.
-- Linux and Windows GitHub Actions gates; source formatting brought into compliance.
-- Governance: decision baseline, refactor thresholds, evidence log, handoff instructions.
+### P1.5 — in progress
+- Added deterministic, seeded malformed-input mutation regression tests for `rel-pe` (512 mutations and fixed-interval truncations per PE32/PE64 fixture).
+- Added separate methodology and limitations documentation in `docs/P15_MUTATION_TESTING.md`.
+- **Not yet verified**: full CI on the associated PR; coverage-guided fuzzing and representative real-world binaries are still outstanding.
 
-- Added tracked `Cargo.lock` and strict `--locked` Rust CI execution.
-- **Verified:** [PR #3](https://github.com/ELITEAYOTO/REL/pull/3) merged at `01367e5c208c44ecccd8e943cb43a7a48f93c6d7`; [CI run 39097322823](https://github.com/ELITEAYOTO/REL/actions/runs/39097322823) passed on Windows and Ubuntu with locked builds, tests and smoke checks.
+### P1 (verified)
+- Modular Rust workspace and PE32/PE32+ static inspector.
+- Synthetic fixtures, parser tests and CLI JSON Schema validation.
+- [PR #1](https://github.com/ELITEAYOTO/REL/pull/1): [CI 39096882395](https://github.com/ELITEAYOTO/REL/actions/runs/39096882395) green on Ubuntu and Windows.
+- [PR #3](https://github.com/ELITEAYOTO/REL/pull/3): [CI 39097322823](https://github.com/ELITEAYOTO/REL/actions/runs/39097322823) green with locked dependency resolution.
 
-### Verified
-- [PR #1](https://github.com/ELITEAYOTO/REL/pull/1) merged as `58ddb71d25c3d9698ee6acbb5446c9b5cc1b497a`.
-- [Actions run 39096882395](https://github.com/ELITEAYOTO/REL/actions/runs/39096882395) succeeded on Ubuntu and Windows: `cargo fmt`, `clippy -D warnings`, unit/integration tests, release build, JSON-schema-backed CLI smoke tests.
-
-### Not verified / not implemented
-- Arbitrary real-world PE corpus compatibility, fuzz resilience, benchmarks or release reproducibility.
-- Ghidra integration, function matching, decompilation, simulation or classification.
-- No general security assurance beyond the explicitly tested paths.
+### Not implemented
+- Ghidra adapter, binary diff, classifier, behavior simulation and desktop interface.

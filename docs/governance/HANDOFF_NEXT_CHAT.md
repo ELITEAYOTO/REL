@@ -163,3 +163,16 @@ Branch `fix/p15a-second-pass-input-check` updates `tools/rel-inspect/src/input.r
 [PR #45](https://github.com/ELITEAYOTO/REL/pull/45) merged as [`d1102f7`](https://github.com/ELITEAYOTO/REL/commit/d1102f7def2c86801f9a6d3688a214fb312c82e3). Final-head [push #39171652919](https://github.com/ELITEAYOTO/REL/actions/runs/39171652919), [PR #39171656519](https://github.com/ELITEAYOTO/REL/actions/runs/39171656519) and [post-merge main #39171804456](https://github.com/ELITEAYOTO/REL/actions/runs/39171804456) all passed Windows/Linux. The Windows log shows three new real filesystem regressions passed (same-file handles, distinct files with identical length and mtime, hard-link aliases). A new `tools/rel-inspect/src/input/windows_identity.rs` calls Win32 `GetFileInformationByHandleEx(FileIdInfo)` through minimal documented FFI and checks volume+full 128-bit file identity of the opened input against a subsequent guarded path open, fail-closed on mismatch or unavailable IDs. No dependencies, parser, Linux or manifest v1.0.0 modifications.
 
 **Do not overclaim:** this is a post-open observation; original `symlink_metadata` is not bound to that identity. Fast/privileged swaps, mutable file contents and Windows ancestor path races remain possible; unsupported filesystem IDs cause compatibility failures. A second open adds unmeasured I/O overhead. Keep issue #9 open and resume critical hardening or the evidence/coverage pilot only according to ADR-0013 gates.
+
+## Candidate: full declared PE data-directory slot check (CI pending)
+
+Branch `fix/p15a-declared-directory-slot-budget` makes a targeted,
+allocation-free preflight change in `crates/rel-pe/src/preflight/directories.rs`:
+`NumberOfRvaAndSizes` must be no greater than the number of complete 8-byte
+records actually present in the declared optional-header size. Existing checks
+looked only at the first two slots, even if the declaration said more.
+PE32/PE32+ boundary tests and public `rel_pe::inspect` regression added;
+the legacy `binary-manifest` v1.0.0 and architecture are unchanged.
+Do not mark done until final Windows/Linux CI and post-merge `main` are
+verified. This is not a parser RSS/CPU bound, complete PE validation, or a
+general hostile-file guarantee. [Issue #9](https://github.com/ELITEAYOTO/REL/issues/9) remains open.

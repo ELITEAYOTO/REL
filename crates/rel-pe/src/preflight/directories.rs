@@ -74,7 +74,10 @@ pub(super) fn validate(
         .checked_add(directory_start)
         .ok_or("data directory offset overflow")?;
     let visible = (optional_size - directory_start) / DATA_DIRECTORY_BYTES;
-    if visible < 1 || (count >= 2 && visible < 2) {
+    // All advertised 8-byte records must physically fit in the optional
+    // header. Earlier policy checked only the first two entries even when
+    // NumberOfRvaAndSizes claimed more, leaving inconsistent declarations.
+    if (count as usize) > visible {
         return Err("declared PE data directories exceed optional header");
     }
     let export_rva = le_u32(data, dir_start).ok_or("truncated export directory")?;
@@ -211,6 +214,32 @@ mod tests {
         assert_eq!(check(&size), Ok(()));
         let count = modify_u32(PE32, export_header_raw(PE32) + 20, MAX_EXPORT_SYMBOLS);
         assert_eq!(check(&count), Ok(()));
+    }
+
+    #[test]
+    fn rejects_directory_counts_larger_than_optional_header_capacity() {
+        for fixture in [PE32, PE64] {
+            let (opt, optional_size) = fixture_fields(fixture);
+            let start = if le_u16(fixture, opt) == Some(0x10b) {
+                PE32_DIRECTORY_START
+            } else {
+                PE64_DIRECTORY_START
+            };
+            let capacity = (optional_size - start) / DATA_DIRECTORY_BYTES;
+            assert!(
+                capacity >= 2,
+                "golden fixture must have two directory slots"
+            );
+
+            let too_many = modify_u32(fixture, opt + start - 4, capacity as u32 + 1);
+            assert_eq!(
+                check(&too_many),
+                Err("declared PE data directories exceed optional header")
+            );
+
+            let exact = modify_u32(fixture, opt + start - 4, capacity as u32);
+            assert_eq!(check(&exact), Ok(()));
+        }
     }
 
     #[test]

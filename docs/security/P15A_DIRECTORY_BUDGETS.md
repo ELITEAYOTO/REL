@@ -48,3 +48,23 @@ This does **not** enforce a parser RSS/CPU/time budget, cap all generated string
 5. Leave [issue #9](https://github.com/ELITEAYOTO/REL/issues/9) open: true CPU/RSS limits, robust parser sandboxing and broader licensed corpus remain outstanding.
 
 See [ADR-0013](../adr/ADR-0013-vision-evidence-evolution.md), [security model](THREAT_MODEL_ALPHA.md) and [preflight stage 1](P15A_PE_PREFLIGHT.md).
+
+## Additional candidate: complete declared-directory record coverage (CI pending)
+
+A `NumberOfRvaAndSizes` declaration can claim more entries than physically
+fit into `SizeOfOptionalHeader`. The original preflight checked only the
+availability of export/import slots; a malformed PE declaring, for example,
+17 records in space for 16 could pass that specific guard. This candidate
+requires **every advertised 8-byte directory entry** to fit fully in the
+optional header, for PE32 and PE32+, before calling `goblin`. Count zero
+remains supported. This is an allocation-free integer comparison reusing
+the existing error for a truncated declaration.
+
+Regression tests exercise an advertised count one above the computed slot
+capacity, the exact capacity boundary, both golden PE formats and the public
+`rel_pe::inspect` error. No new dependency, parser allocation or
+`binary-manifest` v1.0.0 change. It may reject unconventional binaries that
+advertise more records than they contain; this is an explicit conservative
+alpha policy. **It does not cap import thunk traversal or parser CPU/RSS,
+prove PE validity, or safely isolate hostile input.** Record Windows/Linux
+CI (and optionally fuzz evidence) before considering the increment verified.

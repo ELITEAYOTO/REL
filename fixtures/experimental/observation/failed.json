@@ -1,0 +1,43 @@
+{
+  "schema_version": "0.1.0-experimental",
+  "subject": {
+    "sha256": "86a3634db5fbdd88527a8d7316a7133d2ec27edd05be1dcaa81bf574bfbe765b",
+    "size_bytes": 2048,
+    "format": "PE"
+  },
+  "producer": {
+    "component": "rel-ex01-fixture",
+    "version": "0.1.0",
+    "backend": "synthetic-bytes",
+    "backend_version": "0.1.0",
+    "config_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "run_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "scope": {
+    "domain": "pe.dos_magic",
+    "status": "failed",
+    "procedure": "Attempted to inspect the DOS magic; coverage not established.",
+    "limitations": [
+      "DOS signature only; no inference about imports, runtime, or network behavior."
+    ]
+  },
+  "observations": [
+    {
+      "id": "dos-value",
+      "predicate": "equals.MZ",
+      "status": "indeterminate",
+      "raw_value": null,
+      "normalized_value": null,
+      "evidence_ids": []
+    }
+  ],
+  "evidence": [],
+  "diagnostics": [
+    {
+      "code": "INPUT_FAILURE",
+      "severity": "error",
+      "stage": "acquire",
+      "message": "Illustrative diagnostic; not an extractor result."
+    }
+  ]
+}

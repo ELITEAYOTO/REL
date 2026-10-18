@@ -43,7 +43,7 @@ Measure resource use on complex legally redistributable PE files, design atomic 
 Related [threat model](THREAT_MODEL_ALPHA.md), [issue #9](https://github.com/ELITEAYOTO/REL/issues/9) and [ADR-0013](../adr/ADR-0013-vision-evidence-evolution.md).
 
 
-## Unix final-component no-follow candidate (pending new PR CI)
+## Unix final-component no-follow (PR CI verified, P1.5-A still open)
 
 The CLI now uses `OpenOptionsExt::custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK)` on Unix to open the input once, instead of an unguarded `File::open` after a pre-open path check. `O_NOFOLLOW` prevents a swap to a **final-component symlink** from being followed at open time; `O_NONBLOCK` prevents a swapped FIFO from hanging in `open`. The existing descriptor-based regular-file check, 512 MiB byte cap, and modification checks remain. A Unix-only direct-open unit test models a deterministic path replacement with a symlink; a Linux test constructs a FIFO with `mkfifo` and checks nonblocking open and refusal by the higher-level input policy.
 
@@ -54,4 +54,4 @@ Scope and non-goals:
 - A regular file can still be rewritten concurrently without a detectable size/mtime difference. No coherent snapshot, forced CPU/RSS bound or hostile-input authorization is implied.
 - `libc = "=0.2.191"` is added as an exact direct dependency on Unix only; it was already present in the tracked lockfile, and `Cargo.lock` adds it to the CLI dependency list.
 
-**Validation is pending** on PR Windows/Linux CI and should not be claimed until the final head and post-merge checks pass.
+**Validated for controlled cases:** [PR #24 Windows/Linux CI #39109205165](https://github.com/ELITEAYOTO/REL/actions/runs/39109205165) succeeded on the implementation and documentation candidate. Post-merge `main` run must be checked separately. These checks do not demonstrate protection against hostile path trees, Windows reparse-point races, concurrent content changes, or arbitrary device I/O.

@@ -1,0 +1,7 @@
+/* Controlled Win32 RCDATA asset; compiled by the installed Windows SDK rc.exe.
+ * This file is source data only, not a redistribution license.
+ */
+101 RCDATA
+BEGIN
+    "REL-STRUCTURED-PE-RCDATA-V1"
+END

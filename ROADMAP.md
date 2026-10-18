@@ -22,7 +22,8 @@ Every item requires test evidence before the checkbox is marked complete. ADRs g
 
 - [x] Commit and pin `Cargo.lock`; enforce `--locked` in Linux/Windows CI.
 - [ ] Evaluate dependency MSRV, known advisories and license inventory.
-- [ ] Expand corpus: real redistributable Windows binaries with independent reference oracle; PE edge cases.
+- [ ] Expand corpus: license-verified redistributable PE samples spanning multiple compilers and unusual edge cases.
+- [ ] Verify native Windows PE self-inspection against a pinned independent `pefile` oracle (new CI gate).
 - [ ] Fuzz malformed/truncated headers and import/export tables, establish crash-free behavior.
 - [ ] Establish representative runtime **and memory** benchmarks across complex PE files.
 - [ ] Verify the initial CLI timing harness on Windows and Linux CI (synthetic size-overlay samples).

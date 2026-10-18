@@ -2,11 +2,11 @@
 
 ## [Unreleased] — 2026-10-18
 
-### P1.5-A — PE raw section range preflight (candidate, CI pending)
+### P1.5-A — PE raw section range preflight (PR CI verified)
 
 - Validate non-empty section raw data ranges stay inside input bytes before invoking goblin, using checked slice bounds and the existing <=96 section policy.
 - Preserve virtual-only zero-length raw sections, existing APIs/JSON v1.0.0, and avoid new dependencies or allocations.
-- Add PE32/PE32+ malformed/boundary tests and a public inspection API regression. Compatibility with unusual PE layouts, full parser CPU/RAM safety and CI validation remain open.
+- PE32/PE32+ malformed/boundary and public inspect API regressions passed [Windows/Linux CI #39108469504](https://github.com/ELITEAYOTO/REL/actions/runs/39108469504); bounded [libFuzzer #39108469495](https://github.com/ELITEAYOTO/REL/actions/runs/39108469495) passed 686,003 executions in 31 seconds with fuzzer-reported 561 MiB peak RSS on that runner. Compatibility with unusual PE layouts and global parser CPU/RAM safety remain open.
 
 
 ### P1.5-A — Atomic report publication (PR CI verified)

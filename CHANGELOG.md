@@ -2,6 +2,12 @@
 
 ## [Unreleased] — 2026-10-18
 
+### EX-01 — Experimental standalone observation contract (candidate, CI pending)
+
+- Add `contracts/experimental/observation-envelope.schema.json` with explicit subject hash, producer/backend versions, deterministic run ID, precisely named coverage domain, scoped positive/negative/indeterminate observations, typed evidence, and diagnostics. No changes to `binary-manifest` v1.0.0 or the original Rust workspace.
+- Add `scripts/validate_observation_envelope.py`, validating JSON Schema plus cross-field consistency (file-offset bounds, evidence subject equality/references, duplicate IDs, negative claims only for complete scope, diagnostics for incomplete extraction). Five controlled golden reports use the repository's **synthetic PE32 fixture** and demonstrate `present`, `absent_in_scope`, `partial`, `failed`, and `unsupported`. Add invalid-case and v1-isolation tests to both Windows/Linux CI.
+- **Important:** this first experimental contract increment does not provide an extractor, validate the truth of any claim merely by JSON structure, implement a PE manifest-to-evidence migration, or finish EX-01. Full P1.5-A resource/corpus hardening remains open. Tests and CI validation pending.
+
 ### P1.5-A — Entire declared PE data-directory slot consistency (PR #47 merged; CI verified)
 
 - Reject a PE32/PE32+ `NumberOfRvaAndSizes` larger than the number of complete 8-byte data-directory records physically represented by `SizeOfOptionalHeader`. Previously REL checked only the first two when declared, allowing inconsistent higher counts into the backend.

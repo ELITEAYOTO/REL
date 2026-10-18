@@ -3,9 +3,9 @@
 #[cfg(unix)]
 mod unix_open;
 #[cfg(windows)]
-mod windows_path;
-#[cfg(windows)]
 mod windows_identity;
+#[cfg(windows)]
+mod windows_path;
 use std::{
     fs::{self, File, Metadata},
     io::{self, Read, Seek},

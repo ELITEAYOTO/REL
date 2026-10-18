@@ -79,3 +79,18 @@ fn rejects_optional_header_larger_than_alpha_cap_at_public_api() {
         PeError::Parse(ref message) if message.contains("optional header size outside alpha policy")
     ));
 }
+
+#[test]
+fn rejects_oversized_export_count_via_public_inspect_api() {
+    let mut bytes = PE32.to_vec();
+    // Known golden fixture: export directory RVA 0x2100 in .rdata,
+    // mapped through section raw start 0x400 and virtual address 0x2000.
+    let export_header = 0x400 + (0x2100 - 0x2000);
+    bytes[export_header + 20..export_header + 24]
+        .copy_from_slice(&65_537_u32.to_le_bytes());
+    let failure = inspect(&bytes).err().expect("export count must be rejected");
+    assert!(matches!(
+        failure,
+        PeError::Parse(ref message) if message.contains("export count exceeds alpha symbol limit")
+    ));
+}

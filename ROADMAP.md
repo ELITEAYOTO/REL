@@ -33,7 +33,7 @@ Every item requires test evidence before the checkbox is marked complete. ADRs g
 - [x] Verify initial CLI timing harness on Windows/Linux with uploaded JSON observations ([PR #5](https://github.com/ELITEAYOTO/REL/pull/5), CI 39098808184).
 - [x] **P1.5-A increment:** bounded single-descriptor reader, strict byte cap, observable file-change and path-policy tests ([PR #17](https://github.com/ELITEAYOTO/REL/pull/17), [Windows/Linux CI](https://github.com/ELITEAYOTO/REL/actions/runs/39103698604)).
 - [ ] **P1.5-A remaining:** atomic no-follow path handling, same-length concurrent modifications, stronger Windows/Linux path tests and CPU/RSS/output budgets ([issue #9](https://github.com/ELITEAYOTO/REL/issues/9)).
-- [ ] **P1.5-A output increment:** enforce provisional 16 MiB JSON serialization budget with unit/CLI CI checks ([spec](docs/security/P15A_BOUNDED_OUTPUT.md); validation pending).
+- [x] **P1.5-A output increment:** provisional 16 MiB JSON serialization budget, byte-exact and limit tests ([PR #18](https://github.com/ELITEAYOTO/REL/pull/18), [CI #39104382262](https://github.com/ELITEAYOTO/REL/actions/runs/39104382262)).
 - [ ] **P1.5-A remaining resource budgets:** measure and enforce CPU/RSS and pathological structure limits, atomic reporting and representative legal PE corpus ([issue #9](https://github.com/ELITEAYOTO/REL/issues/9)).
 - [ ] **P1.5-B:** extend coverage-guided fuzzing, worker isolation and long-term robustness, without claiming general security ([issues #8](https://github.com/ELITEAYOTO/REL/issues/8), [#11](https://github.com/ELITEAYOTO/REL/issues/11), [#12](https://github.com/ELITEAYOTO/REL/issues/12)).
 - [ ] Establish release/archive provenance and binary integrity checks.

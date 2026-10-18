@@ -65,6 +65,10 @@ The standalone CLI now uses a focused input-reading module with an actual-read c
 
 The standalone CLI now has a **provisional 16 MiB JSON report budget** enforced while serializing. Reports exceeding that limit are rejected before the CLI opens an output file or writes stdout. The report v1.0.0 schema and normal output format are unchanged. The [Windows/Linux CI #39104382262](https://github.com/ELITEAYOTO/REL/actions/runs/39104382262) passed with the new report serializer; the limit remains provisional pending representative measurements. This budget does **not** cap parser allocations, memory usage or CPU time. See [bounded JSON report notes](docs/security/P15A_BOUNDED_OUTPUT.md).
 
+## Provenance des mesures par machine (P1.5-A candidate)
+
+The paired benchmark/profile observations now also record an explicit reported host and toolchain context and exact release analyzer SHA-256. A canonical fingerprint prevents combining reports from different GitHub jobs or binaries while retaining missing RSS/CPU sample flags. This improves **same-job evidence traceability**, not cross-run performance comparability or hardware attestation. See [P1.5 measurement notes](docs/P15_RESOURCE_PROFILING.md).
+
 ## Paired benchmark/resource evidence quality (P1.5-A PR CI verified)
 
 Windows and Linux CI also validate that both JSON measurement tools observed the same input cases and file hashes, and verify their sampled statistics without inventing missing RAM/CPU values. An additional `rel-measurement-evidence.json` artifact describes the internal consistency and sampling coverage. See [measurement scope](docs/P15_RESOURCE_PROFILING.md). This does **not** establish a production performance threshold or security isolation.

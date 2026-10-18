@@ -21,9 +21,10 @@ class CorpusCase:
     source_fixture: str | None
     source_sha256: str | None
     provenance: str
+    toolchain_version: str | None = None
 
     def report_fields(self) -> dict:
-        return {
+        result = {
             "case_id": self.case_id,
             "kind": self.kind,
             "source_fixture": self.source_fixture,
@@ -31,6 +32,9 @@ class CorpusCase:
             "provenance": self.provenance,
             "redistribution_status": REDISTRIBUTION_STATUS,
         }
+        if self.toolchain_version is not None:
+            result["toolchain_version"] = self.toolchain_version
+        return result
 
 
 def load_verified_seeds(fixtures: Path) -> list[tuple[str, bytes, str]]:
@@ -54,14 +58,25 @@ def load_verified_seeds(fixtures: Path) -> list[tuple[str, bytes, str]]:
 def prepare_cases(
     fixtures: Path, workdir: Path, binary: Path, *, include_windows_executable: bool,
     windows_msvc_probe: Path | None = None,
+    windows_clang_probe: Path | None = None,
 ) -> list[CorpusCase]:
     """Create deterministic, provenance-labeled PE cases without running them."""
     # Fail before producing any overlay if the optional compiler input is invalid.
-    if windows_msvc_probe is not None:
-        if not include_windows_executable:
-            raise ValueError("MSVC probe requires the Windows corpus mode")
-        if not windows_msvc_probe.is_file():
-            raise FileNotFoundError(windows_msvc_probe)
+    for name, probe in (("MSVC", windows_msvc_probe), ("Clang-cl", windows_clang_probe)):
+        if probe is not None:
+            if not include_windows_executable:
+                raise ValueError(f"{name} probe requires the Windows corpus mode")
+            if not probe.is_file():
+                raise FileNotFoundError(probe)
+
+    clang_version = None
+    if windows_clang_probe is not None:
+        version_file = windows_clang_probe.with_name("clang-cl-version.txt")
+        version_lines = version_file.read_text(encoding="utf-8").splitlines()
+        if not version_lines or not version_lines[0].startswith("clang version "):
+            raise ValueError("missing or invalid Clang version provenance")
+        clang_version = version_lines[0][:256]
+
     cases: list[CorpusCase] = []
     for name, seed, digest in load_verified_seeds(fixtures):
         arch = name.split("-")[0]
@@ -92,5 +107,13 @@ def prepare_cases(
         cases.append(CorpusCase(
             "msvc-x64-local-build", windows_msvc_probe, "ci-built-msvc-x64-pe",
             "fixtures/probes/msvc_probe.c", source_sha, "built-on-runner-msvc-x64",
+        ))
+    if windows_clang_probe is not None:
+        source = ROOT / "fixtures" / "probes" / "msvc_probe.c"
+        cases.append(CorpusCase(
+            "clang-cl-x64-local-build", windows_clang_probe,
+            "ci-built-clang-cl-x64-pe", "fixtures/probes/msvc_probe.c",
+            hashlib.sha256(source.read_bytes()).hexdigest(),
+            "built-on-runner-clang-cl-x64", clang_version,
         ))
     return cases

@@ -14,7 +14,7 @@ REL previously measured overall CLI wall time on synthetic PE input sizes, not R
 - Launches the child process using `psutil.Popen`; samples the child's RSS and cumulative user+system CPU time at a nominal **2 ms** interval.
 - Uses temporary files for stdout/stderr to prevent pipe deadlocks; checks the resulting manifest's SHA-256 and declared size against the source bytes.
 - Measures elapsed wall time per process; terminates a run that exceeds **30 seconds** and returns an error.
-- Controlled corpus: hash-validated 2 KiB PE32 and PE64 synthetic seeds and zero-filled overlays at 1 MiB and 4 MiB for each architecture. On Windows additionally inspects the locally compiled REL Release EXE and the separate CI-built MSVC x64 probe from tracked source. See [corpus provenance](security/P15A_CORPUS_PROVENANCE.md).
+- Controlled corpus: hash-validated 2 KiB PE32 and PE64 synthetic seeds and zero-filled overlays at 1 MiB and 4 MiB for each architecture. On Windows additionally inspects the locally compiled REL Release EXE and the separate CI-built MSVC x64 probe and candidate Clang-cl x64 build from the same tracked C source. See [corpus provenance](security/P15A_CORPUS_PROVENANCE.md).
 - Performs one warmup and five measured executions per scenario; stores **all measurements**, medians, maximum observed RSS/CPU and environment information.
 - Pins `psutil==7.0.0` **in CI** and uploads `rel-resources.json` as a per-platform artifact. Local use may require installing this version explicitly.
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Windows-only independent oracle for the unexecuted locally compiled PE."""
+"""Windows-only independent oracle for a never-executed compiler-built PE."""
 from __future__ import annotations
 
 import argparse
@@ -11,7 +11,7 @@ from pathlib import Path
 import pefile
 
 
-def check(analyzer: Path, probe: Path) -> None:
+def check(analyzer: Path, probe: Path, compiler_label: str = "MSVC") -> None:
     assert probe.is_file(), "MSVC probe was not built"
     raw = probe.read_bytes()
     assert raw[:2] == b"MZ", "not a PE file"
@@ -58,12 +58,13 @@ def check(analyzer: Path, probe: Path) -> None:
     assert any("GetTickCount64" in item for item in manifest["imports"]), (
         "REL missing the independently verified GetTickCount64 import"
     )
-    print("PASS MSVC x64 probe analyzed without running; sha256=" + expected_sha)
+    print(f"PASS {compiler_label} x64 probe analyzed without running; sha256={expected_sha}")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--binary", type=Path, required=True)
     parser.add_argument("--probe", type=Path, required=True)
+    parser.add_argument("--compiler-label", default="MSVC", choices=["MSVC", "Clang-cl"])
     args = parser.parse_args()
-    check(args.binary.resolve(strict=True), args.probe.resolve(strict=True))
+    check(args.binary.resolve(strict=True), args.probe.resolve(strict=True), args.compiler_label)

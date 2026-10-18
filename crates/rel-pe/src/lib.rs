@@ -5,6 +5,7 @@ use rel_contracts::BinarySection;
 pub enum PeError {
     Unsupported,
     Parse(String),
+    DependencyPanic,
 }
 
 impl std::fmt::Display for PeError {
@@ -12,6 +13,7 @@ impl std::fmt::Display for PeError {
         match self {
             Self::Unsupported => write!(f, "unsupported format (PE only)"),
             Self::Parse(detail) => write!(f, "invalid PE: {detail}"),
+            Self::DependencyPanic => write!(f, "PE parser dependency panicked while parsing"),
         }
     }
 }
@@ -30,7 +32,13 @@ pub fn inspect(data: &[u8]) -> Result<PeInspection, PeError> {
     if !data.starts_with(b"MZ") {
         return Err(PeError::Unsupported);
     }
-    let pe = goblin::pe::PE::parse(data).map_err(|e| PeError::Parse(e.to_string()))?;
+    // goblin 0.9.3 may panic on malformed TLS directory offsets.
+    // Contain unwinding panics at the untrusted third-party parser boundary.
+    // This does not handle aborts, OOM or memory-unsafety and does not replace
+    // upstream fixes or process isolation for hostile inputs.
+    let pe = std::panic::catch_unwind(|| goblin::pe::PE::parse(data))
+        .map_err(|_| PeError::DependencyPanic)?
+        .map_err(|e| PeError::Parse(e.to_string()))?;
     let arch = match pe.header.coff_header.machine {
         0x8664 => "x86_64",
         0x014c => "x86",

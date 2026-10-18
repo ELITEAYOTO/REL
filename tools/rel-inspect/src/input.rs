@@ -344,7 +344,9 @@ mod tests {
         assert_eq!(preflight.len(), after.len());
         assert_eq!(preflight.modified().unwrap(), after.modified().unwrap());
         assert_eq!(
-            verify_preopen_identity(&preflight, &after).unwrap_err().kind(),
+            verify_preopen_identity(&preflight, &after)
+                .unwrap_err()
+                .kind(),
             io::ErrorKind::InvalidData
         );
         drop(opened);

@@ -2,6 +2,14 @@
 
 ## [Unreleased] — 2026-10-18
 
+### P1.5-A — PE structural header preflight (CI pending)
+
+- Added isolated, allocation-free `crates/rel-pe/src/preflight.rs` before invoking the existing goblin parser.
+- Checks DOS NT pointer (≤1 MiB), NT/COFF signature and boundaries, 1–96 sections, optional header (2–4096 bytes, PE32/PE32+) and full section-header table bounds.
+- Added golden, malformed and threshold tests including public-API negative checks; no new dependency or JSON v1 contract change.
+- Limits are conservative alpha policy; unusual valid PE images might be rejected. This is **not** an RSS/CPU budget, full PE verifier, or sandbox.
+- Windows/Linux normal and instrumented libFuzzer gates pending; see [preflight security notes](docs/security/P15A_PE_PREFLIGHT.md).
+
 ### P1.5-A — Cross-platform RSS and CPU observations (verified)
 
 - Added an independent Python profiler `scripts/profile_resources.py`, using `psutil==7.0.0` on Windows and Ubuntu.

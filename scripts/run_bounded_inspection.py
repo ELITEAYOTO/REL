@@ -61,7 +61,9 @@ def supervise(
     child_options = {}
     if max_address_space_bytes is not None or max_cpu_seconds is not None:
         if not sys.platform.startswith("linux"):
-            raise ValueError("RLIMIT_AS and RLIMIT_CPU options require Linux")
+            if max_address_space_bytes is not None:
+                raise ValueError("RLIMIT_AS option requires Linux")
+            raise ValueError("RLIMIT_CPU option requires Linux")
         if max_address_space_bytes is not None and max_address_space_bytes <= 0:
             raise ValueError("address-space limit must be positive")
         if max_cpu_seconds is not None and not 1 <= max_cpu_seconds <= 300:

@@ -18,15 +18,16 @@ Every item requires test evidence before the checkbox is marked complete. ADRs g
 
 **Evidence:** [PR #1](https://github.com/ELITEAYOTO/REL/pull/1) and [CI run 39096882395](https://github.com/ELITEAYOTO/REL/actions/runs/39096882395). **Do not interpret this as production readiness or universal PE correctness.**
 
-## P1.5 — Binary Inspector hardening — NEXT
+## P1.5 — Binary Inspector hardening — IN PROGRESS
 
 - [x] Commit and pin `Cargo.lock`; enforce `--locked` in Linux/Windows CI.
 - [ ] Evaluate dependency MSRV, known advisories and license inventory.
 - [ ] Expand corpus: license-verified redistributable PE samples spanning multiple compilers and unusual edge cases.
-- [ ] Verify native Windows PE self-inspection against a pinned independent `pefile` oracle (new CI gate).
-- [ ] Fuzz malformed/truncated headers and import/export tables, establish crash-free behavior.
+- [x] Verify native Windows PE self-inspection against independent pinned `pefile` ([PR #6](https://github.com/ELITEAYOTO/REL/pull/6), CI 39098961562).
+- [x] Run deterministic seeded mutation/truncation regressions against synthetic PE32/PE32+ fixtures ([PR #4](https://github.com/ELITEAYOTO/REL/pull/4), CI 39098578436).
+- [ ] Run coverage-guided fuzzing against malformed PE fields and preserve minimized failures.
 - [ ] Establish representative runtime **and memory** benchmarks across complex PE files.
-- [ ] Verify the initial CLI timing harness on Windows and Linux CI (synthetic size-overlay samples).
+- [x] Verify initial CLI timing harness on Windows/Linux with uploaded JSON observations ([PR #5](https://github.com/ELITEAYOTO/REL/pull/5), CI 39098808184).
 - [ ] Add deterministic limits for expensive PE structures, test input symlinks and path edge cases.
 - [ ] Establish release/archive provenance and binary integrity checks.
 

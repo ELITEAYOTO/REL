@@ -44,7 +44,7 @@ For controlled authorized PE inputs, the independent Python watchdog can launch 
 
     python scripts/run_bounded_inspection.py --binary target/release/rel-inspect --input fixtures/pe64-basic.exe
 
-Use rel-inspect.exe on Windows. On Linux only, you may additionally pass `--max-address-space-mib 2048` to install a kernel-enforced **virtual address-space** ceiling in the child before `exec`. This is different from a resident RAM/RSS ceiling and is disabled by default. The watchdog retains an opt-in wall-time kill and **sampled** RSS threshold. It does not replace the standard CLI, provide a CPU-time limit, guarantee a physical RAM ceiling or create a security sandbox. Read [scope, failure modes and reproducibility](docs/security/P15A_SUPERVISOR_V0.md).
+Use rel-inspect.exe on Windows. On Linux only, you may additionally pass `--max-address-space-mib 2048` to install a kernel-enforced **virtual address-space** ceiling in the child before `exec`. This is different from a resident RAM/RSS ceiling and is disabled by default. The watchdog retains an opt-in wall-time kill and **sampled** RSS threshold. On Windows only, `--max-job-memory-mib 512` can opt into a native Job Object committed-memory budget, with the analyzer suspended until assignment, and kill-on-close for associated descendants. These controls do not replace the standard CLI, provide a CPU-time limit, guarantee a resident RAM ceiling or create a security sandbox. Read [scope, failure modes and reproducibility](docs/security/P15A_SUPERVISOR_V0.md).
 
 ## Principles frozen for contributors and AI assistants
 

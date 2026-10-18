@@ -57,3 +57,7 @@ The Python wrapper scripts/run_bounded_inspection.py launches REL as one direct 
 ## Linux native per-process address-space option (scoped PR CI verified)
 
 The optional Python supervisor may install `RLIMIT_AS` in the Linux analyzer child before exec. This limits that process's virtual address space (including reserved mappings), not its physical memory/RSS or aggregate descendant memory. Windows mode and direct `rel-inspect` remain unchanged. Under-memory behavior can lead to ordinary parse/launch errors; reporting it as confirmed RSS exhaustion would be misleading. Installation and denied-allocation tests passed [Windows/Linux PR CI #39149771201](https://github.com/ELITEAYOTO/REL/actions/runs/39149771201). Final PR head and post-merge validation must still be checked before marking integrated. [Supervisor scope](P15A_SUPERVISOR_V0.md).
+
+## Native Windows Job Object watchdog (candidate — CI pending)
+
+The optional Windows watchdog proposes a Job Object with job-wide committed-memory limit and kill-on-last-handle-close, applied to the analyzer created suspended before it can execute. This is not an RSS bound, CPU-time limit or arbitrary hostile-code sandbox. Child Job membership, resource failure behavior and descendant cleanup must be demonstrated on Windows CI. Ancestor job policies, handle duplication and descendants that can break away under other policies remain possible risks. Read [supervisor V0](P15A_SUPERVISOR_V0.md) and keep issue #9 open.

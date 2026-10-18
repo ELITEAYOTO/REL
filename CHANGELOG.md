@@ -2,11 +2,11 @@
 
 ## [Unreleased] — 2026-10-18
 
-### P1.5-A — Entire declared PE data-directory slot consistency (candidate; CI pending)
+### P1.5-A — Entire declared PE data-directory slot consistency (PR #47 merged; CI verified)
 
 - Reject a PE32/PE32+ `NumberOfRvaAndSizes` larger than the number of complete 8-byte data-directory records physically represented by `SizeOfOptionalHeader`. Previously REL checked only the first two when declared, allowing inconsistent higher counts into the backend.
 - Add both-architecture exact boundary/rejection tests and a public `rel_pe::inspect` regression. Preserve zero-count handling, valid fixtures, existing error class, `binary-manifest` v1.0.0, and dependency pins.
-- This conservative alpha rule is **not** complete PE validation, an import-thunk bound, or a parser CPU/RSS/sandbox guarantee. Tests and compatibility evidence beyond controlled fixtures remain necessary.
+- This conservative alpha rule is **not** complete PE validation, an import-thunk bound, or a parser CPU/RSS/sandbox guarantee. [PR #47](https://github.com/ELITEAYOTO/REL/pull/47) merged as [`f26b34d`](https://github.com/ELITEAYOTO/REL/commit/f26b34d557e5bd892a7855bc253a6b07880c9709). [Final PR CI #39173751519](https://github.com/ELITEAYOTO/REL/actions/runs/39173751519), [bounded PE libFuzzer #39173751518](https://github.com/ELITEAYOTO/REL/actions/runs/39173751518) and [post-merge main CI #39173973900](https://github.com/ELITEAYOTO/REL/actions/runs/39173973900) all succeeded; Windows tests for PE32/PE32+ boundary and public API were observed as `ok`. Broader compatibility evidence on licensed binaries remains necessary.
 
 ### P1.5-A — Windows 128-bit opened-handle identity check (PR #45 merged, CI verified)
 

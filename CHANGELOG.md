@@ -2,11 +2,11 @@
 
 ## [Unreleased] — 2026-10-18
 
-### P1.5-A — Windows 128-bit opened-handle identity check (candidate; CI pending)
+### P1.5-A — Windows 128-bit opened-handle identity check (PR #45 merged, CI verified)
 
 - Query `GetFileInformationByHandleEx(FileIdInfo)` on the already-opened guarded Windows input handle and a second guarded open of the same path; reject mismatched volume+128-bit identifiers or missing/unsupported identities. Only the controlled-input reader changes; no new dependency, parser change or `binary-manifest v1.0.0` change.
 - Three deterministic Windows regressions: two handles to the same file and normal CLI read, distinct same-length/same-mtime files, and two handles via a hard link (one underlying file). All use real handles, not guessed filesystem IDs.
-- Important: this is a **post-open observation**, not a comparison to the earlier path `symlink_metadata`, an atomic Windows path walk or a coherent filesystem snapshot. Win32 read-sharing already blocks ordinary writers, while privileged/redirector races may evade these checks. Unsupported/zero identifiers now fail closed (potential compatibility change); two file opens and two OS identity queries add overhead. Validate Windows/Linux CI before promoting the gate.
+- Important: this is a **post-open observation**, not a comparison to the earlier path `symlink_metadata`, an atomic Windows path walk or a coherent filesystem snapshot. Win32 read-sharing already blocks ordinary writers, while privileged/redirector races may evade these checks. Unsupported/zero identifiers now fail closed (potential compatibility change); two file opens and two OS identity queries add overhead. [PR #45](https://github.com/ELITEAYOTO/REL/pull/45) merged as [`d1102f7`](https://github.com/ELITEAYOTO/REL/commit/d1102f7def2c86801f9a6d3688a214fb312c82e3). Final-head [push CI #39171652919](https://github.com/ELITEAYOTO/REL/actions/runs/39171652919), [PR CI #39171656519](https://github.com/ELITEAYOTO/REL/actions/runs/39171656519), and [post-merge main CI #39171804456](https://github.com/ELITEAYOTO/REL/actions/runs/39171804456) passed Windows and Linux. All three new Windows identity tests were observed as `ok` in PR CI logs.
 
 ### P1.5-A — Windows observable ancestor reparse-point guard (PR #42 merged, CI verified)
 

@@ -20,6 +20,7 @@ Every item requires test evidence before the checkbox is marked complete. ADRs g
 
 ## P1.5 — Binary Inspector hardening — IN PROGRESS (critical scope before pilot)
 
+- [x] **P1.5-A Unix path mitigations (scoped, Windows/Linux CI verified):** opened-file `(dev, ino)` consistency check ([PR #39](https://github.com/ELITEAYOTO/REL/pull/39), post-merge CI 39165446361) and descriptor-relative no-follow ancestor traversal ([PR #40](https://github.com/ELITEAYOTO/REL/pull/40), post-merge CI 39165928503). Not an atomic snapshot, Windows ancestor protection, sandbox or hostile-file guarantee; issue #9 still open.
 - [x] Commit and pin `Cargo.lock`; enforce `--locked` in Linux/Windows CI.
 - [ ] Evaluate dependency MSRV, known advisories and license inventory.
 - [ ] Expand corpus: license-verified redistributable PE samples spanning multiple compilers and unusual edge cases. The internal case inventory and one CI-built MSVC probe **do not fulfill** this external corpus requirement or establish redistribution rights.

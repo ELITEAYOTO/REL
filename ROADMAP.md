@@ -31,7 +31,7 @@ Every item requires test evidence before the checkbox is marked complete. ADRs g
 - [ ] Run extended fuzz campaigns and persist new distinct failures.
 - [ ] Establish representative runtime **and memory** benchmarks across complex PE files.
 - [x] Verify initial CLI timing harness on Windows/Linux with uploaded JSON observations ([PR #5](https://github.com/ELITEAYOTO/REL/pull/5), CI 39098808184).
-- [ ] **P1.5-A:** stable file-descriptor bounded reads, symlink/path races and files changing during analysis, verified Windows/Linux ([issue #9](https://github.com/ELITEAYOTO/REL/issues/9)).
+- [ ] **P1.5-A:** bounded single-descriptor reader + basic modification/symlink tests ([implementation PR pending CI](https://github.com/ELITEAYOTO/REL/pulls), [spec](docs/security/P15A_BOUNDED_INPUT.md)). **Still open:** atomic no-follow race protection, same-length concurrent modifications, stronger Windows/Linux path tests ([issue #9](https://github.com/ELITEAYOTO/REL/issues/9)).
 - [ ] **P1.5-A:** measure and enforce resource limits (output size, CPU/RSS and pathological structures); expand licensed PE corpus.
 - [ ] **P1.5-B:** extend coverage-guided fuzzing, worker isolation and long-term robustness, without claiming general security ([issues #8](https://github.com/ELITEAYOTO/REL/issues/8), [#11](https://github.com/ELITEAYOTO/REL/issues/11), [#12](https://github.com/ELITEAYOTO/REL/issues/12)).
 - [ ] Establish release/archive provenance and binary integrity checks.

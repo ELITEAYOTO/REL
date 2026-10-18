@@ -226,7 +226,10 @@ mod tests {
                 PE64_DIRECTORY_START
             };
             let capacity = (optional_size - start) / DATA_DIRECTORY_BYTES;
-            assert!(capacity >= 2, "golden fixture must have two directory slots");
+            assert!(
+                capacity >= 2,
+                "golden fixture must have two directory slots"
+            );
 
             let too_many = modify_u32(fixture, opt + start - 4, capacity as u32 + 1);
             assert_eq!(

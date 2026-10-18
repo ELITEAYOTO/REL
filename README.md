@@ -53,9 +53,9 @@ Read [AGENTS.md](AGENTS.md), [architecture](docs/ARCHITECTURE.md), [frozen decis
 
 The standalone CLI now uses a focused input-reading module with an actual-read cap of 512 MiB and rejects symlinks/non-regular paths; it still cannot guarantee a coherent snapshot if a file is modified while read. See [bounded input security notes](docs/security/P15A_BOUNDED_INPUT.md). This is **not** a general sandbox or overall RAM/CPU budget. The reader's unit and CLI integration gates passed [Windows/Linux CI #39103698604](https://github.com/ELITEAYOTO/REL/actions/runs/39103698604).
 
-## Alpha JSON output policy (P1.5-A, CI validation pending)
+## Alpha JSON output policy (P1.5-A, verified on Windows/Linux)
 
-The standalone CLI now has a **provisional 16 MiB JSON report budget** enforced while serializing. Reports exceeding that limit are rejected before the CLI opens an output file or writes stdout. The report v1.0.0 schema and normal output format are unchanged. This budget does **not** cap parser allocations, memory usage or CPU time. See [bounded JSON report notes](docs/security/P15A_BOUNDED_OUTPUT.md).
+The standalone CLI now has a **provisional 16 MiB JSON report budget** enforced while serializing. Reports exceeding that limit are rejected before the CLI opens an output file or writes stdout. The report v1.0.0 schema and normal output format are unchanged. The [Windows/Linux CI #39104382262](https://github.com/ELITEAYOTO/REL/actions/runs/39104382262) passed with the new report serializer; the limit remains provisional pending representative measurements. This budget does **not** cap parser allocations, memory usage or CPU time. See [bounded JSON report notes](docs/security/P15A_BOUNDED_OUTPUT.md).
 
 ## Project maturity / risks
 

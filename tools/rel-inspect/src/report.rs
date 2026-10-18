@@ -17,7 +17,9 @@ impl Write for BoundedJsonWriter {
                 "JSON report exceeds configured 16 MiB output limit",
             ));
         }
-        self.bytes.try_reserve(chunk.len()).map_err(io::Error::other)?;
+        self.bytes
+            .try_reserve(chunk.len())
+            .map_err(io::Error::other)?;
         self.bytes.extend_from_slice(chunk);
         Ok(chunk.len())
     }
@@ -63,7 +65,10 @@ mod tests {
     fn matches_original_pretty_json_output() {
         let manifest = fixture_manifest();
         let expected = serde_json::to_vec_pretty(&manifest).unwrap();
-        assert_eq!(serialize_manifest(&manifest, MAX_REPORT_BYTES).unwrap(), expected);
+        assert_eq!(
+            serialize_manifest(&manifest, MAX_REPORT_BYTES).unwrap(),
+            expected
+        );
     }
 
     #[test]

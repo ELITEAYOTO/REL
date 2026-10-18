@@ -41,3 +41,9 @@ Future assistants must not claim these modules exist: source decompiler, version
 - Source license is **not yet decided**. Need dependency/license review and a separate deliberate policy decision.
 - F001 preserved and mitigated for the tested goblin 0.10.7 version, not a claim of universal hostile-input safety.
 - LOC/complexity limits remain review triggers, no speculative monolithic refactor.
+
+## P1.5-A bounded input increment (validated, P1.5-A overall open)
+
+- Reader work: `tools/rel-inspect/src/input.rs` acquires file bytes through one descriptor and refuses symlinks/non-regular inputs; hard actual-read cap replaces path-metadata+unbounded read. Documentation: [P15A_BOUNDED_INPUT](../security/P15A_BOUNDED_INPUT.md).
+- Preserve the distinction: **size/timestamp checks are not atomic snapshots** and pre-open symlink check can race; do not declare arbitrary hostile files secure. CPU/RSS/output and worker isolation remain unproven.
+- Verified [PR #17](https://github.com/ELITEAYOTO/REL/pull/17) with [CI #39103698604](https://github.com/ELITEAYOTO/REL/actions/runs/39103698604) on Ubuntu/Windows. Remaining path races, true snapshots, resource budgets and process isolation still require their own gates.

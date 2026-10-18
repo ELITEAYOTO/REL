@@ -2,11 +2,11 @@
 
 ## [Unreleased] — 2026-10-18
 
-### P1.5-A — Windows observable ancestor reparse-point guard (candidate; CI pending)
+### P1.5-A — Windows observable ancestor reparse-point guard (PR #42 merged, CI verified)
 
 - Before the initial leaf preflight and again immediately after acquiring its guarded handle, inspect every Windows parent path with `symlink_metadata` and reject directories bearing `FILE_ATTRIBUTE_REPARSE_POINT`, including junctions. Ordinary nested paths still work; the final-component guard and `FILE_SHARE_READ` behavior remain.
 - Three focused Windows regressions cover a normal nested file, a real `mklink /J` ancestor junction and a deterministic junction substitution after initial file metadata. The default locked workspace test stage executes these as regular Rust unit tests and fails if junction creation is unavailable.
-- **No atomicity claim:** these are repeated path lookups rather than descriptor-relative Windows opens. Concurrent attackers can swap/restore ancestors or substitute ordinary directories; network/device namespace semantics and hard links are not covered. Rejecting pre-existing parent reparse points intentionally tightens compatibility. No parser, dependency, resource cap or `binary-manifest v1.0.0` change. CI evidence must be recorded before declaring this implemented gate verified.
+- **No atomicity claim:** these are repeated path lookups rather than descriptor-relative Windows opens. Concurrent attackers can swap/restore ancestors or substitute ordinary directories; network/device namespace semantics and hard links are not covered. Rejecting pre-existing parent reparse points intentionally tightens compatibility. No parser, dependency, resource cap or `binary-manifest v1.0.0` change. [PR #42](https://github.com/ELITEAYOTO/REL/pull/42) merged at [`144657c`](https://github.com/ELITEAYOTO/REL/commit/144657c2428039aff2a24680a12ac8f6fffd8c59). Final-head [PR CI #39167525417](https://github.com/ELITEAYOTO/REL/actions/runs/39167525417), [branch CI #39167522146](https://github.com/ELITEAYOTO/REL/actions/runs/39167522146) and [post-merge main CI #39167703067](https://github.com/ELITEAYOTO/REL/actions/runs/39167703067) all succeeded on Windows/Linux. The Windows test log confirms all three new junction regressions executed and passed.
 
 ### P1.5-A — Unix no-follow ancestor path traversal (PR #40 merged; CI verified)
 

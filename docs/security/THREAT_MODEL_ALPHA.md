@@ -36,3 +36,7 @@ Tests de fichiers changeants, symlinks, budgets structurels et RSS/CPU, corpus d
 ## Raw-section range preflight (PR CI verified)
 
 The PE preflight is being extended to reject non-empty section raw ranges extending past the input bytes. This can stop some malformed section layouts before goblin but does **not** validate all PE structure semantics, cap parser CPU/RSS, eliminate races in file acquisition, or create a sandbox. [Windows/Linux CI #39108469504](https://github.com/ELITEAYOTO/REL/actions/runs/39108469504) and [fuzz #39108469495](https://github.com/ELITEAYOTO/REL/actions/runs/39108469495) passed controlled tests; compatibility on broader legal corpora remains pending; see [P15A_PE_PREFLIGHT](P15A_PE_PREFLIGHT.md).
+
+## P1.5-A Unix input-open follow-up (PR CI verified)
+
+A targeted Unix-only change requests kernel `O_NOFOLLOW` for the final input path component at open time and `O_NONBLOCK` to avoid blocked opening of a swapped FIFO; it retains the single-descriptor regular-file and size checks. No cross-platform or hostile-filesystem guarantee: Windows and ancestor symlinks, concurrent same-length modifications, devices and CPU/RSS/worker isolation remain open. Read [bounded input policy](P15A_BOUNDED_INPUT.md); [PR #24 CI #39109205165](https://github.com/ELITEAYOTO/REL/actions/runs/39109205165) succeeded Windows/Linux in the narrow described scope; post-merge verification and all remaining risks still apply.

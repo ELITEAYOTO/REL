@@ -10,3 +10,6 @@ rel-contracts = { path = "../../crates/rel-contracts" }
 rel-pe = { path = "../../crates/rel-pe" }
 serde_json.workspace = true
 sha2.workspace = true
+
+[target.'cfg(unix)'.dependencies]
+libc = "=0.2.191"

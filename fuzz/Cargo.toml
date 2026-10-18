@@ -1,0 +1,23 @@
+[package]
+name = "rel-pe-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+rel-pe = { path = "../crates/rel-pe" }
+
+# Keep fuzz's nightly and sanitizer dependencies outside the stable workspace.
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "pe_inspect"
+path = "fuzz_targets/pe_inspect.rs"
+test = false
+doc = false
+bench = false

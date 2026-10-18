@@ -2,17 +2,17 @@
 
 ## [Unreleased] — 2026-10-18
 
-### P1.5-A — Unix no-follow ancestor path traversal (candidate; CI pending)
+### P1.5-A — Unix no-follow ancestor path traversal (PR #40 merged; CI verified)
 
 - Replace the Unix leaf-only open with descriptor-relative `openat` for each ancestor and the leaf, applying `O_NOFOLLOW` to both. This rejects an ancestor symlink at its own open point, while keeping the original inode gate, 512 MiB actual-read budget, bounded second pass and static-only PE inspection.
 - Add Unix regressions for nested regular files, ancestor symlink rejection and a deterministic parent substitution after path preflight. Keep Windows reparse/sharing logic and `binary-manifest v1.0.0` unchanged.
-- Compatibility tradeoff: input paths passing through ancestor symlinks or unreadable-but-searchable directories may now fail on Unix. No trusted-root confinement, immutable snapshot, network filesystem guarantee or hostile-input sandbox. Candidate CI validation and post-merge checks remain pending.
+- Compatibility tradeoff: input paths passing through ancestor symlinks or unreadable-but-searchable directories may now fail on Unix. No trusted-root confinement, immutable snapshot, network filesystem guarantee or hostile-input sandbox. [Final branch CI #39165731998](https://github.com/ELITEAYOTO/REL/actions/runs/39165731998), [PR CI #39165747222](https://github.com/ELITEAYOTO/REL/actions/runs/39165747222) and [post-merge main CI #39165928503](https://github.com/ELITEAYOTO/REL/actions/runs/39165928503) passed on Windows and Linux; PR #40 merged at `86cba02`.
 
-### P1.5-A — Unix opened-file identity verification (PR #39 candidate)
+### P1.5-A — Unix opened-file identity verification (PR #39 merged; CI verified)
 
 - Add an additional Unix-only `(st_dev, st_ino)` check comparing the preflight path metadata with the metadata from the *already-opened input handle*. Reject detectable regular-file replacement during the path-check/open interval before reading bytes; both observations must identify the same inode.
 - Test equal-length, equal-modification-time regular-file replacement; retain existing bounded double-read, Windows sharing/reparse guards, and unmodified `binary-manifest v1.0.0`.
-- This check does **not** guarantee consistent bytes under in-place mutations, secure ancestor resolution, a full snapshot, or hostile-filesystem isolation. Validation status: PR CI pending; only mark verified after final-head Windows/Linux checks and post-merge CI.
+- This check does **not** guarantee consistent bytes under in-place mutations, secure ancestor resolution, a full snapshot, or hostile-filesystem isolation. [Final PR CI #39165266295](https://github.com/ELITEAYOTO/REL/actions/runs/39165266295), [branch CI #39165262356](https://github.com/ELITEAYOTO/REL/actions/runs/39165262356) and [post-merge main CI #39165446361](https://github.com/ELITEAYOTO/REL/actions/runs/39165446361) passed on Windows and Linux; PR #39 merged at `a2bb013`.
 
 ### P1.5-A — Second-pass input-byte consistency check (PR CI verified)
 

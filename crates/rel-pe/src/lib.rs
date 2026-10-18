@@ -1,4 +1,5 @@
 //! Static Portable Executable inspection. Input bytes are never executed.
+mod preflight;
 use rel_contracts::BinarySection;
 
 #[derive(Debug)]
@@ -32,7 +33,9 @@ pub fn inspect(data: &[u8]) -> Result<PeInspection, PeError> {
     if !data.starts_with(b"MZ") {
         return Err(PeError::Unsupported);
     }
-    // goblin 0.9.3 may panic on malformed TLS directory offsets.
+    // Reject oversized or truncated PE header structures before entering goblin.
+    preflight::validate(data).map_err(|detail| PeError::Parse(detail.to_owned()))?;
+    // Historical goblin 0.9.3 TLS parsing panic is retained as regression F001.
     // Contain unwinding panics at the untrusted third-party parser boundary.
     // This does not handle aborts, OOM or memory-unsafety and does not replace
     // upstream fixes or process isolation for hostile inputs.

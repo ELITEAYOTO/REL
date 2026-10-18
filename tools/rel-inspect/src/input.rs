@@ -57,9 +57,19 @@ fn open_candidate(path: &Path) -> io::Result<File> {
     }
 }
 
+#[cfg(unix)]
+fn verify_preopen_identity(preflight: &Metadata, opened: &Metadata) -> io::Result<()> {
+    use std::os::unix::fs::MetadataExt;
+    if preflight.dev() != opened.dev() || preflight.ino() != opened.ino() {
+        return Err(invalid("input file identity changed before opening"));
+    }
+    Ok(())
+}
+
 /// Open a regular file only; symbolic links are rejected by alpha policy.
 /// The pre-open path check is still racy; the last component is protected
-/// at open time on Unix and Windows. This is not a security sandbox.
+/// at open time on Unix and Windows. Unix also detects regular-file swaps
+/// between path inspection and descriptor acquisition. Not a sandbox.
 pub(crate) fn read_binary(path: &Path) -> io::Result<Vec<u8>> {
     let preflight = fs::symlink_metadata(path)?;
     if !preflight.file_type().is_file() {
@@ -70,6 +80,8 @@ pub(crate) fn read_binary(path: &Path) -> io::Result<Vec<u8>> {
 
     let mut file = open_candidate(path)?;
     let before = file.metadata()?;
+    #[cfg(unix)]
+    verify_preopen_identity(&preflight, &before)?;
     read_open_file(&mut file, &before, MAX_SIZE)
 }
 
@@ -310,6 +322,35 @@ mod tests {
 
         fs::remove_file(&candidate).unwrap();
         fs::remove_file(&replacement).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn rejects_same_size_regular_swap_even_when_mtime_matches() {
+        let candidate = test_path("regular-swap-candidate");
+        let replacement = test_path("regular-swap-replacement");
+        fs::write(&candidate, b"MZ alpha").unwrap();
+        fs::write(&replacement, b"MZ omega").unwrap();
+        let preflight = fs::symlink_metadata(&candidate).unwrap();
+        File::open(&replacement)
+            .unwrap()
+            .set_times(fs::FileTimes::new().set_modified(preflight.modified().unwrap()))
+            .unwrap();
+        fs::remove_file(&candidate).unwrap();
+        fs::rename(&replacement, &candidate).unwrap();
+
+        let opened = open_candidate(&candidate).unwrap();
+        let after = opened.metadata().unwrap();
+        assert_eq!(preflight.len(), after.len());
+        assert_eq!(preflight.modified().unwrap(), after.modified().unwrap());
+        assert_eq!(
+            verify_preopen_identity(&preflight, &after)
+                .unwrap_err()
+                .kind(),
+            io::ErrorKind::InvalidData
+        );
+        drop(opened);
+        fs::remove_file(&candidate).unwrap();
     }
 
     #[cfg(target_os = "linux")]

@@ -53,6 +53,12 @@ jobs:
         run: python scripts/benchmark_cli.py --binary target/release/rel-inspect --samples 5 --warmup 1 --output rel-benchmark.json
       - name: Install resource profiler dependency
         run: python -m pip install psutil==7.0.0
+      - name: Bounded watchdog regressions (Windows)
+        if: runner.os == 'Windows'
+        run: python scripts/test_bounded_inspection.py --binary target/release/rel-inspect.exe
+      - name: Bounded watchdog regressions (Linux)
+        if: runner.os == 'Linux'
+        run: python scripts/test_bounded_inspection.py --binary target/release/rel-inspect
       - name: Profile PE memory and CPU (Windows)
         if: runner.os == 'Windows'
         run: python scripts/profile_resources.py --binary target/release/rel-inspect.exe --samples 5 --warmup 1 --output rel-resources.json

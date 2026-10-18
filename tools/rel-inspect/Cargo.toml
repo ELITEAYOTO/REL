@@ -1,0 +1,12 @@
+[package]
+name = "rel-inspect"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+rel-contracts = { path = "../../crates/rel-contracts" }
+rel-pe = { path = "../../crates/rel-pe" }
+serde_json.workspace = true
+sha2.workspace = true

@@ -1,0 +1,39 @@
+name: REL CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  rust:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Rust toolchain
+        run: rustc --version
+      - name: Format
+        run: cargo fmt --all -- --check
+      - name: Lint
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Test
+        run: cargo test --workspace --all-targets
+      - name: Build
+        run: cargo build --release --workspace
+      - name: JSON Schema validator
+        run: python -m pip install 'jsonschema>=4,<5'
+      - name: End-to-end CLI test (Windows)
+        if: runner.os == 'Windows'
+        run: python scripts/smoke_cli.py --binary target/release/rel-inspect.exe
+      - name: End-to-end CLI test (Linux)
+        if: runner.os == 'Linux'
+        run: python scripts/smoke_cli.py --binary target/release/rel-inspect

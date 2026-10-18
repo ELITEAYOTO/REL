@@ -2,6 +2,12 @@
 
 ## [Unreleased] — 2026-10-18
 
+### P1.5-A — Unix opened-file identity verification (PR #39 candidate)
+
+- Add an additional Unix-only `(st_dev, st_ino)` check comparing the preflight path metadata with the metadata from the *already-opened input handle*. Reject detectable regular-file replacement during the path-check/open interval before reading bytes; both observations must identify the same inode.
+- Test equal-length, equal-modification-time regular-file replacement; retain existing bounded double-read, Windows sharing/reparse guards, and unmodified `binary-manifest v1.0.0`.
+- This check does **not** guarantee consistent bytes under in-place mutations, secure ancestor resolution, a full snapshot, or hostile-filesystem isolation. Validation status: PR CI pending; only mark verified after final-head Windows/Linux checks and post-merge CI.
+
 ### P1.5-A — Second-pass input-byte consistency check (PR CI verified)
 
 - After the existing capped first read (at most 512 MiB), re-read exactly the same length using the **same opened input descriptor** in bounded 64 KiB chunks; reject mismatched bytes or premature EOF before parsing. Recheck descriptor size/mtime afterward. No new parser/binary-manifest v1.0.0 changes and no extra full-sized input buffer.

@@ -8,6 +8,7 @@ It is not a resident-memory or process-tree limit, nor a sandbox.
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 import sys
 import tempfile
@@ -39,6 +40,7 @@ def supervise(
     wall_seconds: float,
     max_sampled_rss_bytes: int,
     max_address_space_bytes: int | None = None,
+    max_job_memory_bytes: int | None = None,
     poll_seconds: float = POLL_SECONDS,
     max_stdout_bytes: int = MAX_STDOUT_BYTES,
 ) -> bytes:
@@ -47,6 +49,12 @@ def supervise(
         raise ValueError("invalid command or watchdog timing")
     if max_sampled_rss_bytes <= 0 or max_stdout_bytes <= 0:
         raise ValueError("limits must be positive")
+
+    if max_job_memory_bytes is not None:
+        if max_job_memory_bytes <= 0:
+            raise ValueError("job memory budget must be positive")
+        if os.name != "nt":
+            raise ValueError("Windows Job Object budget requires Windows")
 
     child_options = {}
     if max_address_space_bytes is not None:
@@ -67,12 +75,21 @@ def supervise(
         child_options["preexec_fn"] = apply_address_space_limit
 
     with tempfile.TemporaryFile() as stdout, tempfile.TemporaryFile() as stderr:
-        child = psutil.Popen(
-            list(command), stdin=subprocess.DEVNULL, stdout=stdout, stderr=stderr,
-            **child_options,
-        )
-        started = time.monotonic()
+        child = None
+        job = None
         try:
+            child_kwargs = dict(
+                stdin=subprocess.DEVNULL, stdout=stdout, stderr=stderr,
+                **child_options,
+            )
+            if max_job_memory_bytes is not None:
+                from windows_job import WindowsJob
+
+                job = WindowsJob(max_job_memory_bytes)
+                child = job.start(command, **child_kwargs)
+            else:
+                child = psutil.Popen(list(command), **child_kwargs)
+            started = time.monotonic()
             while child.poll() is None:
                 elapsed = time.monotonic() - started
                 if elapsed >= wall_seconds:
@@ -100,13 +117,20 @@ def supervise(
                 raise WorkerFailed("analyzer stdout exceeded bounded JSON size")
             return result
         except BaseException:
-            if child.poll() is None:
-                try:
-                    child.kill()
-                except psutil.NoSuchProcess:
-                    pass
-            child.wait(timeout=5)
+            # Closing the Job Object terminates associated descendants too.
+            if job is not None:
+                job.close()
+            if child is not None:
+                if child.poll() is None:
+                    try:
+                        child.kill()
+                    except psutil.NoSuchProcess:
+                        pass
+                child.wait(timeout=5)
             raise
+        finally:
+            if job is not None:
+                job.close()
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -119,6 +143,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--max-address-space-mib", type=int,
         help="Linux only: optional RLIMIT_AS virtual address-space cap (MiB)",
     )
+    parser.add_argument(
+        "--max-job-memory-mib", type=int,
+        help="Windows only: aggregate Job Object memory commit cap (MiB)",
+    )
     args = parser.parse_args(argv)
     if not 0 < args.wall_seconds <= 600:
         parser.error("--wall-seconds must be > 0 and <= 600")
@@ -130,6 +158,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         if not 128 <= args.max_address_space_mib <= 8192:
             parser.error("--max-address-space-mib must be between 128 and 8192")
 
+    if args.max_job_memory_mib is not None:
+        if os.name != "nt":
+            parser.error("--max-job-memory-mib is supported only on Windows")
+        if not 128 <= args.max_job_memory_mib <= 8192:
+            parser.error("--max-job-memory-mib must be between 128 and 8192")
+
     try:
         # The PE is data passed to REL, never executed as a program.
         result = supervise(
@@ -139,6 +173,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             max_address_space_bytes=(
                 args.max_address_space_mib * 1024 * 1024
                 if args.max_address_space_mib is not None else None
+            ),
+            max_job_memory_bytes=(
+                args.max_job_memory_mib * 1024 * 1024
+                if args.max_job_memory_mib is not None else None
             ),
         )
     except LimitExceeded as error:

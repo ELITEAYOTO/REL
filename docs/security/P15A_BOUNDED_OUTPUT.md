@@ -30,7 +30,7 @@ Previously `rel-inspect` called `serde_json::to_vec_pretty`, allocating a comple
 - **16 MiB is a provisional conservative alpha policy, not a performance-derived optimum.** Real corpus measurements may justify changing this limit through a documented compatibility decision.
 - Parsing and populating Rust `Vec<String>` sections/imports/exports already occurs before JSON serialization; this new bound does **not** constrain their allocations, the source file buffer, hashing, total process RSS or CPU time.
 - The serializer still allocates a buffer up to 16 MiB; it does **not** stream output directly to a file, intentionally preventing partial reports on report-cap errors.
-- Disk-write failures after `create_new` can still leave a partial file. True transactional report publication requires a separate atomic-write design.
+- A follow-up atomic publication candidate stages and syncs a temporary report, then uses a no-replace hard link. See [P15A_ATOMIC_REPORT](P15A_ATOMIC_REPORT.md). [PR #22](https://github.com/ELITEAYOTO/REL/pull/22) passed [Windows/Linux CI #39107936412](https://github.com/ELITEAYOTO/REL/actions/runs/39107936412), but integration into `main` must be confirmed after merge; filesystem races and crash durability remain open.
 - A reported output limit error is not a statement about malicious file safety or a secure sandbox.
 - No CLI flag changes are made; the limit is a documented alpha constant shared by both stdout and file output.
 

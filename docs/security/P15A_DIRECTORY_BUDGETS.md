@@ -1,6 +1,6 @@
 # P1.5-A — Declared PE directory and export-count budgets
 
-**Status:** experimental alpha checks — CI evidence pending. This is a scoped preflight, not full PE validation or a process memory limit.
+**Status:** verified in [PR #21](https://github.com/ELITEAYOTO/REL/pull/21), [Windows/Linux CI #39106804688](https://github.com/ELITEAYOTO/REL/actions/runs/39106804688) and [libFuzzer #39106804686](https://github.com/ELITEAYOTO/REL/actions/runs/39106804686). This is a scoped preflight, not full PE validation or a process memory limit.
 
 ## Threat and purpose
 
@@ -32,6 +32,12 @@ The import and export *directory size fields* may be inaccurate: `goblin` does n
 This intentionally rejects some possible, unusually laid-out PEs (export tables stored outside section raw data, large export counts, oversized directory-size declarations, overlapping section cases). These are **policy limitations**, not universal PE-format invalidity. They must be evaluated against redistributable real-world binaries before increasing platform-compatibility claims.
 
 This does **not** enforce a parser RSS/CPU/time budget, cap all generated strings, validate import thunks, or guarantee that malformed PE input is harmless. `catch_unwind` is not sandboxing; neither are directory header checks. Hostile binaries require a separate worker/OS limits and deeper directory testing.
+
+## Verified CI evidence
+
+- [Windows/Linux standard CI #39106804688](https://github.com/ELITEAYOTO/REL/actions/runs/39106804688): SUCCESS, including public API regression, PE32/PE32+ fixtures, F001, release CLI and Windows independent PE oracle.
+- [Linux instrumented libFuzzer #39106804686](https://github.com/ELITEAYOTO/REL/actions/runs/39106804686): SUCCESS, 586,015 executions in 31 seconds, tool-reported peak RSS 524 MiB. These are tool/runner-specific observations, not a hard memory bound.
+- The directory thresholds are **REL alpha policy**, not claims about PE format universals or Windows loader constraints.
 
 ## Evidence gates
 

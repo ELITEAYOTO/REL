@@ -67,8 +67,8 @@ Future assistants must not claim these modules exist: source decompiler, version
 - No new crate, dependency or manifest v1.0.0 change. Golden + malformed + public API tests added. [PR #20](https://github.com/ELITEAYOTO/REL/pull/20) passed [Windows/Linux CI 39105600717](https://github.com/ELITEAYOTO/REL/actions/runs/39105600717) and [fuzz 39105600726](https://github.com/ELITEAYOTO/REL/actions/runs/39105600726), 642,364 fuzz cases over 31s. Remaining P1.5-A risks are still open.
 - [Policy and security caveats](../security/P15A_PE_PREFLIGHT.md): parser imports/TLS/exports, CPU/RSS, arbitrary hostile-input processing and sandboxing remain **unresolved**. Some unusual parseable PEs may now be rejected.
 
-## P1.5-A directory budget preflight (CI pending)
+## P1.5-A directory budget preflight (verified, overall P1.5-A incomplete)
 
 - New `crates/rel-pe/src/preflight/directories.rs` bounds the *declared* import/export directory size to 1 MiB each and export count fields to 65,536; maps the 40-byte export directory header through raw section data.
 - Header preflight, parser API and JSON v1.0.0 remain structurally unchanged; some unusual PE layouts may be rejected.
-- Read [P15A_DIRECTORY_BUDGETS](../security/P15A_DIRECTORY_BUDGETS.md). A directory declaration cap is **not a parser CPU/RSS/allocations cap**. Do not claim P1.5-A completed; wait for Windows/Linux CI + libFuzzer evidence.
+- Read [P15A_DIRECTORY_BUDGETS](../security/P15A_DIRECTORY_BUDGETS.md). A directory declaration cap is **not a parser CPU/RSS/allocations cap**. [PR #21](https://github.com/ELITEAYOTO/REL/pull/21) verified by [Windows/Linux CI #39106804688](https://github.com/ELITEAYOTO/REL/actions/runs/39106804688) and [libFuzzer #39106804686](https://github.com/ELITEAYOTO/REL/actions/runs/39106804686), 586,015 executions/31s. This is only a declared-field budget, **NOT** a CPU/RSS/allocations guarantee; keep issue #9 open.

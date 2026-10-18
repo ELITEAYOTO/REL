@@ -65,9 +65,9 @@ A separate [resource profiler](docs/P15_RESOURCE_PROFILING.md) records observed 
 
 Before handing an authorized PE to the third-party parser, `rel-pe` now validates minimal header offsets, section count (1–96), optional-header declaration (2–4096 bytes, PE32/PE32+) and the bounds of the section-header table, without allocating. These are conservative alpha compatibility limits, **not** general parsing safety or resource isolation. See [preflight policy and limitations](docs/security/P15A_PE_PREFLIGHT.md); The narrow gate passed [Windows/Linux CI #39105600717](https://github.com/ELITEAYOTO/REL/actions/runs/39105600717) and [libFuzzer #39105600726](https://github.com/ELITEAYOTO/REL/actions/runs/39105600726). Header budgets do **not** constrain downstream parser CPU, allocations or RSS.
 
-## Declared directory budgets (P1.5-A, validation pending)
+## Declared directory budgets (P1.5-A, verified on controlled inputs)
 
-The PE alpha preflight also checks declared import/export directory sizes (each at most 1 MiB) and the announced number of exported symbols (65,536 per count field). These checks happen before `goblin`, but they **do not limit all parser CPU/RAM** and may reject unusual legitimate PEs. See [directory budget policy](docs/security/P15A_DIRECTORY_BUDGETS.md). Cross-platform CI and fuzz validation are required before this increment is accepted.
+The PE alpha preflight also checks declared import/export directory sizes (each at most 1 MiB) and the announced number of exported symbols (65,536 per count field). These checks happen before `goblin`, but they **do not limit all parser CPU/RAM** and may reject unusual legitimate PEs. See [directory budget policy](docs/security/P15A_DIRECTORY_BUDGETS.md). [CI Windows/Linux #39106804688](https://github.com/ELITEAYOTO/REL/actions/runs/39106804688) and [libFuzzer #39106804686](https://github.com/ELITEAYOTO/REL/actions/runs/39106804686) passed. The alpha limits are narrow and do **not** establish overall parser CPU/RAM safety.
 
 ## Project maturity / risks
 

@@ -31,20 +31,20 @@ Every item requires test evidence before the checkbox is marked complete. ADRs g
 - [ ] Run extended fuzz campaigns and persist new distinct failures.
 - [ ] Establish representative runtime **and memory** benchmarks across complex PE files.
 - [x] Verify initial CLI timing harness on Windows/Linux with uploaded JSON observations ([PR #5](https://github.com/ELITEAYOTO/REL/pull/5), CI 39098808184).
-- [ ] **P1.5-A:** stable file-descriptor bounded reads, symlink/path races and files changing during analysis, verified Windows/Linux.
+- [ ] **P1.5-A:** stable file-descriptor bounded reads, symlink/path races and files changing during analysis, verified Windows/Linux ([issue #9](https://github.com/ELITEAYOTO/REL/issues/9)).
 - [ ] **P1.5-A:** measure and enforce resource limits (output size, CPU/RSS and pathological structures); expand licensed PE corpus.
-- [ ] **P1.5-B:** extend coverage-guided fuzzing, worker isolation and long-term robustness, without claiming general security.
+- [ ] **P1.5-B:** extend coverage-guided fuzzing, worker isolation and long-term robustness, without claiming general security ([issues #8](https://github.com/ELITEAYOTO/REL/issues/8), [#11](https://github.com/ELITEAYOTO/REL/issues/11), [#12](https://github.com/ELITEAYOTO/REL/issues/12)).
 - [ ] Establish release/archive provenance and binary integrity checks.
 
 ## EX-01 — Experimental evidence/coverage envelope — AFTER CRITICAL P1.5-A
 
-- [ ] Separate versioned observation schema: source hash, extractor/version/config, exact domain coverage, diagnostics and unknown states.
+- [ ] Separate versioned observation schema: source hash, extractor/version/config, exact domain coverage, diagnostics and unknown states ([issue #14](https://github.com/ELITEAYOTO/REL/issues/14)).
 - [ ] Golden tests for present/absent-in-scope/partial/failed/unsupported, invalid byte offsets, repeatability and v1 compatibility.
 - [ ] Do not change `binary-manifest.schema.json` v1.0.0 or create speculative crates.
 
 ## EX-02 — Metadata-only PE manifest diff pilot — BEFORE P2 (ADR-0013)
 
-- [ ] Independent Rust CLI/library comparing two strictly validated v1 manifest JSON files, separate diff output schema.
+- [ ] Independent Rust CLI/library comparing two strictly validated v1 manifest JSON files, separate diff output schema ([issue #15](https://github.com/ELITEAYOTO/REL/issues/15)).
 - [ ] Golden A/B, inversion symmetry, deterministic ordering, ambiguous sections/imports, extraction failures and incompatible schema.
 - [ ] Benchmark legal paired builds and validate Windows/Linux CI; **no function-diff or behavioral claim**.
 
@@ -66,3 +66,7 @@ Every item requires test evidence before the checkbox is marked complete. ADRs g
 - [ ] P8 — Release hardening, portability and packaging.
 
 **Scope control:** Apex/R5Flowstate is a future optional case study, not a dependency or an excuse for anti-cheat bypass.
+
+## License decision (not yet completed)
+
+- [ ] Review and choose REL source licensing and contribution policy, then add a LICENSE if approved ([issue #16](https://github.com/ELITEAYOTO/REL/issues/16)). Until then the public repository is **not automatically licensed for redistribution**.

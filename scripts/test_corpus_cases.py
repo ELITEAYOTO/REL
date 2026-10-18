@@ -153,6 +153,62 @@ class CorpusCaseTests(unittest.TestCase):
             self.assertEqual(clang["source_sha256"], hashlib.sha256(source.read_bytes()).hexdigest())
             self.assertNotIn("toolchain_version", cases[-2].report_fields())
 
+    def test_structured_probes_rejected_before_writing_overlays(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            missing = folder / "missing.exe"
+            with self.assertRaisesRegex(ValueError, "Windows corpus mode"):
+                prepare_cases(
+                    ROOT / "fixtures", folder, folder / "unused",
+                    include_windows_executable=False,
+                    windows_msvc_structured=missing,
+                )
+            self.assertEqual(list(folder.iterdir()), [])
+            with self.assertRaises(FileNotFoundError):
+                prepare_cases(
+                    ROOT / "fixtures", folder, ROOT / "fixtures" / FIXTURE_NAMES[0],
+                    include_windows_executable=True,
+                    windows_clang_structured=missing,
+                )
+            self.assertEqual(list(folder.iterdir()), [])
+
+    def test_structured_cases_record_source_and_rc_hashes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            native = folder / "rel-inspect.exe"
+            msvc = folder / "rel-msvc-probe.exe"
+            clang = folder / "rel-clang-cl-probe.exe"
+            structured_msvc = folder / "rel-msvc-structured.exe"
+            structured_clang = folder / "rel-clang-structured.exe"
+            for path in (native, msvc, clang, structured_msvc, structured_clang):
+                path.write_bytes(b"synthetic-path-only-test")
+            (folder / "clang-cl-version.txt").write_text(
+                "clang version 20.0.1 (test)\n", encoding="utf-8"
+            )
+            cases = prepare_cases(
+                ROOT / "fixtures", folder, native,
+                include_windows_executable=True,
+                windows_msvc_probe=msvc, windows_clang_probe=clang,
+                windows_msvc_structured=structured_msvc,
+                windows_clang_structured=structured_clang,
+            )
+            self.assertEqual(len(cases), 11)
+            self.assertEqual(len({case.case_id for case in cases}), 11)
+            for case in cases[-2:]:
+                metadata = case.report_fields()
+                self.assertEqual(metadata["redistribution_status"], "not-established")
+                source = ROOT / metadata["source_fixture"]
+                asset = ROOT / metadata["resource_source"]
+                self.assertEqual(
+                    metadata["source_sha256"], hashlib.sha256(source.read_bytes()).hexdigest()
+                )
+                self.assertEqual(
+                    metadata["resource_sha256"], hashlib.sha256(asset.read_bytes()).hexdigest()
+                )
+            self.assertEqual(cases[-2].case_id, "msvc-x64-structured")
+            self.assertEqual(cases[-1].case_id, "clang-cl-x64-structured")
+            self.assertEqual(cases[-1].toolchain_version, "clang version 20.0.1 (test)")
+
     def test_native_build_case_does_not_claim_redistribution(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             folder = Path(tmp)

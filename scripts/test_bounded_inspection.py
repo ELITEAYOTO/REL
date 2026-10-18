@@ -109,6 +109,38 @@ class WatchdogTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "requires Linux"):
                 python_child("print('not launched')", max_address_space_bytes=1024)
 
+    @unittest.skipUnless(sys.platform.startswith("linux"), "Linux RLIMIT_AS only")
+    def test_linux_cli_rejects_too_small_address_space_cap(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable, str(ROOT / "scripts" / "run_bounded_inspection.py"),
+                "--binary", str(BINARY), "--input", str(ROOT / "fixtures/pe64-basic.exe"),
+                "--max-address-space-mib", "16",
+            ],
+            capture_output=True,
+            check=False,
+            timeout=10,
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn(b"between 128 and 8192", result.stderr)
+        self.assertEqual(result.stdout, b"")
+
+    @unittest.skipIf(sys.platform.startswith("linux"), "Linux supports this flag")
+    def test_nonlinux_cli_rejects_address_space_cap(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable, str(ROOT / "scripts" / "run_bounded_inspection.py"),
+                "--binary", str(BINARY), "--input", str(ROOT / "fixtures/pe64-basic.exe"),
+                "--max-address-space-mib", "512",
+            ],
+            capture_output=True,
+            check=False,
+            timeout=10,
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn(b"supported only on Linux", result.stderr)
+        self.assertEqual(result.stdout, b"")
+
     def test_real_rel_cli_manifest_preserved(self) -> None:
         self.assertIsNotNone(BINARY)
         fixture = ROOT / "fixtures" / "pe64-basic.exe"

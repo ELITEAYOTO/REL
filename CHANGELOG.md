@@ -2,11 +2,11 @@
 
 ## [Unreleased] — 2026-10-18
 
-### P1.5-A — CI-built MSVC x64 PE source probe (candidate, CI pending)
+### P1.5-A — CI-built MSVC x64 PE source probe (PR CI verified)
 
 - Add a tracked small C PE probe compiled with runner MSVC on Windows. The produced EXE remains an ignored local artifact and is never executed by tests.
 - Independent pinned pefile oracle verifies native sections, imports and exported symbol against REL's static JSON manifest, size and SHA-256. Integrate the probe as an eighth Windows case for both existing resource profiling and benchmarking; Linux inventory remains six cases.
-- Preserve the source hash and explicitly unresolved binary redistribution rights. This does not establish a diverse legal third-party corpus, reproduce the compiler binary byte-for-byte, or change binary-manifest v1.0.0.
+- The independent Windows oracle explicitly matched GetTickCount64 and the named export; [Windows/Linux CI #39155346166](https://github.com/ELITEAYOTO/REL/actions/runs/39155346166) and [CI #39155351313](https://github.com/ELITEAYOTO/REL/actions/runs/39155351313) passed the Windows/Linux matrix, benchmarks and resource artifacts. Preserve the source hash and explicitly unresolved binary redistribution rights. This does not establish a diverse legal third-party corpus, reproduce the compiler binary byte-for-byte, or change binary-manifest v1.0.0.
 
 
 

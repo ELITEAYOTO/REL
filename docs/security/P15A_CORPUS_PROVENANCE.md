@@ -1,6 +1,6 @@
 # P1.5-A — Controlled PE measurement corpus and provenance
 
-**Status:** MSVC source-compiled PE extension is a CI candidate (pending), built on top of the validated controlled corpus. Earlier inventory and measurement gates were verified by [Windows/Linux CI #39153900290](https://github.com/ELITEAYOTO/REL/actions/runs/39153900290) and [CI #39153927673](https://github.com/ELITEAYOTO/REL/actions/runs/39153927673); post-merge `main` CI must still be verified. This is a controlled measurement corpus, not a licensed or representative public binary collection. No new third-party executables are committed.
+**Status:** CI-built MSVC PE oracle, case inventory and profilers passed [Windows/Linux CI #39155346166](https://github.com/ELITEAYOTO/REL/actions/runs/39155346166) and [CI #39155351313](https://github.com/ELITEAYOTO/REL/actions/runs/39155351313) on Windows/Linux; post-merge `main` CI must still be checked. Earlier inventory and measurement gates were verified by [Windows/Linux CI #39153900290](https://github.com/ELITEAYOTO/REL/actions/runs/39153900290) and [CI #39153927673](https://github.com/ELITEAYOTO/REL/actions/runs/39153927673); post-merge `main` CI must still be verified. This is a controlled measurement corpus, not a licensed or representative public binary collection. No new third-party executables are committed.
 
 ## Sources and rights
 

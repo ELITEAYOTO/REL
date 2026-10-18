@@ -1,6 +1,6 @@
 # P1.5-A — Bounded JSON report serialization
 
-**Status:** implementation in PR, Windows/Linux CI pending. This is a small resource guard, **not** global memory management.
+**Status:** bounded report writer verified in [PR #18](https://github.com/ELITEAYOTO/REL/pull/18), [Windows/Linux CI #39104382262](https://github.com/ELITEAYOTO/REL/actions/runs/39104382262). **P1.5-A remains incomplete.** This is a small resource guard, not global memory management.
 
 ## Motivation
 
@@ -22,6 +22,8 @@ Previously `rel-inspect` called `serde_json::to_vec_pretty`, allocating a comple
 - Oversized diagnostic warning: rejected. The writer does not append beyond its cap.
 - Existing PE32/PE64 CLI smoke, JSON Schema, Windows self-oracle, Cargo tests, Clippy and formatting pass in CI on the PR.
 - Record CI run IDs and update the changelog before marking this increment verified.
+
+[Windows/Linux CI #39104382262](https://github.com/ELITEAYOTO/REL/actions/runs/39104382262) passed with exact-size, output-equivalence and oversized-report tests. This validates these test scenarios only; general memory and CPU budgets remain unimplemented.
 
 ## Scope limitations / still unresolved
 

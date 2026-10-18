@@ -76,3 +76,9 @@ The `measurement_context_sha256` field is a SHA-256 of the **canonical sorted JS
 `host_ram_bytes_reported` is **host RAM reported by psutil**, **not** necessarily the RAM limit visible to a process in a container/VM. Likewise CPU counts/models/affinity are descriptive; do not infer dedicated scheduler cores or available CPU quotas from them. `ImageVersion` is runner-supplied when available, and `null` means unavailable, not zero. Rust/hosted CI versions are captured but **not pinned**. A changed runner identifier is deliberately treated as a different measurement context, even if CPU details appear identical.
 
 An exact same-job match improves provenance of **paired** existing data, not comparability of independently collected CI runs, reproducibility of binary bytes, statistical confidence, true RSS peaks, total CPU accounting or a production safe resource limit. Retain the current 11 Windows / 6 Linux controlled scenarios and missing RSS/CPU flags; calibrating budgets still requires repeated fixed-hardware tests.
+
+## Independent campaign comparison (PR CI verified)
+
+A separate offline `scripts/compare_measurement_campaigns.py` consumes **two complete** per-OS benchmark+resource pairs, validates each with the paired-evidence gate, then compares their source and host/toolchain provenance. It excludes only the unique GitHub run ID and attempt from cross-campaign hardware-context equality; those identities must nevertheless be recorded and distinct. It does not compare RSS/CPU maxima, infer repeatability or execute binaries.
+
+For the full CLI, exit-status, limitations and strict abstention cases see [cross-campaign comparison](P15_CROSS_RUN_COMPARISON.md). CI tests synthetic examples only; a future fixed-machine and licensed-corpus study is needed for measured CPU/RAM budgets.

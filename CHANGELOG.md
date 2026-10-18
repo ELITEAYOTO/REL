@@ -2,6 +2,13 @@
 
 ## [Unreleased] — 2026-10-18
 
+### P1.5-A — Independent measurement campaign comparison pilot (PR CI verified)
+
+- New offline `scripts/compare_measurement_campaigns.py` reads four already produced timing/resource JSON files (two campaigns), revalidates each job's paired evidence, excludes only run ID/attempt from hardware-context equality, requires known **distinct** run identities and identical CPU/runner/toolchain, exact REL executable SHA, PE corpus and sampling policy. Mismatches produce `not_comparable`, explicit blockers, **no numeric comparisons** and CLI exit status 2.
+- Only compatible evidence yields descriptive per-case median timing differences/ratios from the original five samples. No RSS/CPU cross-run ratios, statistical or performance assertions, or modification to `binary-manifest v1.0.0`. Ten controlled positive/abstention regressions passed [Windows/Linux CI #39162247353](https://github.com/ELITEAYOTO/REL/actions/runs/39162247353) and [CI #39162250970](https://github.com/ELITEAYOTO/REL/actions/runs/39162250970) on Windows/Linux. Real fixed-machine multi-run evidence remains open.
+
+
+
 ### P1.5-A — Paired measurement host/toolchain fingerprint (candidate; CI pending)
 
 - Add `scripts/measurement_environment.py`, a shared low-volatility fingerprint of the CI run identity, reported CPU model and logical/physical/affinity counts, reported total host RAM, OS/kernel, Python, psutil, rustc/cargo versions and exact REL executable SHA-256. Both reports record this context before measuring cases.

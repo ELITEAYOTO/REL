@@ -2,6 +2,14 @@
 
 ## [Unreleased] — 2026-10-18
 
+### P1.5-A — Source-built structured PE resource/relocation cases (PR CI verified)
+
+- Add a controlled C exported-pointer and RC RCDATA source pair; build ephemeral Windows PE32+ x64 variants with MSVC and Clang-cl using `/DYNAMICBASE /FIXED:NO`.
+- Independently validate RC data bytes, resource directory ID, native DIR64 base relocations, sections and original REL binary-manifest v1.0.0 size/hash/exports without executing the samples.
+- Add two distinct Windows scenarios to both benchmark and resource profiler (9 -> 11), recording separate C and RC SHA-256 fingerprints plus compiler provenance and unresolved redistribution status. Independent resource/relocation oracles and Python corpus tests passed [Windows/Linux CI #39157915184](https://github.com/ELITEAYOTO/REL/actions/runs/39157915184) and [CI #39157910924](https://github.com/ELITEAYOTO/REL/actions/runs/39157910924). Six Linux synthetic scenarios remain unchanged. No parser/API/schema changes or claims of structural semantic extraction.
+
+
+
 ### P1.5-A — Optional CI-built Clang-cl x64 PE case (PR CI verified)
 
 - Build the same tracked C PE probe with runner-installed LLVM Clang-cl in addition to MSVC, via the Windows SDK. Compare imports, named exports and PE32+ architecture independently through pinned pefile; no inspected PE is executed.

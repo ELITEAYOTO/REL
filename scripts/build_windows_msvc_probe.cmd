@@ -39,4 +39,20 @@ if not exist compiler-probes\rel-clang-cl-probe.exe (
   exit /b 1
 )
 echo Built controlled Clang-cl PE x64 probe from tracked C source
+rem Build two new PE variants with RCDATA and a forced DIR64 relocation.
+rem We only statically inspect the produced executables.
+where rc.exe >nul 2>nul
+if errorlevel 1 (
+  echo Windows resource compiler rc.exe not found 1>&2
+  exit /b 1
+)
+rc.exe /nologo /fo compiler-probes\rel-structured.res fixtures\probes\structured_probe.rc
+if errorlevel 1 exit /b 1
+cl.exe /nologo /W4 /WX /O2 /MD /Fe:compiler-probes\rel-msvc-structured.exe fixtures\probes\structured_probe.c compiler-probes\rel-structured.res /link /DYNAMICBASE /FIXED:NO
+if errorlevel 1 exit /b 1
+clang-cl.exe /nologo /W4 /WX /O2 /MD /Fe:compiler-probes\rel-clang-structured.exe fixtures\probes\structured_probe.c compiler-probes\rel-structured.res /link /DYNAMICBASE /FIXED:NO
+if errorlevel 1 exit /b 1
+if not exist compiler-probes\rel-msvc-structured.exe exit /b 1
+if not exist compiler-probes\rel-clang-structured.exe exit /b 1
+echo Built two controlled structured PE probes without execution
 exit /b 0

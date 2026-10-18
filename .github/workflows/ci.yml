@@ -57,9 +57,15 @@ jobs:
       - name: Independent Clang-cl PE structure oracle (Windows)
         if: runner.os == 'Windows'
         run: python scripts/check_windows_msvc_probe.py --binary target/release/rel-inspect.exe --probe compiler-probes/rel-clang-cl-probe.exe --compiler-label Clang-cl
+      - name: Independent structured MSVC PE resource/relocation oracle
+        if: runner.os == 'Windows'
+        run: python scripts/check_windows_structured_probe.py --binary target/release/rel-inspect.exe --probe compiler-probes/rel-msvc-structured.exe --compiler-label MSVC
+      - name: Independent structured Clang-cl PE resource/relocation oracle
+        if: runner.os == 'Windows'
+        run: python scripts/check_windows_structured_probe.py --binary target/release/rel-inspect.exe --probe compiler-probes/rel-clang-structured.exe --compiler-label Clang-cl
       - name: Benchmark CLI (Windows)
         if: runner.os == 'Windows'
-        run: python scripts/benchmark_cli.py --binary target/release/rel-inspect.exe --samples 5 --warmup 1 --windows-msvc-probe compiler-probes/rel-msvc-probe.exe --windows-clang-probe compiler-probes/rel-clang-cl-probe.exe --output rel-benchmark.json
+        run: python scripts/benchmark_cli.py --binary target/release/rel-inspect.exe --samples 5 --warmup 1 --windows-msvc-probe compiler-probes/rel-msvc-probe.exe --windows-clang-probe compiler-probes/rel-clang-cl-probe.exe --windows-msvc-structured compiler-probes/rel-msvc-structured.exe --windows-clang-structured compiler-probes/rel-clang-structured.exe --output rel-benchmark.json
       - name: Benchmark CLI (Linux)
         if: runner.os == 'Linux'
         run: python scripts/benchmark_cli.py --binary target/release/rel-inspect --samples 5 --warmup 1 --output rel-benchmark.json
@@ -73,7 +79,7 @@ jobs:
         run: python scripts/test_bounded_inspection.py --binary target/release/rel-inspect
       - name: Profile PE memory and CPU (Windows)
         if: runner.os == 'Windows'
-        run: python scripts/profile_resources.py --binary target/release/rel-inspect.exe --samples 5 --warmup 1 --windows-msvc-probe compiler-probes/rel-msvc-probe.exe --windows-clang-probe compiler-probes/rel-clang-cl-probe.exe --output rel-resources.json
+        run: python scripts/profile_resources.py --binary target/release/rel-inspect.exe --samples 5 --warmup 1 --windows-msvc-probe compiler-probes/rel-msvc-probe.exe --windows-clang-probe compiler-probes/rel-clang-cl-probe.exe --windows-msvc-structured compiler-probes/rel-msvc-structured.exe --windows-clang-structured compiler-probes/rel-clang-structured.exe --output rel-resources.json
       - name: Profile PE memory and CPU (Linux)
         if: runner.os == 'Linux'
         run: python scripts/profile_resources.py --binary target/release/rel-inspect --samples 5 --warmup 1 --output rel-resources.json

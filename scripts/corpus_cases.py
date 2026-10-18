@@ -22,6 +22,8 @@ class CorpusCase:
     source_sha256: str | None
     provenance: str
     toolchain_version: str | None = None
+    resource_source: str | None = None
+    resource_sha256: str | None = None
 
     def report_fields(self) -> dict:
         result = {
@@ -34,6 +36,9 @@ class CorpusCase:
         }
         if self.toolchain_version is not None:
             result["toolchain_version"] = self.toolchain_version
+        if self.resource_source is not None:
+            result["resource_source"] = self.resource_source
+            result["resource_sha256"] = self.resource_sha256
         return result
 
 
@@ -55,14 +60,54 @@ def load_verified_seeds(fixtures: Path) -> list[tuple[str, bytes, str]]:
     return seeds
 
 
+
+def append_structured_cases(
+    cases: list[CorpusCase],
+    msvc_probe: Path | None,
+    clang_probe: Path | None,
+    clang_version: str | None,
+) -> None:
+    """Append source-verified Windows structured cases after input validation."""
+    if msvc_probe is None and clang_probe is None:
+        return
+    source = ROOT / "fixtures" / "probes" / "structured_probe.c"
+    asset = ROOT / "fixtures" / "probes" / "structured_probe.rc"
+    source_hash = hashlib.sha256(source.read_bytes()).hexdigest()
+    asset_hash = hashlib.sha256(asset.read_bytes()).hexdigest()
+    for compiler, probe, version in (
+        ("msvc", msvc_probe, None),
+        ("clang-cl", clang_probe, clang_version),
+    ):
+        if probe is None:
+            continue
+        cases.append(CorpusCase(
+            case_id=f"{compiler}-x64-structured",
+            path=probe,
+            kind=f"ci-built-{compiler}-x64-structured-pe",
+            source_fixture="fixtures/probes/structured_probe.c",
+            source_sha256=source_hash,
+            provenance=f"built-on-runner-{compiler}-x64-with-rc",
+            toolchain_version=version,
+            resource_source="fixtures/probes/structured_probe.rc",
+            resource_sha256=asset_hash,
+        ))
+
+
 def prepare_cases(
     fixtures: Path, workdir: Path, binary: Path, *, include_windows_executable: bool,
     windows_msvc_probe: Path | None = None,
     windows_clang_probe: Path | None = None,
+    windows_msvc_structured: Path | None = None,
+    windows_clang_structured: Path | None = None,
 ) -> list[CorpusCase]:
     """Create deterministic, provenance-labeled PE cases without running them."""
     # Fail before producing any overlay if the optional compiler input is invalid.
-    for name, probe in (("MSVC", windows_msvc_probe), ("Clang-cl", windows_clang_probe)):
+    for name, probe in (
+        ("MSVC", windows_msvc_probe),
+        ("Clang-cl", windows_clang_probe),
+        ("MSVC structured", windows_msvc_structured),
+        ("Clang-cl structured", windows_clang_structured),
+    ):
         if probe is not None:
             if not include_windows_executable:
                 raise ValueError(f"{name} probe requires the Windows corpus mode")
@@ -70,8 +115,10 @@ def prepare_cases(
                 raise FileNotFoundError(probe)
 
     clang_version = None
-    if windows_clang_probe is not None:
-        version_file = windows_clang_probe.with_name("clang-cl-version.txt")
+    if windows_clang_probe is not None or windows_clang_structured is not None:
+        clang_path = windows_clang_probe or windows_clang_structured
+        assert clang_path is not None
+        version_file = clang_path.with_name("clang-cl-version.txt")
         version_lines = version_file.read_text(encoding="utf-8").splitlines()
         if not version_lines or not version_lines[0].startswith("clang version "):
             raise ValueError("missing or invalid Clang version provenance")
@@ -116,4 +163,7 @@ def prepare_cases(
             hashlib.sha256(source.read_bytes()).hexdigest(),
             "built-on-runner-clang-cl-x64", clang_version,
         ))
+    append_structured_cases(
+        cases, windows_msvc_structured, windows_clang_structured, clang_version
+    )
     return cases

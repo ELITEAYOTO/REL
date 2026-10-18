@@ -95,6 +95,8 @@ def run(
     binary: Path, samples: int, warmup: int, *,
     windows_msvc_probe: Path | None = None,
     windows_clang_probe: Path | None = None,
+    windows_msvc_structured: Path | None = None,
+    windows_clang_structured: Path | None = None,
 ) -> dict:
     meta = {
         "schema": "rel-resource-observations-v1",
@@ -119,6 +121,8 @@ def run(
             include_windows_executable=os.name == "nt",
             windows_msvc_probe=windows_msvc_probe,
             windows_clang_probe=windows_clang_probe,
+            windows_msvc_structured=windows_msvc_structured,
+            windows_clang_structured=windows_clang_structured,
         )
         for case in cases:
             for _ in range(warmup):
@@ -141,12 +145,16 @@ def main() -> None:
     parser.add_argument("--warmup", type=int, default=1)
     parser.add_argument("--windows-msvc-probe", type=Path)
     parser.add_argument("--windows-clang-probe", type=Path)
+    parser.add_argument("--windows-msvc-structured", type=Path)
+    parser.add_argument("--windows-clang-structured", type=Path)
     args = parser.parse_args()
     if os.name != "nt":
         if args.windows_msvc_probe is not None:
             parser.error("--windows-msvc-probe is Windows only")
         if args.windows_clang_probe is not None:
             parser.error("--windows-clang-probe is Windows only")
+        if args.windows_msvc_structured is not None or args.windows_clang_structured is not None:
+            parser.error("structured compiler probes are Windows only")
     if not 2 <= args.samples <= 100:
         parser.error("--samples must be between 2 and 100")
     if not 0 <= args.warmup <= 20:
@@ -160,6 +168,14 @@ def main() -> None:
         windows_clang_probe=(
             args.windows_clang_probe.resolve(strict=True)
             if args.windows_clang_probe is not None else None
+        ),
+        windows_msvc_structured=(
+            args.windows_msvc_structured.resolve(strict=True)
+            if args.windows_msvc_structured is not None else None
+        ),
+        windows_clang_structured=(
+            args.windows_clang_structured.resolve(strict=True)
+            if args.windows_clang_structured is not None else None
         ),
     )
     document = json.dumps(report, indent=2) + "\n"

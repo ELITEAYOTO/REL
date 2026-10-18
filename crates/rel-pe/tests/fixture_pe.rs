@@ -88,7 +88,9 @@ fn rejects_oversized_export_count_via_public_inspect_api() {
     let export_header = 0x400 + (0x2100 - 0x2000);
     bytes[export_header + 20..export_header + 24]
         .copy_from_slice(&65_537_u32.to_le_bytes());
-    let failure = inspect(&bytes).err().expect("export count must be rejected");
+    let failure = inspect(&bytes)
+        .err()
+        .expect("export count must be rejected");
     assert!(matches!(
         failure,
         PeError::Parse(ref message) if message.contains("export count exceeds alpha symbol limit")

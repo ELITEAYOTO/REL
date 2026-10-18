@@ -2,11 +2,11 @@
 
 ## [Unreleased] — 2026-10-18
 
-### P1.5-A — Windows final-component reparse-point opening (candidate, CI pending)
+### P1.5-A — Windows final-component reparse-point opening (PR CI verified)
 
 - Windows CLI opens the final input path component without following reparse points, rejects reparse attributes from the opened descriptor and preserves the 512 MiB cap.
 - Adds Windows regular-file, deterministic symlink-swap (privilege-dependent) and directory-substitution tests; no new dependency, no schema v1.0.0 change.
-- No ancestor junction/path protection, coherent snapshot, Windows redirector guarantee or CPU/RSS isolation. Tests and compatibility validation pending: [bounded input policy](docs/security/P15A_BOUNDED_INPUT.md).
+- No ancestor junction/path protection, coherent snapshot, Windows redirector guarantee or CPU/RSS isolation. [CI Windows/Linux #39146000935](https://github.com/ELITEAYOTO/REL/actions/runs/39146000935) passed formatting, Clippy, locked tests, Release, smoke and Windows PE oracle. The dedicated Windows `--nocapture` step printed `PASS Windows final-component symlink was created and refused`; broader filesystem compatibility remains unverified. [Bounded input policy](docs/security/P15A_BOUNDED_INPUT.md).
 
 
 ### P1.5-A — Unix no-follow descriptor open (PR CI verified)

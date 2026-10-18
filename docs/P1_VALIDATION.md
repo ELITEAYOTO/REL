@@ -1,29 +1,25 @@
-# P1 — Proof-driven validation
+# P1 — Verified acceptance and scope
 
-## Static-only scope
+## Verified on 2026-10-18
 
-The input executable is never executed. The PE32/PE32+ fixtures are synthetic, authored for this project, and contain an inert dummy instruction. The fixture corpus is **not** evidence of suitability for every real-world Windows executable.
+- **Pull request:** [#1](https://github.com/ELITEAYOTO/REL/pull/1)
+- **Merged commit:** `58ddb71d25c3d9698ee6acbb5446c9b5cc1b497a`
+- **CI run:** [39096882395](https://github.com/ELITEAYOTO/REL/actions/runs/39096882395)
+- **Runners:** Ubuntu and Windows; both jobs completed SUCCESS.
+- **Checks:** Rust formatting, Clippy with denied warnings, 6 Rust tests (2 original + 4 integration), optimized compilation, JSON Schema-backed executable smoke test.
 
-## Ground truth
+## Test evidence
 
-- `fixtures/expected.json` lists the expected SHA-256, architecture, section names, imports and exports.
-- Both binary fixtures are 2048-byte files built with fixed PE headers and deterministic import/export tables.
-- `crates/rel-pe/tests/fixture_pe.rs` checks parser output and failure modes.
-- `scripts/smoke_cli.py` runs the compiled CLI on both fixtures, validates JSON Schema, and tests output overwrite protection.
-- `.github/workflows/ci.yml` runs both on Linux and Windows.
+- `fixtures/pe32-basic.exe` and `fixtures/pe64-basic.exe` are reproducible synthetic test inputs.
+- `fixtures/expected.json` records SHA-256, sizes, architecture, section names, imports, and exports.
+- `crates/rel-pe/tests/fixture_pe.rs` tests successful PE parsing and rejects invalid/truncated samples.
+- `scripts/smoke_cli.py` executes the **compiled REL CLI**, not the imported fixtures. It checks parsed output, JSON schema and non-overwrite behavior.
+- `contracts/schemas/binary-manifest.schema.json` is the authoritative P1 output contract.
 
-## Gates
+## Boundaries
 
-1. Rust formatting, Clippy, unit/integration tests and release build pass on both operating systems.
-2. Both generated fixture SHA-256 values match the registry.
-3. A malformed file produces a nonzero status, not a crash.
-4. A pre-existing report and the original binary cannot be silently overwritten.
-5. All emitted P1 JSON obeys `contracts/schemas/binary-manifest.schema.json`.
-
-## Known limitations
-
-- Parsing via `goblin` is currently a provisional adapter; suitability on complex PE files remains untested.
-- Non-PE binaries are out of scope for P1.
-- No decompilation, behavioral simulation, anti-cheat interaction or live process instrumentation.
-- Fuzz testing, streaming I/O, reproducible Cargo.lock and large-file benchmarks remain future work.
-- CI results must be inspected before calling any gate passed.
+- No native executable is run by the inspector; static parsing only.
+- The corpus contains **two crafted examples**, not a representative suite of modern PE variations.
+- Fuzzing, advanced malformed PE coverage, runtime/memory profiling, reproducible lockfile and packaging remain P1.5.
+- No implication that all malicious inputs are safe, or that gameplay/network behavior is inferred.
+- Claims of platform compatibility extend only to the tested CI environments, not end-user installers.

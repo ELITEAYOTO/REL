@@ -52,9 +52,16 @@ def load_verified_seeds(fixtures: Path) -> list[tuple[str, bytes, str]]:
 
 
 def prepare_cases(
-    fixtures: Path, workdir: Path, binary: Path, *, include_windows_executable: bool
+    fixtures: Path, workdir: Path, binary: Path, *, include_windows_executable: bool,
+    windows_msvc_probe: Path | None = None,
 ) -> list[CorpusCase]:
     """Create deterministic, provenance-labeled PE cases without running them."""
+    # Fail before producing any overlay if the optional compiler input is invalid.
+    if windows_msvc_probe is not None:
+        if not include_windows_executable:
+            raise ValueError("MSVC probe requires the Windows corpus mode")
+        if not windows_msvc_probe.is_file():
+            raise FileNotFoundError(windows_msvc_probe)
     cases: list[CorpusCase] = []
     for name, seed, digest in load_verified_seeds(fixtures):
         arch = name.split("-")[0]
@@ -78,5 +85,12 @@ def prepare_cases(
         cases.append(CorpusCase(
             "rel-windows-self", binary, "native-windows-rel-executable",
             None, None, "locally-built-rel-cli",
+        ))
+    if windows_msvc_probe is not None:
+        source = ROOT / "fixtures" / "probes" / "msvc_probe.c"
+        source_sha = hashlib.sha256(source.read_bytes()).hexdigest()
+        cases.append(CorpusCase(
+            "msvc-x64-local-build", windows_msvc_probe, "ci-built-msvc-x64-pe",
+            "fixtures/probes/msvc_probe.c", source_sha, "built-on-runner-msvc-x64",
         ))
     return cases

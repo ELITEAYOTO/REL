@@ -65,9 +65,9 @@ The standalone CLI now uses a focused input-reading module with an actual-read c
 
 The standalone CLI now has a **provisional 16 MiB JSON report budget** enforced while serializing. Reports exceeding that limit are rejected before the CLI opens an output file or writes stdout. The report v1.0.0 schema and normal output format are unchanged. The [Windows/Linux CI #39104382262](https://github.com/ELITEAYOTO/REL/actions/runs/39104382262) passed with the new report serializer; the limit remains provisional pending representative measurements. This budget does **not** cap parser allocations, memory usage or CPU time. See [bounded JSON report notes](docs/security/P15A_BOUNDED_OUTPUT.md).
 
-## Controlled measurement corpus (P1.5-A candidate)
+## Controlled measurement corpus (P1.5-A verified incremental MSVC case)
 
-The resource profiler and CLI benchmark now share a [hash-verified PE32/PE64 scenario inventory](docs/security/P15A_CORPUS_PROVENANCE.md): two tracked synthetic fixtures, deterministic zero-filled overlays, and the locally compiled REL EXE on Windows. Output distinguishes scenario identifiers and source hashes from runtime measurements. **Redistribution rights are not established**, and this is not a diverse third-party or cross-compiler corpus. The repository still has no selected source license; see [issue #16](https://github.com/ELITEAYOTO/REL/issues/16).
+The resource profiler and CLI benchmark now share a [hash-verified PE32/PE64 scenario inventory](docs/security/P15A_CORPUS_PROVENANCE.md): two tracked synthetic fixtures, deterministic zero-filled overlays, and the locally compiled REL EXE on Windows, with an additional MSVC x64 PE built from tracked C source during Windows CI. Output distinguishes scenario identifiers and source hashes from runtime measurements. **Redistribution rights are not established**, and this is not a diverse third-party or cross-compiler corpus. The repository still has no selected source license; see [issue #16](https://github.com/ELITEAYOTO/REL/issues/16).
 
 ## P1.5-A resource measurements (Windows/Linux verified)
 

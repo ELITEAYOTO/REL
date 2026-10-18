@@ -6,3 +6,9 @@
 .vscode/
 .env
 *.log
+
+# Ephemeral controlled compiler artifacts; only tracked source is committed
+/compiler-probes/
+/msvc_probe.obj
+/msvc_probe.exp
+/msvc_probe.lib

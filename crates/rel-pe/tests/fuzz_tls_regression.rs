@@ -8,5 +8,8 @@ const MALFORMED_TLS: &[u8] =
 fn malformed_tls_directory_is_rejected_without_unwinding() {
     let attempt = std::panic::catch_unwind(|| inspect(MALFORMED_TLS));
     assert!(attempt.is_ok(), "REL exposed the dependency panic");
-    assert!(attempt.unwrap().is_err(), "invalid TLS directory was accepted");
+    assert!(
+        attempt.unwrap().is_err(),
+        "invalid TLS directory was accepted"
+    );
 }

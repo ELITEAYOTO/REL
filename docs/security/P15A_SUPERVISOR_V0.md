@@ -1,6 +1,6 @@
 # P1.5-A — Opt-in direct-child watchdog (v0)
 
-**Status: optional direct-child watchdog integrated on `main` ([Windows/Linux post-merge CI #39148186718](https://github.com/ELITEAYOTO/REL/actions/runs/39148186718)); native Linux cap scoped PR CI verified, merge pending.** This is an optional controlled-input runner, not a sandbox or a hard memory/CPU cap.
+**Status: Python watchdog and optional Linux RLIMIT_AS integrated on `main` ([Linux native-cap post-merge CI #39150254312](https://github.com/ELITEAYOTO/REL/actions/runs/39150254312)); Windows Job Object increment tested on PR CI, merge pending.** This is an optional controlled-input runner, not a sandbox or a hard memory/CPU cap.
 
 ## Scope
 
@@ -54,7 +54,7 @@ This is **not** a cgroup aggregate RAM cap, a strict RSS threshold, a CPU-time l
 
 The added cap is off by default. A too-small virtual-address-space ceiling may cause ordinary analyzer failure rather than a distinguished budget exception; do not present error code 1 as proof of an RSS breach. The effective kernel limit and an intentionally rejected allocation were checked by dedicated Ubuntu tests in [Windows/Linux PR CI #39149771201](https://github.com/ELITEAYOTO/REL/actions/runs/39149771201); this is not a system-wide memory bound.
 
-## Windows native Job Object memory-commit budget (candidate — CI pending)
+## Windows native Job Object memory-commit budget (PR CI verified)
 
 Windows gains the optional `--max-job-memory-mib N` argument (range `128..8192`, disabled by default). It creates a Windows Job Object with `JOB_OBJECT_LIMIT_JOB_MEMORY` and `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`, creates the analyzer child with `CREATE_SUSPENDED`, attaches it to the Job Object, verifies membership through `IsProcessInJob` and resumes its only initial thread. If any step fails, it terminates the suspended child and reports failure; it does not run REL without the requested job. During cleanup, closing the Job Object terminates associated descendants. This protects the **supervised direct analyzer process and cooperating descendants assigned to this job**, not external processes.
 
@@ -64,6 +64,6 @@ Example after building REL and installing `psutil==7.0.0`:
 
 This memory budget is **job commit charge**, not a strictly enforced resident RSS/physical RAM quota. Native job memory denials may surface as allocation errors or ordinary nonzero child failures; they cannot automatically be labeled a sampled-RSS breach. The sampled RSS threshold and wall-time watchdog remain separate. The option is rejected on Linux; Linux's optional `RLIMIT_AS` remains unchanged.
 
-Windows tests exercise assignment before user code, native memory allocation refusal under a smaller limit, descendant termination after a supervisor timeout, and actual REL manifest compatibility. This is not a sandbox: custom breakaway/ancestor jobs, protected processes, malicious descendant handle duplication, drivers, filesystem races, CPU-time and temp-file disk quotas remain open. The job handle remains owned exclusively by the Python wrapper. Windows 8+ nested job behavior is assumed in hosted CI; association failure must be treated as an error, never silently disabled. **CI evidence pending.** Issue #9 remains open.
+Windows tests exercise assignment before user code, native memory allocation refusal under a smaller limit, descendant termination after a supervisor timeout, and actual REL manifest compatibility. This is not a sandbox: custom breakaway/ancestor jobs, protected processes, malicious descendant handle duplication, drivers, filesystem races, CPU-time and temp-file disk quotas remain open. The job handle remains owned exclusively by the Python wrapper. Windows 8+ nested job behavior is assumed in hosted CI; association failure must be treated as an error, never silently disabled. The implementation plus native Windows allocation, process startup, descendant cleanup and PE64 compatibility regressions passed [Windows/Linux PR CI #39151722498](https://github.com/ELITEAYOTO/REL/actions/runs/39151722498), along with Rustfmt, Clippy, locked tests, Release, smoke and oracle. The memory quota is the Job Object's **committed memory**, not RSS. **Post-merge main CI must still be verified.** Issue #9 remains open.
 
 Microsoft references: [Job Objects](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects), [AssignProcessToJobObject](https://learn.microsoft.com/en-us/windows/win32/api/jobapi2/nf-jobapi2-assignprocesstojobobject), [Job Object limits](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-jobobject_extended_limit_information).

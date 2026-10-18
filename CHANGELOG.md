@@ -2,11 +2,11 @@
 
 ## [Unreleased] — 2026-10-18
 
-### P1.5-A — Windows native Job Object opt-in (candidate; CI pending)
+### P1.5-A — Windows native Job Object opt-in (PR CI verified)
 
 - New independent `scripts/windows_job.py` helper: suspended Windows process creation, attach to `JOB_OBJECT_LIMIT_JOB_MEMORY | JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE` job, verify membership, resume main thread, and fail closed if setup fails.
 - New optional `--max-job-memory-mib` flag for the Python watchdog on Windows, range 128–8192 MiB. Existing default, native Linux `RLIMIT_AS`, Rust parser, CLI and manifest v1.0.0 unchanged.
-- Add native Windows tests for successful job startup/association, denied oversized allocation, and kill-on-close descendant cleanup, plus non-Windows flag refusal. No sandbox, CPU-time bound, RSS guarantee or adversarial process containment.
+- Native Windows tests for successful job startup, denied oversized allocation, and kill-on-close descendant cleanup, plus Linux option refusal, passed [Windows/Linux PR CI #39151722498](https://github.com/ELITEAYOTO/REL/actions/runs/39151722498); Windows log showed 17 tests, four expected platform skips. No sandbox, CPU-time bound, RSS guarantee or adversarial process containment.
 
 
 ### P1.5-A — Optional Linux RLIMIT_AS native address-space cap (scoped PR CI verified)

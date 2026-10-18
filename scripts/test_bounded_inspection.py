@@ -180,7 +180,7 @@ class WatchdogTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "between 1 and 300"):
                 python_child("print('not launched')", max_cpu_seconds=0)
         else:
-            with self.assertRaisesRegex(ValueError, "require Linux"):
+            with self.assertRaisesRegex(ValueError, "RLIMIT_CPU option requires Linux"):
                 python_child("print('not launched')", max_cpu_seconds=1)
 
     @unittest.skipUnless(sys.platform.startswith("linux"), "Linux RLIMIT_CPU only")

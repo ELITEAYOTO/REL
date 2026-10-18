@@ -11,6 +11,8 @@ import json
 import math
 import re
 import statistics
+
+from measurement_environment import fingerprint
 from pathlib import Path
 
 CASE_FIELDS = (
@@ -115,6 +117,21 @@ def build_evidence(benchmark: dict, resource: dict, expected_cases: int | None =
     require(bench_env.get("commit") is None or
             bool(re.fullmatch(r"[a-f0-9]{40}", bench_env["commit"])),
             "invalid non-null commit ID")
+    for label, environment in (("benchmark", bench_env), ("resources", res_env)):
+        context = environment.get("measurement_context")
+        require(isinstance(context, dict), f"{label}: missing measurement context")
+        require(context.get("schema") == "rel-measurement-context-v1",
+                f"{label}: invalid measurement context schema")
+        require(context.get("platform") == environment.get("os") and
+                context.get("machine") == environment.get("machine"),
+                f"{label}: hardware platform mismatch")
+        digest = context.get("analyzer_binary_sha256")
+        require(isinstance(digest, str) and re.fullmatch(r"[a-f0-9]{64}", digest) is not None,
+                f"{label}: invalid analyzer binary SHA-256")
+        require(environment.get("measurement_context_sha256") == fingerprint(context),
+                f"{label}: invalid measurement context fingerprint")
+    require(bench_env["measurement_context"] == res_env["measurement_context"],
+            "measurement context mismatch across tools")
     require(bench_env.get("warmup") == res_env.get("warmup"),
             "warmup policy mismatch")
     bench_samples, resource_samples = bench_env["samples"], res_env["samples"]
@@ -160,6 +177,8 @@ def build_evidence(benchmark: dict, resource: dict, expected_cases: int | None =
         "environment": {
             "os": bench_env["os"], "machine": bench_env["machine"],
             "commit": bench_env.get("commit"),
+            "measurement_context_sha256": bench_env["measurement_context_sha256"],
+            "measurement_context": bench_env["measurement_context"],
             "benchmark_samples": bench_samples, "resource_samples": resource_samples,
         },
         "cases": paired,

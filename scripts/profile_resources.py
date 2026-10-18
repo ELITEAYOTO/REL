@@ -17,6 +17,7 @@ from pathlib import Path
 
 import psutil
 from corpus_cases import ROOT, prepare_cases
+from measurement_environment import capture_context
 TIMEOUT_SECONDS = 30
 POLL_SECONDS = 0.002
 
@@ -98,8 +99,11 @@ def run(
     windows_msvc_structured: Path | None = None,
     windows_clang_structured: Path | None = None,
 ) -> dict:
+    context, context_id = capture_context(binary)
     meta = {
         "schema": "rel-resource-observations-v1",
+        "measurement_context": context,
+        "measurement_context_sha256": context_id,
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
         "os": platform.platform(),
         "machine": platform.machine(),

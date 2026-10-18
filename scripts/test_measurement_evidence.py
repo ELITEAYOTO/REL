@@ -8,10 +8,19 @@ import statistics
 import unittest
 
 from check_measurement_evidence import build_evidence
+from measurement_environment import fingerprint
 
 
 def make_pair() -> tuple[dict, dict]:
     sha = hashlib.sha256(b"controlled-file").hexdigest()
+    context = {
+        "schema": "rel-measurement-context-v1",
+        "platform": "Linux-example", "machine": "x86_64",
+        "cpu_model_reported": "Synthetic CPU",
+        "analyzer_binary_sha256": hashlib.sha256(b"analyzer").hexdigest(),
+        "github_run_id": "123456", "github_run_attempt": "1",
+        "rustc_version": "rustc-test-version",
+    }
     shared = {
         "case_id": "pe32-reference", "kind": "synthetic-fixture",
         "source_fixture": "pe32-basic.exe", "source_sha256": "b" * 64,
@@ -25,6 +34,8 @@ def make_pair() -> tuple[dict, dict]:
             "machine": "x86_64", "binary": "rel-inspect", "commit": "a" * 40,
             "corpus_policy": "docs/security/P15A_CORPUS_PROVENANCE.md",
             "warmup": 1, "samples": 3,
+            "measurement_context": copy.deepcopy(context),
+            "measurement_context_sha256": fingerprint(context),
         },
         "results": [{**shared, "iterations": 3,
                      "all_ms": [1.0, 1.5, 2.0],
@@ -45,6 +56,8 @@ def make_pair() -> tuple[dict, dict]:
             "machine": "x86_64", "analyzer": "rel-inspect", "git_sha": "a" * 40,
             "corpus_policy": "docs/security/P15A_CORPUS_PROVENANCE.md",
             "warmup": 1, "samples": 3,
+            "measurement_context": copy.deepcopy(context),
+            "measurement_context_sha256": fingerprint(context),
         },
         "scenarios": [{
             **shared, "observations": observations,
@@ -106,6 +119,36 @@ class EvidenceGateTests(unittest.TestCase):
         a, b = make_pair()
         b["scenarios"][0]["observations"][1]["last_sampled_cpu_ms"] = 0
         with self.assertRaisesRegex(ValueError, "CPU recorded without sampling"):
+            build_evidence(a, b)
+
+    def test_rejects_same_commit_different_ci_run(self) -> None:
+        a, b = make_pair()
+        context = b["environment"]["measurement_context"]
+        context["github_run_id"] = "different-run"
+        b["environment"]["measurement_context_sha256"] = fingerprint(context)
+        with self.assertRaisesRegex(ValueError, "measurement context mismatch"):
+            build_evidence(a, b)
+
+    def test_rejects_same_fixtures_different_cpu(self) -> None:
+        a, b = make_pair()
+        context = b["environment"]["measurement_context"]
+        context["cpu_model_reported"] = "Different CPU"
+        b["environment"]["measurement_context_sha256"] = fingerprint(context)
+        with self.assertRaisesRegex(ValueError, "measurement context mismatch"):
+            build_evidence(a, b)
+
+    def test_rejects_different_analyzer_binary_even_same_commit(self) -> None:
+        a, b = make_pair()
+        context = b["environment"]["measurement_context"]
+        context["analyzer_binary_sha256"] = "c" * 64
+        b["environment"]["measurement_context_sha256"] = fingerprint(context)
+        with self.assertRaisesRegex(ValueError, "measurement context mismatch"):
+            build_evidence(a, b)
+
+    def test_rejects_forged_measurement_context_digest(self) -> None:
+        a, b = make_pair()
+        b["environment"]["measurement_context_sha256"] = "f" * 64
+        with self.assertRaisesRegex(ValueError, "invalid measurement context fingerprint"):
             build_evidence(a, b)
 
     def test_rejects_environment_mismatch(self) -> None:

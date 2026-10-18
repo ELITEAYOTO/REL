@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from corpus_cases import ROOT, prepare_cases
+from measurement_environment import capture_context
 
 
 def measure(binary: Path, target: Path, count: int, warmup: int) -> dict:
@@ -57,8 +58,11 @@ def run(
     windows_msvc_structured: Path | None = None,
     windows_clang_structured: Path | None = None,
 ) -> dict:
+    context, context_id = capture_context(binary)
     metadata = {
         "kind": "rel-cli-benchmark-v1",
+        "measurement_context": context,
+        "measurement_context_sha256": context_id,
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
         "os": platform.platform(),
         "machine": platform.machine(),

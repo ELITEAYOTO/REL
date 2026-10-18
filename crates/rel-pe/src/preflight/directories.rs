@@ -57,8 +57,8 @@ pub(super) fn validate(
         Some(0x20b) => PE64_DIRECTORY_START,
         _ => return Err("invalid optional header magic for data directories"),
     };
-    let count_field_end = directory_start + 0; // Directory offset follows NumberOfRvaAndSizes.
-    if optional_size < count_field_end {
+    // DataDirectory[] starts after NumberOfRvaAndSizes in PE32/PE32+.
+    if optional_size < directory_start {
         // Minimal optional headers are handled by goblin; nothing to budget here.
         return Ok(());
     }
@@ -117,17 +117,16 @@ mod tests {
     const PE32: &[u8] = include_bytes!("../../../../fixtures/pe32-basic.exe");
     const PE64: &[u8] = include_bytes!("../../../../fixtures/pe64-basic.exe");
 
-    fn fixture_fields(bytes: &[u8]) -> (usize, usize, usize) {
+    fn fixture_fields(bytes: &[u8]) -> (usize, usize) {
         let nt = le_u32(bytes, 0x3c).unwrap() as usize;
         let coff = nt + 4;
         let opt = coff + 20;
-        let count = le_u16(bytes, coff + 2).unwrap() as usize;
         let optional_size = le_u16(bytes, coff + 16).unwrap() as usize;
-        (opt, optional_size, opt + optional_size + count * 0)
+        (opt, optional_size)
     }
 
     fn check(data: &[u8]) -> Result<(), &'static str> {
-        let (opt, size, _) = fixture_fields(data);
+        let (opt, size) = fixture_fields(data);
         let coff = le_u32(data, 0x3c).unwrap() as usize + 4;
         let count = le_u16(data, coff + 2).unwrap() as usize;
         validate(data, opt, size, opt + size, count)
@@ -140,7 +139,7 @@ mod tests {
     }
 
     fn export_header_raw(data: &[u8]) -> usize {
-        let (opt, size, _) = fixture_fields(data);
+        let (opt, size) = fixture_fields(data);
         let directory_offset = if le_u16(data, opt) == Some(0x10b) {
             PE32_DIRECTORY_START
         } else {
@@ -158,14 +157,14 @@ mod tests {
 
     #[test]
     fn rejects_declared_oversized_import_directory() {
-        let (opt, _, _) = fixture_fields(PE32);
+        let (opt, _) = fixture_fields(PE32);
         let bad = modify_u32(PE32, opt + PE32_DIRECTORY_START + 12, MAX_DIRECTORY_BYTES + 1);
         assert_eq!(check(&bad), Err("import directory declaration exceeds alpha size limit"));
     }
 
     #[test]
     fn rejects_declared_oversized_export_directory() {
-        let (opt, _, _) = fixture_fields(PE64);
+        let (opt, _) = fixture_fields(PE64);
         let bad = modify_u32(PE64, opt + PE64_DIRECTORY_START + 4, MAX_DIRECTORY_BYTES + 1);
         assert_eq!(check(&bad), Err("export directory declaration exceeds alpha size limit"));
     }
@@ -183,14 +182,14 @@ mod tests {
 
     #[test]
     fn rejects_unmapped_export_directory() {
-        let (opt, _, _) = fixture_fields(PE32);
+        let (opt, _) = fixture_fields(PE32);
         let bad = modify_u32(PE32, opt + PE32_DIRECTORY_START, 0xfffffff0);
         assert_eq!(check(&bad), Err("export directory cannot be mapped to raw section data"));
     }
 
     #[test]
     fn exact_budget_values_do_not_fail_due_to_threshold_alone() {
-        let (opt, _, _) = fixture_fields(PE32);
+        let (opt, _) = fixture_fields(PE32);
         let size = modify_u32(PE32, opt + PE32_DIRECTORY_START + 12, MAX_DIRECTORY_BYTES);
         assert_eq!(check(&size), Ok(()));
         let count = modify_u32(PE32, export_header_raw(PE32) + 20, MAX_EXPORT_SYMBOLS);
@@ -199,7 +198,7 @@ mod tests {
 
     #[test]
     fn missing_optional_directory_records_fail_cleanly() {
-        let (opt, _, _) = fixture_fields(PE32);
+        let (opt, _) = fixture_fields(PE32);
         let bad = modify_u32(PE32, opt + PE32_DIRECTORY_START - 4, 4);
         let mut short = bad;
         let nt = le_u32(&short, 0x3c).unwrap() as usize;

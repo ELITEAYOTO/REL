@@ -1,0 +1,24 @@
+name: Temporary Cargo lockfile export
+on:
+  push:
+    branches: [chore/p15-reproducible-lockfile]
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve dependencies
+        run: cargo generate-lockfile
+      - name: Emit verified Cargo.lock
+        run: |
+          python - <<'PY'
+          import base64
+          from pathlib import Path
+          data = Path("Cargo.lock").read_bytes()
+          print("REL_CARGO_LOCK_BEGIN")
+          print(base64.b64encode(data).decode("ascii"))
+          print("REL_CARGO_LOCK_END")
+          PY

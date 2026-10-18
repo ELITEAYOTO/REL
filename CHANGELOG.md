@@ -2,6 +2,13 @@
 
 ## [Unreleased] — 2026-10-18
 
+### P1.5-A — PE raw section range preflight (candidate, CI pending)
+
+- Validate non-empty section raw data ranges stay inside input bytes before invoking goblin, using checked slice bounds and the existing <=96 section policy.
+- Preserve virtual-only zero-length raw sections, existing APIs/JSON v1.0.0, and avoid new dependencies or allocations.
+- Add PE32/PE32+ malformed/boundary tests and a public inspection API regression. Compatibility with unusual PE layouts, full parser CPU/RAM safety and CI validation remain open.
+
+
 ### P1.5-A — Atomic report publication (PR CI verified)
 
 - Stage bounded complete JSON in a same-directory temporary file, sync its contents, then publish with hard-link no-replace semantics; clean temporary names on normal errors.

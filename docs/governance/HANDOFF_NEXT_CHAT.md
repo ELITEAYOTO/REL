@@ -41,3 +41,9 @@ Future assistants must not claim these modules exist: source decompiler, version
 - Source license is **not yet decided**. Need dependency/license review and a separate deliberate policy decision.
 - F001 preserved and mitigated for the tested goblin 0.10.7 version, not a claim of universal hostile-input safety.
 - LOC/complexity limits remain review triggers, no speculative monolithic refactor.
+
+## P1.5-A bounded input change (validation pending)
+
+- Reader work: `tools/rel-inspect/src/input.rs` acquires file bytes through one descriptor and refuses symlinks/non-regular inputs; hard actual-read cap replaces path-metadata+unbounded read. Documentation: [P15A_BOUNDED_INPUT](../security/P15A_BOUNDED_INPUT.md).
+- Preserve the distinction: **size/timestamp checks are not atomic snapshots** and pre-open symlink check can race; do not declare arbitrary hostile files secure. CPU/RSS/output and worker isolation remain unproven.
+- Review associated PR CI on Ubuntu and Windows before treating new gates as validated.

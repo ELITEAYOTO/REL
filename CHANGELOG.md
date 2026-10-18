@@ -2,10 +2,10 @@
 
 ## [Unreleased] — 2026-10-18
 
-### P1.5-A — Second-pass input-byte consistency check (candidate; CI pending)
+### P1.5-A — Second-pass input-byte consistency check (PR CI verified)
 
 - After the existing capped first read (at most 512 MiB), re-read exactly the same length using the **same opened input descriptor** in bounded 64 KiB chunks; reject mismatched bytes or premature EOF before parsing. Recheck descriptor size/mtime afterward. No new parser/binary-manifest v1.0.0 changes and no extra full-sized input buffer.
-- Add deterministic same-size-content replacement, multiple-chunk, second-pass truncation and empty-file regressions. This **detects some concurrent modifications, not all**; doubles input-read I/O in the worst case and does not produce an atomic snapshot, sandbox, RAM/CPU ceiling or path-race safety.
+- Add deterministic same-size-content replacement, multiple-chunk, second-pass truncation and empty-file regressions. All four new Rust tests passed on Windows and Linux in [Windows/Linux CI #39163640989](https://github.com/ELITEAYOTO/REL/actions/runs/39163640989) and [CI #39163645354](https://github.com/ELITEAYOTO/REL/actions/runs/39163645354); an initial format-only failure was corrected before those runs. This **detects some concurrent modifications, not all**; doubles input-read I/O in the worst case and does not produce an atomic snapshot, sandbox, RAM/CPU ceiling or path-race safety.
 
 
 

@@ -77,7 +77,7 @@ The Windows input descriptor additionally requests `OpenOptionsExt::share_mode(F
 
 **Verified in narrow scope:** [Windows/Linux CI #39146872882](https://github.com/ELITEAYOTO/REL/actions/runs/39146872882) passed format, lint, locked tests, release, CLI smoke, Windows native PE oracle and resource profiling. Windows logs explicitly confirm `windows_reader_allows_other_readers_but_blocks_new_writer` and `windows_reader_refuses_preexisting_writer` both passed. Confirm post-merge main CI separately. The JSON manifest v1.0.0 is unchanged; this does not enforce parser CPU/RSS budgets.
 
-## Bounded second-pass byte verification (PR candidate; CI pending)
+## Bounded second-pass byte verification (PR CI verified)
 
 The existing bounded reader retains the first copy of up to 512 MiB in memory and **rewinds the same opened regular-file descriptor** to read that exact byte range again in 64 KiB scratch chunks. Any mismatch or premature EOF is rejected as `InvalidData` **before the PE parser receives input**. The reader then repeats the descriptor-based size and modification-time comparison. This requires no second full-size allocation, does not open a new path, and preserves the existing Unix final-component `O_NOFOLLOW` / non-blocking and Windows reparse/read-sharing semantics.
 
@@ -85,4 +85,4 @@ Deterministic unit tests exercise (1) a second pass after a same-size content re
 
 **Security and compatibility limits:** This is a *best-effort consistency check*, **not an atomic snapshot**. A concurrent writer might mutate bytes between either read, restore them before comparison, or modify previously verified regions. Unix writers are not blocked; Windows read-sharing is narrower but does not stop existing privileged or memory-mapped writers. Files may also change immediately after the descriptor closes. A second full read increases input I/O and time (up to another 512 MiB, excluding OS cache effects) and can amplify costs on slow/network filesystems. No hard wall-time/CPU/RSS guarantee, ancestor-path protection, hostile-input sandbox, or arbitrary-filesystem guarantee follows. This increment intentionally keeps the entire PE handling pipeline **static-only**; it does not execute the PE.
 
-See the post-merge evidence and issue #9 before treating the increment as verified.
+Four focused Rust regressions plus formatting, linting, locked workspace tests, native Windows PE oracle, CLI smoke and performance-report quality suites passed [Windows/Linux CI #39163640989](https://github.com/ELITEAYOTO/REL/actions/runs/39163640989) and [CI #39163645354](https://github.com/ELITEAYOTO/REL/actions/runs/39163645354) on both OSes. The first CI attempts failed solely on `cargo fmt` formatting for a new test; no functional check was weakened. Verify final PR-head and post-merge main CI separately. Keep [issue #9](https://github.com/ELITEAYOTO/REL/issues/9) open.

@@ -158,15 +158,29 @@ mod tests {
     #[test]
     fn rejects_declared_oversized_import_directory() {
         let (opt, _) = fixture_fields(PE32);
-        let bad = modify_u32(PE32, opt + PE32_DIRECTORY_START + 12, MAX_DIRECTORY_BYTES + 1);
-        assert_eq!(check(&bad), Err("import directory declaration exceeds alpha size limit"));
+        let bad = modify_u32(
+            PE32,
+            opt + PE32_DIRECTORY_START + 12,
+            MAX_DIRECTORY_BYTES + 1,
+        );
+        assert_eq!(
+            check(&bad),
+            Err("import directory declaration exceeds alpha size limit")
+        );
     }
 
     #[test]
     fn rejects_declared_oversized_export_directory() {
         let (opt, _) = fixture_fields(PE64);
-        let bad = modify_u32(PE64, opt + PE64_DIRECTORY_START + 4, MAX_DIRECTORY_BYTES + 1);
-        assert_eq!(check(&bad), Err("export directory declaration exceeds alpha size limit"));
+        let bad = modify_u32(
+            PE64,
+            opt + PE64_DIRECTORY_START + 4,
+            MAX_DIRECTORY_BYTES + 1,
+        );
+        assert_eq!(
+            check(&bad),
+            Err("export directory declaration exceeds alpha size limit")
+        );
     }
 
     #[test]
@@ -184,7 +198,10 @@ mod tests {
     fn rejects_unmapped_export_directory() {
         let (opt, _) = fixture_fields(PE32);
         let bad = modify_u32(PE32, opt + PE32_DIRECTORY_START, 0xfffffff0);
-        assert_eq!(check(&bad), Err("export directory cannot be mapped to raw section data"));
+        assert_eq!(
+            check(&bad),
+            Err("export directory cannot be mapped to raw section data")
+        );
     }
 
     #[test]
@@ -203,6 +220,9 @@ mod tests {
         let mut short = bad;
         let nt = le_u32(&short, 0x3c).unwrap() as usize;
         short[nt + 4 + 16..nt + 4 + 18].copy_from_slice(&100_u16.to_le_bytes());
-        assert_eq!(check(&short), Err("declared PE data directories exceed optional header"));
+        assert_eq!(
+            check(&short),
+            Err("declared PE data directories exceed optional header")
+        );
     }
 }

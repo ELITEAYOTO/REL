@@ -33,3 +33,9 @@ cargo +nightly fuzz run pe_inspect -- -max_total_time=30 -timeout=4 -rss_limit_m
 This is a **bounded smoke fuzz**. Even a green job does not establish an absence of crashes, hangs or exploitable vulnerabilities. A broad multi-hour corpus campaign, coverage tracking, independent oracle and minimized crash registry remain separate acceptance tasks.
 
 See also [deterministic regression](P15_MUTATION_TESTING.md) and [roadmap](../ROADMAP.md).
+
+## Observed failure F001 and mitigation
+
+The initial [CI run 39100602574](https://github.com/ELITEAYOTO/REL/actions/runs/39100602574) did **not** pass: libFuzzer found a reproducible panic in goblin's TLS parsing after approximately 182,323 executions. The original crashing input is committed unchanged. See [finding F001](findings/F001_GOBLIN_TLS_PANIC.md).
+
+REL now contains unwinding dependency panics at the parser boundary; this is a **mitigation only**, not a repair of goblin or proof that hostile files are safe. CI must be re-run to prove that the saved regression is handled.

@@ -2,6 +2,12 @@
 
 ## [Unreleased] — 2026-10-18
 
+### P1.5 — Coverage-guided fuzzing (verification pending)
+- Added independent nightly libFuzzer harness with unchanged synthetic seeds.
+- [Run 39100602574](https://github.com/ELITEAYOTO/REL/actions/runs/39100602574) **FAILED** after revealing third-party goblin 0.9.3 TLS parser panic (F001).
+- Preserved original 1104-byte crashing input, original SHA-256 and regression test.
+- Added a limited catch_unwind boundary around the dependency, recording its limitations. Passing CI on this mitigation remains to be confirmed.
+
 ### P1.5 — Verified increments, hardening still in progress
 
 - **[PR #4](https://github.com/ELITEAYOTO/REL/pull/4)** — Deterministic PE32/PE32+ negative-input regression: 512 seeded mutations per synthetic fixture, plus fixed-interval truncations. Linux and Windows green in [run 39098578436](https://github.com/ELITEAYOTO/REL/actions/runs/39098578436). This is not coverage-guided fuzzing.

@@ -16,9 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import psutil
-
-ROOT = Path(__file__).resolve().parents[1]
-SIZES = (2048, 1024 * 1024, 4 * 1024 * 1024)
+from corpus_cases import ROOT, prepare_cases
 TIMEOUT_SECONDS = 30
 POLL_SECONDS = 0.002
 
@@ -94,9 +92,6 @@ def summarize(values: list[dict]) -> dict:
 
 
 def run(binary: Path, samples: int, warmup: int) -> dict:
-    seed = (ROOT / "fixtures/pe64-basic.exe").read_bytes()
-    if len(seed) != SIZES[0]:
-        raise ValueError("synthetic fixture size differs from reference")
     meta = {
         "schema": "rel-resource-observations-v1",
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
@@ -111,29 +106,22 @@ def run(binary: Path, samples: int, warmup: int) -> dict:
         "timeout_seconds": TIMEOUT_SECONDS,
         "warmup": warmup,
         "samples": samples,
+        "corpus_policy": "docs/security/P15A_CORPUS_PROVENANCE.md",
     }
     scenarios = []
     with tempfile.TemporaryDirectory(prefix="rel-resource-") as folder:
-        for size in SIZES:
-            source = Path(folder) / f"synthetic-overlay-{size}.exe"
-            with source.open("wb") as output:
-                output.write(seed)
-                output.truncate(size)
+        cases = prepare_cases(
+            ROOT / "fixtures", Path(folder), binary,
+            include_windows_executable=os.name == "nt",
+        )
+        for case in cases:
             for _ in range(warmup):
-                profile_once(binary, source)
-            readings = [profile_once(binary, source) for _ in range(samples)]
+                profile_once(binary, case.path)
+            readings = [profile_once(binary, case.path) for _ in range(samples)]
             scenarios.append({
-                "kind": "synthetic-overlay",
-                "size_bytes": size,
-                "sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
-                **summarize(readings),
-            })
-        if os.name == "nt":
-            readings = [profile_once(binary, binary) for _ in range(samples)]
-            scenarios.append({
-                "kind": "native-windows-rel-executable",
-                "size_bytes": binary.stat().st_size,
-                "sha256": hashlib.sha256(binary.read_bytes()).hexdigest(),
+                **case.report_fields(),
+                "size_bytes": case.path.stat().st_size,
+                "sha256": hashlib.sha256(case.path.read_bytes()).hexdigest(),
                 **summarize(readings),
             })
     return {"environment": meta, "scenarios": scenarios}

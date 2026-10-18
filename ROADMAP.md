@@ -22,14 +22,15 @@ Every item requires test evidence before the checkbox is marked complete. ADRs g
 
 - [x] Commit and pin `Cargo.lock`; enforce `--locked` in Linux/Windows CI.
 - [ ] Evaluate dependency MSRV, known advisories and license inventory.
-- [ ] Expand corpus: license-verified redistributable PE samples spanning multiple compilers and unusual edge cases.
+- [ ] Expand corpus: license-verified redistributable PE samples spanning multiple compilers and unusual edge cases. The new internal case inventory **does not fulfill** this external corpus requirement.
 - [x] Verify native Windows PE self-inspection against independent pinned `pefile` ([PR #6](https://github.com/ELITEAYOTO/REL/pull/6), CI 39098961562).
 - [x] Run deterministic seeded mutation/truncation regressions against synthetic PE32/PE32+ fixtures ([PR #4](https://github.com/ELITEAYOTO/REL/pull/4), CI 39098578436).
 - [x] Validate bounded coverage-guided libFuzzer smoke using the preserved F001 regression and pinned goblin 0.10.7 ([PR #10](https://github.com/ELITEAYOTO/REL/pull/10), fuzz CI 39101228893 and regular CI 39101228912).
 - [ ] Pin fuzz-specific Cargo.lock and nightly compiler, then conduct longer campaigns with coverage trend tracking.
 - [ ] Minimize F001 and investigate upstream fix; preserve original input evidence.
 - [ ] Run extended fuzz campaigns and persist new distinct failures.
-- [ ] Establish representative runtime **and memory** benchmarks across complex PE files.
+- [ ] Establish representative runtime **and memory** benchmarks across complex PE files; controlled PE32/PE64 size baselines and the Windows self-build do **not** establish representativeness.
+- [x] **P1.5-A controlled provenance inventory (PR CI verified):** share a hash-verified PE32/PE64 synthetic+overlay case inventory for both profiling tools, with explicit unknown redistribution rights, native Windows self-build and reproducibility tests verified by [Windows/Linux CI #39153900290](https://github.com/ELITEAYOTO/REL/actions/runs/39153900290) and [CI #39153927673](https://github.com/ELITEAYOTO/REL/actions/runs/39153927673) ([corpus provenance](docs/security/P15A_CORPUS_PROVENANCE.md)).
 - [x] **P1.5-A measurement increment:** record sampled RSS, CPU and wall time on Windows/Linux with standalone Python profiler ([PR #19](https://github.com/ELITEAYOTO/REL/pull/19), [CI #39104870706](https://github.com/ELITEAYOTO/REL/actions/runs/39104870706)); representative structure and enforceable CPU/RSS limits **remain open**.
 - [x] Verify initial CLI timing harness on Windows/Linux with uploaded JSON observations ([PR #5](https://github.com/ELITEAYOTO/REL/pull/5), CI 39098808184).
 - [x] **P1.5-A increment:** bounded single-descriptor reader, strict byte cap, observable file-change and path-policy tests ([PR #17](https://github.com/ELITEAYOTO/REL/pull/17), [Windows/Linux CI](https://github.com/ELITEAYOTO/REL/actions/runs/39103698604)).

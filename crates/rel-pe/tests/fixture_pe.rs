@@ -95,3 +95,26 @@ fn rejects_oversized_export_count_via_public_inspect_api() {
         PeError::Parse(ref message) if message.contains("export count exceeds alpha symbol limit")
     ));
 }
+
+#[test]
+fn rejects_out_of_file_raw_section_via_public_inspect_api() {
+    for fixture in [PE32, PE64] {
+        let mut bytes = fixture.to_vec();
+        let nt = u32::from_le_bytes(bytes[0x3c..0x40].try_into().unwrap()) as usize;
+        let coff = nt + 4;
+        let optional_size =
+            u16::from_le_bytes(bytes[coff + 16..coff + 18].try_into().unwrap()) as usize;
+        let section = coff + 20 + optional_size;
+        let end = bytes.len() as u32;
+        bytes[section + 20..section + 24].copy_from_slice(&end.to_le_bytes());
+        bytes[section + 16..section + 20].copy_from_slice(&1_u32.to_le_bytes());
+
+        let failure = inspect(&bytes)
+            .err()
+            .expect("raw section outside the input must fail before the backend");
+        assert!(matches!(
+            failure,
+            PeError::Parse(ref message) if message.contains("section raw data extends beyond input")
+        ));
+    }
+}

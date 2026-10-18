@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### P1.5 — experimental, pending CI
+- Added a CLI benchmark harness (2 KiB, 1 MiB, 4 MiB synthetic overlays), controlled repetitions and per-platform JSON artifacts.
+- No claimed performance thresholds: timings are environment-specific and benchmarking complex real PE files is still pending.
+
 ### Added — 2026-10-18
 - Modular Rust workspace: `rel-contracts`, `rel-pe`, `rel-inspect`.
 - Static PE32/PE32+ inspection and JSON manifests with SHA-256.
@@ -19,6 +23,6 @@
 - [Actions run 39096882395](https://github.com/ELITEAYOTO/REL/actions/runs/39096882395) succeeded on Ubuntu and Windows: `cargo fmt`, `clippy -D warnings`, unit/integration tests, release build, JSON-schema-backed CLI smoke tests.
 
 ### Not verified / not implemented
-- Arbitrary real-world PE corpus compatibility, fuzz resilience, benchmarks or release reproducibility.
+- Arbitrary real-world PE corpus compatibility, coverage-guided fuzzing, representative benchmarks or release reproducibility.
 - Ghidra integration, function matching, decompilation, simulation or classification.
 - No general security assurance beyond the explicitly tested paths.

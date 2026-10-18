@@ -116,7 +116,9 @@ mod tests {
         fs::write(&first_path, b"MZ alpha").unwrap();
         fs::write(&second_path, b"MZ omega").unwrap();
         let mtime = fs::metadata(&first_path).unwrap().modified().unwrap();
-        File::open(&second_path)
+        fs::OpenOptions::new()
+            .write(true)
+            .open(&second_path)
             .unwrap()
             .set_times(fs::FileTimes::new().set_modified(mtime))
             .unwrap();

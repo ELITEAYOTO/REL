@@ -16,8 +16,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-SIZES = (2048, 1024 * 1024, 4 * 1024 * 1024)
+from corpus_cases import ROOT, prepare_cases
 
 
 def measure(binary: Path, target: Path, count: int, warmup: int) -> dict:
@@ -52,9 +51,6 @@ def measure(binary: Path, target: Path, count: int, warmup: int) -> dict:
 
 
 def run(binary: Path, count: int, warmup: int) -> dict:
-    fixture = (ROOT / "fixtures/pe64-basic.exe").read_bytes()
-    if len(fixture) != 2048:
-        raise ValueError("Reference fixture size changed")
     metadata = {
         "kind": "rel-cli-benchmark-v1",
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
@@ -66,15 +62,19 @@ def run(binary: Path, count: int, warmup: int) -> dict:
         "method": "CLI process startup + PE parsing + SHA-256 + JSON stdout",
         "warmup": warmup,
         "samples": count,
+        "corpus_policy": "docs/security/P15A_CORPUS_PROVENANCE.md",
     }
     results = []
     with tempfile.TemporaryDirectory(prefix="rel-bench-") as directory:
-        for size in SIZES:
-            target = Path(directory) / f"fixture-overlay-{size}.exe"
-            with target.open("wb") as output:
-                output.write(fixture)
-                output.truncate(size)
-            results.append(measure(binary, target, count, warmup))
+        cases = prepare_cases(
+            ROOT / "fixtures", Path(directory), binary,
+            include_windows_executable=os.name == "nt",
+        )
+        for case in cases:
+            results.append({
+                **case.report_fields(),
+                **measure(binary, case.path, count, warmup),
+            })
     return {"environment": metadata, "results": results}
 
 

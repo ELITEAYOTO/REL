@@ -32,6 +32,8 @@ jobs:
         run: cargo test --locked -p rel-inspect --bin rel-inspect input::tests::refuses_final_component_symlink_after_preflight_swap -- --nocapture
       - name: Build
         run: cargo build --locked --release --workspace
+      - name: Corpus source hashes and overlay reproducibility
+        run: python scripts/test_corpus_cases.py
       - name: JSON Schema validator
         run: python -m pip install 'jsonschema>=4,<5'
       - name: End-to-end CLI test (Windows)

@@ -11,8 +11,28 @@ fn invalid(message: &'static str) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, message)
 }
 
+/// Open the candidate descriptor with platform-specific safeguards.
+/// On Unix, no-follow is checked by the kernel on the final path component
+/// at open time, and nonblocking open avoids hanging on a swapped-in FIFO.
+/// Ancestor symlinks, special devices and concurrent writes remain out of scope.
+fn open_candidate(path: &Path) -> io::Result<File> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        let mut options = fs::OpenOptions::new();
+        options.read(true);
+        options.custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK);
+        options.open(path)
+    }
+    #[cfg(not(unix))]
+    {
+        File::open(path)
+    }
+}
+
 /// Open a regular file only; symbolic links are rejected by alpha policy.
-/// The pre-open type check is NOT race-free or a security sandbox.
+/// The pre-open path check is still racy; on Unix, the final component is
+/// additionally checked at open time. This is not a security sandbox.
 pub(crate) fn read_binary(path: &Path) -> io::Result<Vec<u8>> {
     let preflight = fs::symlink_metadata(path)?;
     if !preflight.file_type().is_file() {
@@ -21,7 +41,7 @@ pub(crate) fn read_binary(path: &Path) -> io::Result<Vec<u8>> {
         ));
     }
 
-    let mut file = File::open(path)?;
+    let mut file = open_candidate(path)?;
     let before = file.metadata()?;
     read_open_file(&mut file, &before, MAX_SIZE)
 }
@@ -156,5 +176,46 @@ mod tests {
         fs::remove_file(&link).unwrap();
         fs::remove_file(&target).unwrap();
         assert!(result.is_err());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn rejects_final_component_replaced_with_symlink_before_open() {
+        use std::os::unix::fs::symlink;
+        let candidate = test_path("race-candidate");
+        let replacement = test_path("race-target");
+        fs::write(&candidate, b"MZ original").unwrap();
+        fs::write(&replacement, b"MZ replacement").unwrap();
+
+        // Deterministic model of a swap between symlink_metadata and open.
+        assert!(fs::symlink_metadata(&candidate)
+            .unwrap()
+            .file_type()
+            .is_file());
+        fs::remove_file(&candidate).unwrap();
+        symlink(&replacement, &candidate).unwrap();
+        assert!(open_candidate(&candidate).is_err());
+
+        fs::remove_file(&candidate).unwrap();
+        fs::remove_file(&replacement).unwrap();
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn opens_fifo_nonblocking_but_refuses_it_as_input() {
+        use std::process::Command;
+        let fifo = test_path("fifo");
+        let status = Command::new("mkfifo")
+            .arg(&fifo)
+            .status()
+            .expect("Linux test requires mkfifo");
+        assert!(status.success());
+
+        // No writer is attached: read-only open would block without O_NONBLOCK.
+        let descriptor = open_candidate(&fifo).expect("nonblocking FIFO open");
+        assert!(!descriptor.metadata().unwrap().is_file());
+        drop(descriptor);
+        assert!(read_binary(&fifo).is_err());
+        fs::remove_file(&fifo).unwrap();
     }
 }

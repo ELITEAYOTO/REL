@@ -126,6 +126,7 @@ dependencies = [
 name = "rel-inspect"
 version = "0.1.0"
 dependencies = [
+ "libc",
  "rel-contracts",
  "rel-pe",
  "serde_json",

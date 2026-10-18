@@ -18,7 +18,7 @@ Every item requires test evidence before the checkbox is marked complete. ADRs g
 
 **Evidence:** [PR #1](https://github.com/ELITEAYOTO/REL/pull/1) and [CI run 39096882395](https://github.com/ELITEAYOTO/REL/actions/runs/39096882395). **Do not interpret this as production readiness or universal PE correctness.**
 
-## P1.5 — Binary Inspector hardening — IN PROGRESS
+## P1.5 — Binary Inspector hardening — IN PROGRESS (critical scope before pilot)
 
 - [x] Commit and pin `Cargo.lock`; enforce `--locked` in Linux/Windows CI.
 - [ ] Evaluate dependency MSRV, known advisories and license inventory.
@@ -31,8 +31,24 @@ Every item requires test evidence before the checkbox is marked complete. ADRs g
 - [ ] Run extended fuzz campaigns and persist new distinct failures.
 - [ ] Establish representative runtime **and memory** benchmarks across complex PE files.
 - [x] Verify initial CLI timing harness on Windows/Linux with uploaded JSON observations ([PR #5](https://github.com/ELITEAYOTO/REL/pull/5), CI 39098808184).
-- [ ] Add deterministic limits for expensive PE structures, test input symlinks and path edge cases.
+- [ ] **P1.5-A:** stable file-descriptor bounded reads, symlink/path races and files changing during analysis, verified Windows/Linux.
+- [ ] **P1.5-A:** measure and enforce resource limits (output size, CPU/RSS and pathological structures); expand licensed PE corpus.
+- [ ] **P1.5-B:** extend coverage-guided fuzzing, worker isolation and long-term robustness, without claiming general security.
 - [ ] Establish release/archive provenance and binary integrity checks.
+
+## EX-01 — Experimental evidence/coverage envelope — AFTER CRITICAL P1.5-A
+
+- [ ] Separate versioned observation schema: source hash, extractor/version/config, exact domain coverage, diagnostics and unknown states.
+- [ ] Golden tests for present/absent-in-scope/partial/failed/unsupported, invalid byte offsets, repeatability and v1 compatibility.
+- [ ] Do not change `binary-manifest.schema.json` v1.0.0 or create speculative crates.
+
+## EX-02 — Metadata-only PE manifest diff pilot — BEFORE P2 (ADR-0013)
+
+- [ ] Independent Rust CLI/library comparing two strictly validated v1 manifest JSON files, separate diff output schema.
+- [ ] Golden A/B, inversion symmetry, deterministic ordering, ambiguous sections/imports, extraction failures and incompatible schema.
+- [ ] Benchmark legal paired builds and validate Windows/Linux CI; **no function-diff or behavioral claim**.
+
+**Product strategy and sequence:** [RFC-0001](docs/rfc/RFC-0001-EVIDENCE-EVOLUTION.md), [ADR-0013](docs/adr/ADR-0013-vision-evidence-evolution.md), [gates](docs/governance/STRATEGY_AND_GATES.md). P1.5-B continues and is NOT silently declared done.
 
 ## P2 — Ghidra adapter
 

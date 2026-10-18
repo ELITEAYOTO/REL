@@ -1,7 +1,7 @@
 //! Windows ancestor-path check for controlled-input alpha.
 //! This is a double path inspection, NOT a descriptor-relative or atomic open.
-use std::{fs, io, path::Path};
 use std::os::windows::fs::MetadataExt;
+use std::{fs, io, path::Path};
 
 const FILE_ATTRIBUTE_REPARSE_POINT: u32 = 0x0000_0400;
 

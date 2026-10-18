@@ -2,6 +2,12 @@
 
 ## [Unreleased] — 2026-10-18
 
+### P1.5-A — Windows 128-bit opened-handle identity check (candidate; CI pending)
+
+- Query `GetFileInformationByHandleEx(FileIdInfo)` on the already-opened guarded Windows input handle and a second guarded open of the same path; reject mismatched volume+128-bit identifiers or missing/unsupported identities. Only the controlled-input reader changes; no new dependency, parser change or `binary-manifest v1.0.0` change.
+- Three deterministic Windows regressions: two handles to the same file and normal CLI read, distinct same-length/same-mtime files, and two handles via a hard link (one underlying file). All use real handles, not guessed filesystem IDs.
+- Important: this is a **post-open observation**, not a comparison to the earlier path `symlink_metadata`, an atomic Windows path walk or a coherent filesystem snapshot. Win32 read-sharing already blocks ordinary writers, while privileged/redirector races may evade these checks. Unsupported/zero identifiers now fail closed (potential compatibility change); two file opens and two OS identity queries add overhead. Validate Windows/Linux CI before promoting the gate.
+
 ### P1.5-A — Windows observable ancestor reparse-point guard (PR #42 merged, CI verified)
 
 - Before the initial leaf preflight and again immediately after acquiring its guarded handle, inspect every Windows parent path with `symlink_metadata` and reject directories bearing `FILE_ATTRIBUTE_REPARSE_POINT`, including junctions. Ordinary nested paths still work; the final-component guard and `FILE_SHARE_READ` behavior remain.

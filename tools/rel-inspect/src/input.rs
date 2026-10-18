@@ -4,6 +4,8 @@
 mod unix_open;
 #[cfg(windows)]
 mod windows_path;
+#[cfg(windows)]
+mod windows_identity;
 use std::{
     fs::{self, File, Metadata},
     io::{self, Read, Seek},
@@ -88,6 +90,8 @@ pub(crate) fn read_binary(path: &Path) -> io::Result<Vec<u8>> {
     verify_preopen_identity(&preflight, &before)?;
     #[cfg(windows)]
     windows_path::reject_reparse_ancestors(path)?;
+    #[cfg(windows)]
+    windows_identity::verify_against_reopened_path(path, &file)?;
     read_open_file(&mut file, &before, MAX_SIZE)
 }
 

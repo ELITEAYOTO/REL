@@ -19,3 +19,13 @@ Status: ACCEPTED, 2026-10-18. This is a project-specific decision log, not a cla
 Architecture modifications: identify actual problem -> gather measurements -> compare alternatives -> ADR -> compatibility and migration plan -> tests -> CHANGELOG. A later chat must **not silently reset these decisions**.
 
 The baseline does not prohibit evolution: it requires justification and traceability.
+
+## Accepted product direction and sequencing — ADR-0013, 18 October 2026
+
+- **D12:** REL remains a general-purpose, powerful reverse-engineering research platform. Evidence & Evolution (explainable longitudinal comparisons, reproducible observations) is a proposed differentiator, not a constraint to compliance scanning.
+- **D13:** Critical P1.5-A input/resource hardening precedes EX-01 experimental evidence/coverage and EX-02 PE manifest metadata diff, which are **deliberately scheduled before P2 Ghidra**. P3 retains meaning: deep function matching.
+- **D14:** manifest v1.0.0 immutable absent separate compatibility ADR; hypotheses, partial/failed extraction and missing imports cannot be presented as proven absence of behavior.
+- **D15:** do not create speculative modules, UI, graph database or AI engine before testing a concrete need. Use existing stable module boundaries.
+- **D16:** selecting a redistributable source LICENSE requires dedicated review; repository visibility alone does not grant an open-source license.
+
+Reference decision: [ADR-0013](../adr/ADR-0013-vision-evidence-evolution.md), [gates](STRATEGY_AND_GATES.md) and [RFC-0001](../rfc/RFC-0001-EVIDENCE-EVOLUTION.md). These are **adopted design decisions**, not completed software features. Revisions require a new ADR supported by tests and trade-offs, never a new assistant's styling preference.

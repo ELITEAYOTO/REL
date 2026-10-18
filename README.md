@@ -1,6 +1,8 @@
 # Reverse Engineering Lab (REL)
 
-A **modular, reproducible, offline-first** research suite for analyzing binaries that users are authorized to inspect, with future comparison across software versions.
+A **modular, reproducible, offline-first reverse-engineering platform** for authorized binary analysis and cross-version evolution. Its adopted **Evidence & Evolution** strategy emphasizes explainable, bounded, reproducible findings, while preserving deep reverse engineering as a long-term capability.
+
+**Strategic decision:** [RFC-0001](docs/rfc/RFC-0001-EVIDENCE-EVOLUTION.md), accepted with [ADR-0013](docs/adr/ADR-0013-vision-evidence-evolution.md). [Milestone gates](docs/governance/STRATEGY_AND_GATES.md).
 
 **Current status (2026-10-18): P1 alpha validated; P1.5 partial hardening verified (mutation regression, cross-platform CLI timings, independent Windows PE oracle, and bounded libFuzzer smoke after upgrading goblin). Not production-hardened.** The original [CI run](https://github.com/ELITEAYOTO/REL/actions/runs/39096882395) passed on Ubuntu and Windows. P1.5 evidence is recorded in [CHANGELOG](CHANGELOG.md). See [P1 evidence](docs/P1_VALIDATION.md).
 
@@ -50,8 +52,14 @@ Read [AGENTS.md](AGENTS.md), [architecture](docs/ARCHITECTURE.md), [frozen decis
 ## Project maturity / risks
 
 - Two synthetic fixtures are insufficient to infer quality on complex modern Windows binaries.
-- Dependency resolution is pinned by committed `Cargo.lock`. Fuzzing, property testing, PE edge-case coverage and performance measurements remain P1.5 work.
+- Stable Rust dependencies are pinned in `Cargo.lock` and a bounded libFuzzer run has succeeded; extended fuzzing, representative corpus, CPU/RAM budgets, fuzz-specific toolchain pinning and process isolation remain unfinished P1.5 work.
 - `goblin` is a provisional parser adapter, not a permanent lock-in; switching requires measured reasons and an ADR.
 - No source license selected: do not assume redistribution rights for third-party code/binaries.
 
 See [changelog](CHANGELOG.md), [roadmap](ROADMAP.md) and [future-chat handoff](docs/governance/HANDOFF_NEXT_CHAT.md).
+
+## Next validated direction (not yet implemented)
+
+After critical P1.5 resource/path hardening on **controlled inputs**, EX-01 will explore a small independent contract for provenance/coverage/diagnostics, and EX-02 will test a **metadata-only** Rust PE manifest diff before P2 Ghidra. P3 still means function matching, not import-list comparison. No changes to `binary-manifest` v1.0.0.
+
+Read [EX-01 spec](docs/specs/OBSERVATION_ENVELOPE_DRAFT.md), [EX-02 spec](docs/specs/METADATA_DIFF_PILOT.md), and [alpha threat model](docs/security/THREAT_MODEL_ALPHA.md). The repo is public but no source license is selected yet.

@@ -2,6 +2,14 @@
 
 ## [Unreleased] — 2026-10-18
 
+### Strategy decision — RFC-0001 / ADR-0013
+
+- Accepted a **full reverse-engineering platform** mission, with Evidence & Evolution as its method for reproducible, explainable, bounded conclusions. This is a product decision, not a claim of novel decompilation or shipped diff.
+- Recorded explicit P1.5-A hardening, EX-01 minimal experimental evidence envelope, EX-02 PE metadata-only diff pilot **before P2 Ghidra**, then P3 function matching.
+- Added ADR-0013, experimental specs, validation gates and an alpha threat model; existing source crates and manifest v1.0.0 remain unchanged.
+- **Not implemented:** EX-01, EX-02, Ghidra adapter, function matching, behavior lab or GUI. Source license remains undecided.
+
+
 ### P1.5 — Fuzzing and verified TLS regression resolution (bounded)
 
 - Introduced a separate nightly libFuzzer workspace, using unmodified synthetic PE32/PE32+ seeds.

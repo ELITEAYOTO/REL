@@ -2,6 +2,13 @@
 
 ## [Unreleased] — 2026-10-18
 
+### P1.5-A — Second-pass input-byte consistency check (candidate; CI pending)
+
+- After the existing capped first read (at most 512 MiB), re-read exactly the same length using the **same opened input descriptor** in bounded 64 KiB chunks; reject mismatched bytes or premature EOF before parsing. Recheck descriptor size/mtime afterward. No new parser/binary-manifest v1.0.0 changes and no extra full-sized input buffer.
+- Add deterministic same-size-content replacement, multiple-chunk, second-pass truncation and empty-file regressions. This **detects some concurrent modifications, not all**; doubles input-read I/O in the worst case and does not produce an atomic snapshot, sandbox, RAM/CPU ceiling or path-race safety.
+
+
+
 ### P1.5-A — Independent measurement campaign comparison pilot (PR CI verified)
 
 - New offline `scripts/compare_measurement_campaigns.py` reads four already produced timing/resource JSON files (two campaigns), revalidates each job's paired evidence, excludes only run ID/attempt from hardware-context equality, requires known **distinct** run identities and identical CPU/runner/toolchain, exact REL executable SHA, PE corpus and sampling policy. Mismatches produce `not_comparable`, explicit blockers, **no numeric comparisons** and CLI exit status 2.

@@ -20,7 +20,8 @@ Every item requires test evidence before the checkbox is marked complete. ADRs g
 
 ## P1.5 — Binary Inspector hardening — NEXT
 
-- [ ] Commit and pin `Cargo.lock`; evaluate dependency MSRV and license inventory.
+- [x] Commit and pin `Cargo.lock`; enforce `--locked` in Linux/Windows CI.
+- [ ] Evaluate dependency MSRV, known advisories and license inventory.
 - [ ] Expand corpus: real redistributable Windows binaries with independent reference oracle; PE edge cases.
 - [ ] Fuzz malformed/truncated headers and import/export tables, establish crash-free behavior.
 - [ ] Benchmark input size, memory and runtime with a reproducible methodology.

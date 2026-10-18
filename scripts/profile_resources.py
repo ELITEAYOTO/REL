@@ -94,6 +94,7 @@ def summarize(values: list[dict]) -> dict:
 def run(
     binary: Path, samples: int, warmup: int, *,
     windows_msvc_probe: Path | None = None,
+    windows_clang_probe: Path | None = None,
 ) -> dict:
     meta = {
         "schema": "rel-resource-observations-v1",
@@ -117,6 +118,7 @@ def run(
             ROOT / "fixtures", Path(folder), binary,
             include_windows_executable=os.name == "nt",
             windows_msvc_probe=windows_msvc_probe,
+            windows_clang_probe=windows_clang_probe,
         )
         for case in cases:
             for _ in range(warmup):
@@ -138,9 +140,13 @@ def main() -> None:
     parser.add_argument("--samples", type=int, default=5)
     parser.add_argument("--warmup", type=int, default=1)
     parser.add_argument("--windows-msvc-probe", type=Path)
+    parser.add_argument("--windows-clang-probe", type=Path)
     args = parser.parse_args()
-    if args.windows_msvc_probe is not None and os.name != "nt":
-        parser.error("--windows-msvc-probe is Windows only")
+    if os.name != "nt":
+        if args.windows_msvc_probe is not None:
+            parser.error("--windows-msvc-probe is Windows only")
+        if args.windows_clang_probe is not None:
+            parser.error("--windows-clang-probe is Windows only")
     if not 2 <= args.samples <= 100:
         parser.error("--samples must be between 2 and 100")
     if not 0 <= args.warmup <= 20:
@@ -150,6 +156,10 @@ def main() -> None:
         windows_msvc_probe=(
             args.windows_msvc_probe.resolve(strict=True)
             if args.windows_msvc_probe is not None else None
+        ),
+        windows_clang_probe=(
+            args.windows_clang_probe.resolve(strict=True)
+            if args.windows_clang_probe is not None else None
         ),
     )
     document = json.dumps(report, indent=2) + "\n"

@@ -94,6 +94,65 @@ class CorpusCaseTests(unittest.TestCase):
             source = ROOT / meta["source_fixture"]
             self.assertEqual(meta["source_sha256"], hashlib.sha256(source.read_bytes()).hexdigest())
 
+    def test_clang_probe_requires_windows_mode_and_valid_toolchain_record(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            compiler_probe = folder / "rel-clang-cl-probe.exe"
+            with self.assertRaisesRegex(ValueError, "Clang-cl probe requires"):
+                prepare_cases(
+                    ROOT / "fixtures", folder, folder / "unused",
+                    include_windows_executable=False,
+                    windows_clang_probe=compiler_probe,
+                )
+            compiler_probe.write_bytes(b"compiled-PE-placeholder")
+            analyzer = folder / "rel-inspect.exe"
+            analyzer.write_bytes(b"analyzer-placeholder")
+            with self.assertRaises(FileNotFoundError):
+                prepare_cases(
+                    ROOT / "fixtures", folder, analyzer,
+                    include_windows_executable=True,
+                    windows_clang_probe=compiler_probe,
+                )
+            (folder / "clang-cl-version.txt").write_text(
+                "unexpected toolchain\n", encoding="utf-8"
+            )
+            with self.assertRaisesRegex(ValueError, "Clang version provenance"):
+                prepare_cases(
+                    ROOT / "fixtures", folder, analyzer,
+                    include_windows_executable=True,
+                    windows_clang_probe=compiler_probe,
+                )
+
+    def test_clang_probe_source_and_version_are_recorded_without_license_claim(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            analyzer = folder / "rel-inspect.exe"
+            clang_probe = folder / "rel-clang-cl-probe.exe"
+            msvc_probe = folder / "rel-msvc-probe.exe"
+            analyzer.write_bytes(b"analyzer-placeholder")
+            clang_probe.write_bytes(b"clang-output-placeholder")
+            msvc_probe.write_bytes(b"msvc-output-placeholder")
+            (folder / "clang-cl-version.txt").write_text(
+                "clang version 20.0.1 (test)\nTarget: x86_64-pc-windows-msvc\n",
+                encoding="utf-8",
+            )
+            cases = prepare_cases(
+                ROOT / "fixtures", folder, analyzer,
+                include_windows_executable=True,
+                windows_msvc_probe=msvc_probe,
+                windows_clang_probe=clang_probe,
+            )
+            self.assertEqual(len(cases), 9)
+            clang = cases[-1].report_fields()
+            self.assertEqual(clang["case_id"], "clang-cl-x64-local-build")
+            self.assertEqual(clang["kind"], "ci-built-clang-cl-x64-pe")
+            self.assertEqual(clang["toolchain_version"], "clang version 20.0.1 (test)")
+            self.assertEqual(clang["redistribution_status"], REDISTRIBUTION_STATUS)
+            self.assertEqual(clang["source_fixture"], "fixtures/probes/msvc_probe.c")
+            source = ROOT / clang["source_fixture"]
+            self.assertEqual(clang["source_sha256"], hashlib.sha256(source.read_bytes()).hexdigest())
+            self.assertNotIn("toolchain_version", cases[-2].report_fields())
+
     def test_native_build_case_does_not_claim_redistribution(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             folder = Path(tmp)

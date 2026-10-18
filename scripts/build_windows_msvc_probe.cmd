@@ -23,4 +23,20 @@ if not exist compiler-probes\rel-msvc-probe.exe (
   exit /b 1
 )
 echo Built controlled MSVC PE x64 probe from tracked C source
+rem Compile same source with a genuinely distinct compiler frontend (LLVM clang-cl).
+rem Use the already configured MSVC/Windows SDK link environment. Fail if absent.
+where clang-cl.exe >nul 2>nul
+if errorlevel 1 (
+  echo Required LLVM clang-cl.exe not found on PATH 1>&2
+  exit /b 1
+)
+clang-cl.exe --version > compiler-probes\clang-cl-version.txt
+if errorlevel 1 exit /b 1
+clang-cl.exe /nologo /W4 /WX /O2 /MD /Fe:compiler-probes\rel-clang-cl-probe.exe fixtures\probes\msvc_probe.c
+if errorlevel 1 exit /b 1
+if not exist compiler-probes\rel-clang-cl-probe.exe (
+  echo Clang-cl did not produce probe executable 1>&2
+  exit /b 1
+)
+echo Built controlled Clang-cl PE x64 probe from tracked C source
 exit /b 0

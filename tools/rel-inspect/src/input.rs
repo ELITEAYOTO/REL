@@ -14,7 +14,8 @@ fn invalid(message: &'static str) -> io::Error {
 /// Open the candidate descriptor with platform-specific safeguards.
 /// On Unix, no-follow is checked by the kernel on the final path component
 /// at open time, and nonblocking open avoids hanging on a swapped-in FIFO.
-/// On Windows, open the final reparse point itself and reject the handle.
+/// On Windows, open the final reparse point itself, reject the handle,
+/// and share only read access for the lifetime of the descriptor.
 /// Ancestor symlinks, special devices and concurrent writes remain out of scope.
 fn open_candidate(path: &Path) -> io::Result<File> {
     #[cfg(unix)]
@@ -34,10 +35,15 @@ fn open_candidate(path: &Path) -> io::Result<File> {
         // Check attributes on THAT HANDLE, not through a fresh path lookup.
         const FILE_FLAG_OPEN_REPARSE_POINT: u32 = 0x0020_0000;
         const FILE_ATTRIBUTE_REPARSE_POINT: u32 = 0x0000_0400;
+        // Restrict Win32 share access during the entire file read. Existing
+        // conflicting writer handles prevent this open; new ordinary write
+        // and delete opens are denied until the reader descriptor is closed.
+        const FILE_SHARE_READ: u32 = 0x0000_0001;
 
         let mut options = fs::OpenOptions::new();
         let file = options
             .read(true)
+            .share_mode(FILE_SHARE_READ)
             .custom_flags(FILE_FLAG_OPEN_REPARSE_POINT)
             .open(path)?;
         if file.metadata()?.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT != 0 {
@@ -308,5 +314,49 @@ mod tests {
         }
         assert!(read_binary(&candidate).is_err());
         fs::remove_dir(&candidate).unwrap();
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn windows_reader_allows_other_readers_but_blocks_new_writer() {
+        let path = test_path("windows-read-share");
+        fs::write(&path, b"MZ immutable during open").unwrap();
+
+        let first = open_candidate(&path).unwrap();
+        let second = open_candidate(&path).unwrap();
+        assert_eq!(
+            first.metadata().unwrap().len(),
+            second.metadata().unwrap().len()
+        );
+
+        assert!(
+            fs::OpenOptions::new().write(true).open(&path).is_err(),
+            "ordinary write opens must be denied while REL reads"
+        );
+        drop(second);
+        drop(first);
+
+        let mut writer = fs::OpenOptions::new().write(true).open(&path).unwrap();
+        writer.write_all(b"OK").unwrap();
+        drop(writer);
+        fs::remove_file(&path).unwrap();
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn windows_reader_refuses_preexisting_writer() {
+        let path = test_path("windows-existing-writer");
+        fs::write(&path, b"MZ writable").unwrap();
+
+        let writer = fs::OpenOptions::new().write(true).open(&path).unwrap();
+        assert!(
+            open_candidate(&path).is_err(),
+            "input open must fail while a conflicting writer is active"
+        );
+        drop(writer);
+
+        let reader = open_candidate(&path).unwrap();
+        drop(reader);
+        fs::remove_file(&path).unwrap();
     }
 }

@@ -56,6 +56,12 @@ def prepare_cases(
     windows_msvc_probe: Path | None = None,
 ) -> list[CorpusCase]:
     """Create deterministic, provenance-labeled PE cases without running them."""
+    # Fail before producing any overlay if the optional compiler input is invalid.
+    if windows_msvc_probe is not None:
+        if not include_windows_executable:
+            raise ValueError("MSVC probe requires the Windows corpus mode")
+        if not windows_msvc_probe.is_file():
+            raise FileNotFoundError(windows_msvc_probe)
     cases: list[CorpusCase] = []
     for name, seed, digest in load_verified_seeds(fixtures):
         arch = name.split("-")[0]
@@ -81,10 +87,6 @@ def prepare_cases(
             None, None, "locally-built-rel-cli",
         ))
     if windows_msvc_probe is not None:
-        if not include_windows_executable:
-            raise ValueError("MSVC probe requires the Windows corpus mode")
-        if not windows_msvc_probe.is_file():
-            raise FileNotFoundError(windows_msvc_probe)
         source = ROOT / "fixtures" / "probes" / "msvc_probe.c"
         source_sha = hashlib.sha256(source.read_bytes()).hexdigest()
         cases.append(CorpusCase(

@@ -30,7 +30,7 @@ Every item requires test evidence before the checkbox is marked complete. ADRs g
 - [ ] Minimize F001 and investigate upstream fix; preserve original input evidence.
 - [ ] Run extended fuzz campaigns and persist new distinct failures.
 - [ ] Establish representative runtime **and memory** benchmarks across complex PE files.
-- [ ] **P1.5-A measurement increment:** observe RSS and CPU on Linux/Windows compiled CLI with a separate, pinned Python profiler; zero-filled PE overlays are not representative complexity ([method](docs/P15_RESOURCE_PROFILING.md), CI pending).
+- [x] **P1.5-A measurement increment:** record sampled RSS, CPU and wall time on Windows/Linux with standalone Python profiler ([PR #19](https://github.com/ELITEAYOTO/REL/pull/19), [CI #39104870706](https://github.com/ELITEAYOTO/REL/actions/runs/39104870706)); representative structure and enforceable CPU/RSS limits **remain open**.
 - [x] Verify initial CLI timing harness on Windows/Linux with uploaded JSON observations ([PR #5](https://github.com/ELITEAYOTO/REL/pull/5), CI 39098808184).
 - [x] **P1.5-A increment:** bounded single-descriptor reader, strict byte cap, observable file-change and path-policy tests ([PR #17](https://github.com/ELITEAYOTO/REL/pull/17), [Windows/Linux CI](https://github.com/ELITEAYOTO/REL/actions/runs/39103698604)).
 - [ ] **P1.5-A remaining:** atomic no-follow path handling, same-length concurrent modifications, stronger Windows/Linux path tests and CPU/RSS/output budgets ([issue #9](https://github.com/ELITEAYOTO/REL/issues/9)).

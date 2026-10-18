@@ -28,3 +28,7 @@ Windows and Ubuntu CI run a short benchmark after the main parser/CLI gates. A b
 - Allocations, CPU/RAM peaks and adversarial worst-case data are not measured here.
 - Zero-filled overlay padding is not a substitute for genuine complex Windows executables.
 - Formal performance budgeting and independent reference samples are still P1.5 tasks.
+
+## Additional structured PE cases (candidate)
+
+Windows CI can measure two more controlled source-built PE32+ files using independent MSVC and Clang-cl frontends plus a shared RC asset. A separate pinned pefile oracle checks RCDATA and DIR64 relocation entries without executing them. In the benchmark output, the two case IDs are `msvc-x64-structured` and `clang-cl-x64-structured`, with independent C/RC source hashes. These increase structural variety but still do not define representative CPU/RAM performance or license-cleared redistribution rights. See [corpus provenance](security/P15A_CORPUS_PROVENANCE.md).

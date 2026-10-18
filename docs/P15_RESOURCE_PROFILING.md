@@ -47,3 +47,7 @@ Windows binary: `target/release/rel-inspect.exe`. Output-file creation refuses s
 5. Keep P1.5-A open until the required enforceable resource controls and path-race concerns are addressed.
 
 See [ROADMAP](../ROADMAP.md), [alpha threats](security/THREAT_MODEL_ALPHA.md), [prior wall-clock benchmarks](P15_BENCHMARKS.md) and [issue #9](https://github.com/ELITEAYOTO/REL/issues/9).
+
+## Structured Windows PE resource/relocation cases (candidate)
+
+When the CI provides the two new source-built Windows PE paths, this profiler includes 11 Windows scenarios rather than 9; Linux remains at 6. The source-built `.rsrc` and `.reloc` inputs are independently checked by pefile and then passed to REL **only as data**. Sampled RSS and CPU are observations, not hard ceilings or a claim that REL semantically decodes resources or relocations. Corpus licensing is unresolved. See [source and rights policy](security/P15A_CORPUS_PROVENANCE.md).

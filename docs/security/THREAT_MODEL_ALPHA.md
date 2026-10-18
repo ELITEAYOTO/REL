@@ -31,3 +31,8 @@ Référence : [ADR-0013](../adr/ADR-0013-vision-evidence-evolution.md).
 ## Gates avant élargissement
 
 Tests de fichiers changeants, symlinks, budgets structurels et RSS/CPU, corpus diversifié, fuzz plus long avec régressions minimisées, modèle d'isolation par OS, politique de confidentialités des sorties et revue de dépendances. Documenter les risques résiduels. Une CI verte est nécessaire mais non suffisante.
+
+
+## Candidate raw-section range check (not yet CI verified)
+
+The PE preflight is being extended to reject non-empty section raw ranges extending past the input bytes. This can stop some malformed section layouts before goblin but does **not** validate all PE structure semantics, cap parser CPU/RSS, eliminate races in file acquisition, or create a sandbox. CI evidence and compatibility on broader legal corpora remain pending; see [P15A_PE_PREFLIGHT](P15A_PE_PREFLIGHT.md).

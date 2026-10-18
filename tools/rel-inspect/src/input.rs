@@ -1,7 +1,7 @@
 //! Bounded, static input acquisition. No parsing or execution belongs here.
 use std::{
     fs::{self, File, Metadata},
-    io::{self, Read},
+    io::{self, Read, Seek},
     path::Path,
 };
 
@@ -73,9 +73,31 @@ pub(crate) fn read_binary(path: &Path) -> io::Result<Vec<u8>> {
     read_open_file(&mut file, &before, MAX_SIZE)
 }
 
+/// Re-read the exact initial byte range through the SAME descriptor.
+/// A second pass catches detectable same-length changes without allocating
+/// another input-sized buffer. This is not a coherent snapshot: a writer may
+/// change bytes between comparisons or restore the previous values.
+fn verify_second_pass(file: &mut File, initial: &[u8]) -> io::Result<()> {
+    file.rewind()?;
+    let mut scratch = [0_u8; 64 * 1024];
+    for original in initial.chunks(scratch.len()) {
+        match file.read_exact(&mut scratch[..original.len()]) {
+            Ok(()) => {}
+            Err(error) if error.kind() == io::ErrorKind::UnexpectedEof => {
+                return Err(invalid("input file changed during verification"));
+            }
+            Err(error) => return Err(error),
+        }
+        if &scratch[..original.len()] != original {
+            return Err(invalid("input file changed during verification"));
+        }
+    }
+    Ok(())
+}
+
 /// Enforce the *actual* bytes read, not only an earlier path-based stat.
-/// The descriptor is opened once. Metadata catches detectable modifications,
-/// but concurrent same-size writes can still produce an inconsistent snapshot.
+/// A second bounded pass detects many same-size modifications on one descriptor
+/// without assuming atomicity or isolating the filesystem from other writers.
 fn read_open_file(file: &mut File, before: &Metadata, limit: u64) -> io::Result<Vec<u8>> {
     if !before.is_file() {
         return Err(invalid("input must be a regular file"));
@@ -90,11 +112,14 @@ fn read_open_file(file: &mut File, before: &Metadata, limit: u64) -> io::Result<
         return Err(invalid("file grew beyond configured input size limit"));
     }
 
+    // The original size/time checks remain, now after BOTH observations.
+    // No new path lookup is performed; both passes use the opened descriptor.
+    verify_second_pass(file, &bytes)?;
+
     let after = file.metadata()?;
     if after.len() != before.len() || after.len() != bytes.len() as u64 {
         return Err(invalid("input file changed size during analysis"));
     }
-
     if let (Ok(start), Ok(end)) = (before.modified(), after.modified()) {
         if start != end {
             return Err(invalid(
@@ -102,7 +127,6 @@ fn read_open_file(file: &mut File, before: &Metadata, limit: u64) -> io::Result<
             ));
         }
     }
-
     Ok(bytes)
 }
 
@@ -129,6 +153,67 @@ mod tests {
         let result = read_binary(&path);
         fs::remove_file(&path).unwrap();
         assert_eq!(result.unwrap(), b"MZ test");
+    }
+
+    #[test]
+    fn second_pass_detects_same_length_content_replacement() {
+        let path = test_path("same-size-replacement");
+        let original = b"0123456789abcdef";
+        fs::write(&path, original).unwrap();
+        let mut reader = File::open(&path).unwrap();
+        let mut first = Vec::new();
+        reader.read_to_end(&mut first).unwrap();
+
+        // Keep exactly the same length; no mtime-resolution assumption.
+        fs::write(&path, b"0123456789ABCDEF").unwrap();
+        assert_eq!(reader.metadata().unwrap().len(), first.len() as u64);
+        let error = verify_second_pass(&mut reader, &first).unwrap_err();
+        assert_eq!(error.kind(), io::ErrorKind::InvalidData);
+        assert!(error.to_string().contains("changed during verification"));
+
+        drop(reader);
+        fs::remove_file(&path).unwrap();
+    }
+
+    #[test]
+    fn second_pass_accepts_identical_bytes_across_multiple_chunks() {
+        let path = test_path("multi-chunk");
+        let mut payload = vec![0_u8; 64 * 1024 * 2 + 17];
+        payload[0] = b'M';
+        payload[64 * 1024] = b'Z';
+        let end = payload.len() - 1;
+        payload[end] = b'!';
+        fs::write(&path, &payload).unwrap();
+        let mut reader = File::open(&path).unwrap();
+        verify_second_pass(&mut reader, &payload).unwrap();
+        drop(reader);
+        assert_eq!(read_binary(&path).unwrap(), payload);
+        fs::remove_file(&path).unwrap();
+    }
+
+    #[test]
+    fn second_pass_rejects_truncated_data_without_claiming_snapshot() {
+        let path = test_path("second-pass-truncated");
+        fs::write(&path, b"MZ 12345678").unwrap();
+        let mut reader = File::open(&path).unwrap();
+        fs::OpenOptions::new()
+            .write(true)
+            .open(&path)
+            .unwrap()
+            .set_len(3)
+            .unwrap();
+        let error = verify_second_pass(&mut reader, b"MZ 12345678").unwrap_err();
+        assert_eq!(error.kind(), io::ErrorKind::InvalidData);
+        drop(reader);
+        fs::remove_file(&path).unwrap();
+    }
+
+    #[test]
+    fn second_pass_accepts_empty_regular_file() {
+        let path = test_path("empty");
+        fs::write(&path, b"").unwrap();
+        assert!(read_binary(&path).unwrap().is_empty());
+        fs::remove_file(&path).unwrap();
     }
 
     #[test]

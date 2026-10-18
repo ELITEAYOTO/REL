@@ -59,7 +59,7 @@ Read [AGENTS.md](AGENTS.md), [architecture](docs/ARCHITECTURE.md), [frozen decis
 
 ## Alpha input policy (P1.5-A bounded reader verified)
 
-The standalone CLI now uses a focused input-reading module with an actual-read cap of 512 MiB and rejects symlinks/non-regular paths; it still cannot guarantee a coherent snapshot if a file is modified while read. See [bounded input security notes](docs/security/P15A_BOUNDED_INPUT.md). This is **not** a general sandbox or overall RAM/CPU budget. The reader's unit and CLI integration gates passed [Windows/Linux CI #39103698604](https://github.com/ELITEAYOTO/REL/actions/runs/39103698604).
+The standalone CLI uses a focused input-reading module with an actual-read cap of 512 MiB and rejects symlinks/non-regular paths. A second bounded pass over the same opened descriptor can detect additional same-size modifications at the cost of another file read. It **still cannot guarantee a coherent atomic snapshot** if a file is modified while read. See [bounded input security notes](docs/security/P15A_BOUNDED_INPUT.md). This is **not** a general sandbox or overall RAM/CPU budget. The reader's unit and CLI integration gates passed [Windows/Linux CI #39103698604](https://github.com/ELITEAYOTO/REL/actions/runs/39103698604).
 
 ## Alpha JSON output policy (P1.5-A, verified on Windows/Linux)
 

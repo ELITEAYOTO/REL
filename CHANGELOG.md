@@ -2,6 +2,14 @@
 
 ## [Unreleased] — 2026-10-18
 
+### P1.5-A — Paired measurement host/toolchain fingerprint (candidate; CI pending)
+
+- Add `scripts/measurement_environment.py`, a shared low-volatility fingerprint of the CI run identity, reported CPU model and logical/physical/affinity counts, reported total host RAM, OS/kernel, Python, psutil, rustc/cargo versions and exact REL executable SHA-256. Both reports record this context before measuring cases.
+- The independent paired-evidence gate rejects missing/invalid context, mismatched runner/run attempt/CPU/compiler or analyzer fingerprints, even when the Git SHA and corpus match. Adds 6 hardware/context tests and 4 new negative evidence regressions. CI pins psutil before all tests/benchmarks.
+- These fields are observations, not an attested hardware identity, pinned image/toolchain, cgroup memory quota, stable benchmark baseline, process-tree limit or evidence of safe hostile-input isolation. No native binary-manifest v1.0.0 change.
+
+
+
 ### P1.5-A — Paired CLI/resource measurement evidence gate (PR CI verified)
 
 - New independent `scripts/check_measurement_evidence.py` matches the existing timing and sampled RSS/CPU reports by case ID, exact input SHA-256 and size, source/licensing metadata, runner OS/machine and commit; rejects inconsistent sample counts, nonfinite/negative metrics, corrupt aggregate medians/p95 and sampled maxima.

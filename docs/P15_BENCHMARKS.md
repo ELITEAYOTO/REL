@@ -36,3 +36,7 @@ Windows CI can measure two more controlled source-built PE32+ files using indepe
 ## Paired timing/resource quality check (PR CI verified)
 
 CI cross-checks the five timing observations for each benchmark case against the corresponding sampled-resource case of the same OS job. The independent `rel-measurement-evidence-v1` output checks manifest identity, sample consistency and aggregate median/p95, and reports the **relative spread within the timing sample** `(max - min) / median`. This is an observational quality indicator, not a performance threshold or a reliable cross-run speed-up estimate. See [resource evidence policy](P15_RESOURCE_PROFILING.md).
+
+## Measurement host and analyzer identity (candidate)
+
+The CLI benchmark records the same `measurement_context` and its canonical SHA-256 as the resource profiler, including observed CPU/OS/runner/toolchain fields and the exact analyzed **REL CLI** executable hash. The paired QA gate checks equality and rejects report combinations from separate hosted jobs. This fingerprint is an observation and not a guarantee of hardware identity, an approved cross-run comparison or a wall/CPU/RAM performance threshold. See [resource measurement scope](P15_RESOURCE_PROFILING.md).

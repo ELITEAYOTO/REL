@@ -4,6 +4,7 @@
  */
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#pragma comment(lib, "kernel32.lib")
 
 static const wchar_t rel_probe_label[] = L"REL static PE corpus - MSVC x64";
 

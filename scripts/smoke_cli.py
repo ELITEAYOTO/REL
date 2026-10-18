@@ -57,6 +57,19 @@ def main() -> None:
         assert first.returncode == 0, first.stderr
         second = call(binary, "analyze", str(source), "--output", str(destination))
         assert second.returncode != 0, "existing reports must not be silently overwritten"
+        assert sorted(path.name for path in Path(directory).iterdir()) == ["result.json"], (
+            "report publication must clean temporary names after collision"
+        )
+        assert json.loads(destination.read_text(encoding="utf-8"))["binary_sha256"] == expected[
+            "pe64-basic.exe"
+        ]["sha256"]
+
+        # Publishing through a hard link must not replace an existing directory.
+        occupied = Path(directory) / "occupied"
+        occupied.mkdir()
+        failed = call(binary, "analyze", str(source), "--output", str(occupied))
+        assert failed.returncode != 0 and occupied.is_dir()
+        assert not any(p.name.startswith(".rel-inspect-") for p in Path(directory).iterdir())
         assert json.loads(destination.read_text(encoding="utf-8"))["binary_sha256"] == expected[
             "pe64-basic.exe"
         ]["sha256"]

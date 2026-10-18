@@ -20,9 +20,9 @@ Requirements: Rust 1.85.1 (see `rust-toolchain.toml`), Cargo, Python 3 with `jso
 
 ```bash
 cargo fmt --all -- --check
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace --all-targets
-cargo build --release -p rel-inspect
+cargo clippy --locked --workspace --all-targets -- -D warnings
+cargo test --locked --workspace --all-targets
+cargo build --locked --release -p rel-inspect
 python -m pip install "jsonschema>=4,<5"
 python scripts/smoke_cli.py --binary target/release/rel-inspect
 ```
@@ -50,7 +50,7 @@ Read [AGENTS.md](AGENTS.md), [architecture](docs/ARCHITECTURE.md), [frozen decis
 ## Project maturity / risks
 
 - Two synthetic fixtures are insufficient to infer quality on complex modern Windows binaries.
-- Fuzzing, property testing, PE edge-case coverage, performance measurements and versioned `Cargo.lock` are P1.5 work.
+- Dependency resolution is pinned by committed `Cargo.lock`. Fuzzing, property testing, PE edge-case coverage and performance measurements remain P1.5 work.
 - `goblin` is a provisional parser adapter, not a permanent lock-in; switching requires measured reasons and an ADR.
 - No source license selected: do not assume redistribution rights for third-party code/binaries.
 

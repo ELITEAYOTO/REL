@@ -34,4 +34,4 @@ Demonstrated bug, security risk, untestable coupling, repeated stable concept, m
 - Every release requires a versioned changelog, toolchain lock/pin and recorded CI evidence.
 - Exceptions to hard limits must document path, owner, technical reason, compensating tests and expiry/review date.
 
-`Cargo.lock` and broader input fuzzing are P1.5 work, not previously completed.
+`Cargo.lock` is tracked and CI enforces `--locked`. P1.5 deterministic mutation tests are verified, but coverage-guided fuzzing, memory benchmarking and a broader corpus are not yet complete.

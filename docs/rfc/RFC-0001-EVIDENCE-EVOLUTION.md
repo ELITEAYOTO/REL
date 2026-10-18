@@ -1,12 +1,12 @@
 # RFC-0001 — REL Evidence & Evolution Engine
 
-**Status:** PROPOSED — non adopté, non implémenté.  
+**Status:** ADOPTÉ POUR LA VISION PRODUIT, avec amendements [ADR-0013](../adr/ADR-0013-vision-evidence-evolution.md) ; les modules envisagés restent NON IMPLÉMENTÉS.  
 **Date:** 2026-10-18  
 **Nature:** cadrage produit/architecture, aucun changement de contrat ou de roadmap accepté par ce document.  
 **Repository:** https://github.com/ELITEAYOTO/REL  
 **Baseline examinée:** branche main au merge de la PR #10, commit 2ee47efca4668da1016041bf377ad517c8da488b.
 
-> This RFC is deliberately **non-normative** until an explicit decision/ADR accepts an implementation milestone. Existing decisions in docs/governance/DECISIONS_FIGEES.md, AGENTS.md and ROADMAP.md take precedence. A future assistant must not treat a design hypothesis as a shipped feature.
+> **Décision du 18/10/2026 :** la direction générale et la séquence expérimentale sont acceptées via [ADR-0013](../adr/ADR-0013-vision-evidence-evolution.md). Les exemples de ce document restent des **propositions**, pas des contrats ou fonctionnalités livrées. En cas de divergence, ADR-0013, ROADMAP, AGENTS et DECISIONS_FIGEES priment. Ne jamais confondre vision et code testé.
 
 ## 1. Résumé exécutif
 
@@ -333,3 +333,16 @@ Ne jamais déclarer gate COMPLETED seulement parce que le code compile. Chaque g
 ---
 
 **Decision record:** This is an architecture and product research proposal only. The next step is to review it, choose a narrow acceptance experiment, and create a dedicated implementation ADR/issue/PR. No claims of implemented functionality, production safety, unique invention or measured market superiority arise from this document.
+
+
+## 16. Décision et amendements approuvés (18/10/2026)
+
+1. **REL reste une plateforme de reverse engineering complète** ; Evidence & Evolution est son approche de vérification, non une réduction à un scanner d'imports ou à la conformité.
+2. **Ordre formalisé** : durcissement critique P1.5-A, EX-01 contrat minimal de couverture/provenance, EX-02 diff de métadonnées PE **avant P2 Ghidra**, puis P3 matching de fonctions. La robustesse P1.5-B continue, sans blocage inutile d'expériences sur corpus contrôlé.
+3. **Manifest v1.0.0 inchangé**. Les enrichissements d'observations, diagnostics et états sont expérimentaux, versionnés séparément et conditionnés à des tests.
+4. Pas de multiplication artificielle de crates ni d'UI, de graphe, de moteur IA ou de WASM sans preuve de besoin.
+5. Entrées hostiles arbitraires : pas de prétention de sûreté sans budgets, isolation OS testée et corpus représentatif.
+6. Les affirmations négatives exigent un domaine et une couverture vérifiés ; absence d'import ≠ impossibilité de comportement.
+7. La licence de la source reste à définir après inventaire de dépendances et stratégie de contributions.
+
+Documents normatifs : [ADR-0013](../adr/ADR-0013-vision-evidence-evolution.md), [gates](../governance/STRATEGY_AND_GATES.md), [EX-01](../specs/OBSERVATION_ENVELOPE_DRAFT.md), [EX-02](../specs/METADATA_DIFF_PILOT.md), [modèle de menace](../security/THREAT_MODEL_ALPHA.md).

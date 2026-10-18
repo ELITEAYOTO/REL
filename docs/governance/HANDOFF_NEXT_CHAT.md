@@ -19,9 +19,9 @@
 ## Immediate priorities
 1. Cargo.lock is now tracked; keep it updated only with deliberate dependency changes and green `--locked` CI.
 2. Expand reference corpus beyond synthetic fixtures and the CI-built REL Windows executable; verify each source/license.
-3. Add **coverage-guided** fuzzing and persisted minimized crash regressions; deterministic mutations are already present.
+3. Maintain already-implemented **bounded coverage-guided** fuzzing (PR #10), pin fuzz-nightly toolchain/dependencies, extend campaigns and keep F001 original regression.
 4. Extend benchmarks to diverse PE complexity, peak memory, and repeatable local baselines; CLI wall-clock measurements are already present.
-5. Only then start a separate Ghidra adapter in Python (P2).
+5. Per accepted ADR-0013, after critical P1.5-A gates, build EX-01 experimental evidence/coverage contract then EX-02 metadata-only PE diff before a separate Ghidra adapter (P2). Do not conflate EX-02 with P3 function matching.
 
 ## Nonnegotiable distinctions
 - VERIFIED: directly observed code/test/CI result.
@@ -30,3 +30,14 @@
 - HYPOTHESIS: explicitly labeled and accompanied by validation plan.
 
 Future assistants must not claim these modules exist: source decompiler, version matcher, classifier, emulator or desktop UI. They remain roadmap items.
+
+## Strategic decision from PR #13 (18 October 2026)
+
+- **Accepted:** [RFC-0001](../rfc/RFC-0001-EVIDENCE-EVOLUTION.md) with explicit amendments in [ADR-0013](../adr/ADR-0013-vision-evidence-evolution.md) and [STRATEGY_AND_GATES](STRATEGY_AND_GATES.md).
+- REL continues as a **full reverse-engineering platform**. The Evidence & Evolution approach focuses on source-backed, version-aware, reproducible findings, without reducing product scope.
+- Official milestones: **P1.5-A critical input hardening -> EX-01 minimal observation/coverage contract -> EX-02 PE manifest metadata diff -> P2 Ghidra -> P3 deep matching**. P1.5-B continuous hardening remains incomplete.
+- **NOT BUILT:** EX-01, EX-02, Ghidra, advanced classifier, behavior lab, UI, graph engine. Do not silently mark them complete or change existing v1.0.0 schema.
+- First inspect [EX-01 spec](../specs/OBSERVATION_ENVELOPE_DRAFT.md), [EX-02 spec](../specs/METADATA_DIFF_PILOT.md), [alpha threats](../security/THREAT_MODEL_ALPHA.md) before implementation.
+- Source license is **not yet decided**. Need dependency/license review and a separate deliberate policy decision.
+- F001 preserved and mitigated for the tested goblin 0.10.7 version, not a claim of universal hostile-input safety.
+- LOC/complexity limits remain review triggers, no speculative monolithic refactor.

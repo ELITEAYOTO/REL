@@ -1,4 +1,5 @@
 mod input;
+mod output;
 mod report;
 
 use rel_contracts::{BinaryManifest, MANIFEST_SCHEMA};
@@ -56,14 +57,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             };
             let serialized = report::serialize_manifest(&manifest, report::MAX_REPORT_BYTES)?;
             match output {
-                Some(path) => {
-                    // Refuse implicit overwrite.
-                    let mut file = fs::OpenOptions::new()
-                        .write(true)
-                        .create_new(true)
-                        .open(Path::new(&path))?;
-                    file.write_all(&serialized)?;
-                }
+                Some(path) => output::publish_new_report(Path::new(&path), &serialized)?,
                 None => {
                     io::stdout().write_all(&serialized)?;
                     println!();

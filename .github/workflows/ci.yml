@@ -37,6 +37,11 @@ jobs:
       - name: End-to-end CLI test (Linux)
         if: runner.os == 'Linux'
         run: python scripts/smoke_cli.py --binary target/release/rel-inspect
+      - name: Independent Windows PE oracle
+        if: runner.os == 'Windows'
+        run: |
+          python -m pip install pefile==2024.8.26
+          python scripts/check_windows_pe_oracle.py --binary target/release/rel-inspect.exe
       - name: Benchmark CLI (Windows)
         if: runner.os == 'Windows'
         run: python scripts/benchmark_cli.py --binary target/release/rel-inspect.exe --samples 5 --warmup 1 --output rel-benchmark.json

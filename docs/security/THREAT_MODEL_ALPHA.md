@@ -14,7 +14,7 @@ Référence : [ADR-0013](../adr/ADR-0013-vision-evidence-evolution.md).
 
 | Risque | Situation vérifiée | Actions requises |
 | --- | --- | --- |
-| Lecture et course fichier | Ancien `metadata` puis `read` remplacé par une lecture bornée sur descripteur unique (PR P1.5-A, validation CI pending) ; pré-ouverture `symlink_metadata` non atomique | protéger races d'ouverture, modifications concurrentes de même taille, chemins spéciaux et RSS total ; voir [P15A_BOUNDED_INPUT](P15A_BOUNDED_INPUT.md) |
+| Lecture et course fichier | Ancien `metadata` puis `read` remplacé par une lecture bornée sur descripteur unique ([PR #17](https://github.com/ELITEAYOTO/REL/pull/17), [CI #39103698604](https://github.com/ELITEAYOTO/REL/actions/runs/39103698604) verified) ; pré-ouverture `symlink_metadata` non atomique | protéger races d'ouverture, modifications concurrentes de même taille, chemins spéciaux et RSS total ; voir [P15A_BOUNDED_INPUT](P15A_BOUNDED_INPUT.md) |
 | Coût disproportionné | petite entrée peut causer un parsing très coûteux | plafonds de structures/temps/mémoire/sortie et mesures réelles |
 | Panic tiers | ancien F001 `goblin 0.9.3`, reproducer conservé | version 0.10.7 verrouillée et fuzz ; `catch_unwind` ≠ sandbox |
 | Exécution | P1 ne lance aucun EXE soumis | préserver statique par défaut ; futures expériences dynamiques opt-in isolées |

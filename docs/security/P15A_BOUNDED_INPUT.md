@@ -1,6 +1,6 @@
 # P1.5-A — Bounded input acquisition
 
-**Status: implementation submitted, cross-platform verification pending.**  
+**Status: bounded-input increment VERIFIED on controlled tests (PR #17, CI #39103698604); P1.5-A remains INCOMPLETE.**  
 Scope: `tools/rel-inspect/src/input.rs` only. The PE parser, CLI JSON contract v1.0.0 and dependency versions are unchanged.
 
 ## The original issue
@@ -31,6 +31,10 @@ Previously, the CLI performed a path-based `fs::metadata` followed by `fs::read`
 - The 512 MiB limit bounds raw input bytes read, **not** peak RSS of parsing/allocations, CPU time, output volume or IO latency. `Read::take` does not cap wall-clock time.
 - `catch_unwind` is not a security boundary, and adding this reader does not authorize arbitrary hostile input. Process isolation and OS budgets remain P1.5 work.
 - Symbolic links are deliberately rejected for this alpha release; this may change only through a deliberate compatibility/security decision.
+
+## Verified CI evidence
+
+[GitHub Actions 39103698604](https://github.com/ELITEAYOTO/REL/actions/runs/39103698604) passed on both Ubuntu and Windows, including the new Rust input reader tests, existing PE fixtures, F001 regression, CLI smoke tests and Windows PE oracle. This confirms only the specified tests on those systems, not immunity to concurrent adversarial file replacement.
 
 ## Future gates
 

@@ -2,6 +2,8 @@
 
 #[cfg(unix)]
 mod unix_open;
+#[cfg(windows)]
+mod windows_path;
 use std::{
     fs::{self, File, Metadata},
     io::{self, Read, Seek},
@@ -19,7 +21,8 @@ fn invalid(message: &'static str) -> io::Error {
 /// a nonblocking leaf open avoids hanging on a swapped-in FIFO.
 /// On Windows, open the final reparse point itself, reject the handle,
 /// and share only read access for the lifetime of the descriptor.
-/// Ancestor symlinks, special devices and concurrent writes remain out of scope.
+/// Parent reparse checks are separate path lookups, not atomic with this open;
+/// special devices and concurrent same-inode writes remain out of scope.
 fn open_candidate(path: &Path) -> io::Result<File> {
     #[cfg(unix)]
     {
@@ -70,6 +73,8 @@ fn verify_preopen_identity(preflight: &Metadata, opened: &Metadata) -> io::Resul
 /// at open time on Unix and Windows. Unix additionally rejects ancestor
 /// symlinks and detects regular-file swaps. This is not a sandbox.
 pub(crate) fn read_binary(path: &Path) -> io::Result<Vec<u8>> {
+    #[cfg(windows)]
+    windows_path::reject_reparse_ancestors(path)?;
     let preflight = fs::symlink_metadata(path)?;
     if !preflight.file_type().is_file() {
         return Err(invalid(
@@ -81,6 +86,8 @@ pub(crate) fn read_binary(path: &Path) -> io::Result<Vec<u8>> {
     let before = file.metadata()?;
     #[cfg(unix)]
     verify_preopen_identity(&preflight, &before)?;
+    #[cfg(windows)]
+    windows_path::reject_reparse_ancestors(path)?;
     read_open_file(&mut file, &before, MAX_SIZE)
 }
 

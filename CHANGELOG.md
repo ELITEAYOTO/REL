@@ -2,6 +2,14 @@
 
 ## [Unreleased] — 2026-10-18
 
+### P1.5-A — Windows input read-sharing (candidate, CI pending)
+
+- Open Windows candidate files with `FILE_SHARE_READ` only, keeping the final-component reparse guard and descriptor-based bounded acquisition.
+- Add tests for simultaneous readers, rejecting concurrent writers, refusing REL input open while a writer already owns the file, and reopening a writer after reader close.
+- Windows-only compatibility impact: some live files become unavailable while another writer is active. No new dependency, public manifest v1.0.0 change, OS sandbox, coherent snapshot or CPU/RSS hard limit.
+
+
+
 ### P1.5-A — Windows final-component reparse-point opening (PR CI verified)
 
 - Windows CLI opens the final input path component without following reparse points, rejects reparse attributes from the opened descriptor and preserves the 512 MiB cap.

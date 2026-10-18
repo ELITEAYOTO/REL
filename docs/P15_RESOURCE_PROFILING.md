@@ -77,7 +77,7 @@ The `measurement_context_sha256` field is a SHA-256 of the **canonical sorted JS
 
 An exact same-job match improves provenance of **paired** existing data, not comparability of independently collected CI runs, reproducibility of binary bytes, statistical confidence, true RSS peaks, total CPU accounting or a production safe resource limit. Retain the current 11 Windows / 6 Linux controlled scenarios and missing RSS/CPU flags; calibrating budgets still requires repeated fixed-hardware tests.
 
-## Independent campaign comparison (CI candidate)
+## Independent campaign comparison (PR CI verified)
 
 A separate offline `scripts/compare_measurement_campaigns.py` consumes **two complete** per-OS benchmark+resource pairs, validates each with the paired-evidence gate, then compares their source and host/toolchain provenance. It excludes only the unique GitHub run ID and attempt from cross-campaign hardware-context equality; those identities must nevertheless be recorded and distinct. It does not compare RSS/CPU maxima, infer repeatability or execute binaries.
 

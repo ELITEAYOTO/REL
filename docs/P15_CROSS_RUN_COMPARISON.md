@@ -1,6 +1,6 @@
 # P1.5-A — Comparison of independent measurement campaigns
 
-**Status:** experimental *offline* comparison of existing CI measurement JSON; real-world stability and representative performance thresholds remain **unverified**. No compiled PE is executed.
+**Status:** offline comparison and refusal logic verified by [Windows/Linux CI #39162247353](https://github.com/ELITEAYOTO/REL/actions/runs/39162247353) and [CI #39162250970](https://github.com/ELITEAYOTO/REL/actions/runs/39162250970) on Windows/Linux, with 10 synthetic tests. Real-world stability and representative performance thresholds remain **unverified**; post-merge main CI still required. No compiled PE is executed.
 
 ## Why a new check is required
 

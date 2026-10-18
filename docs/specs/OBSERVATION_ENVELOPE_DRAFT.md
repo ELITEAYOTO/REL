@@ -30,3 +30,30 @@ Le v1 contient `imports: Vec<String>`, `exports: Vec<String>`, `warnings: Vec<St
 ## Conditions d'acceptation
 
 Schéma indépendant sous `contracts/experimental/` avec golden examples `present, absent_in_scope, partial, failed, unsupported`; tests JSON Schema invalides, champs incohérents, offset hors bornes, configurations/version, déterminisme et compatibilité v1. Une PR de contrat ne rend pas ce moteur fonctionnel tant qu'aucun extracteur ne peut produire ses observations fiables.
+
+## First contract-only prototype (candidate, Windows/Linux CI pending)
+
+The separate `contracts/experimental/observation-envelope.schema.json` uses
+`0.1.0-experimental`. Its validator is
+`scripts/validate_observation_envelope.py`. Five synthetic/controlled
+examples in `fixtures/experimental/observation/` exercise present,
+absent-in-scope, partial, failed and unsupported; this is **not** a
+real extractor or production evidence source. `pe.dos_magic` is used
+instead of inventing detailed import offsets from v1.
+
+Cross-field checks reject file-offset ranges beyond subject size; evidence
+whose subject hash differs; dangling or duplicated IDs; present claims
+without raw+normalized values or referenced evidence; absence unless
+scope is complete; and failure states without diagnostic records.
+RVA and VA are explicitly **not** compared to `size_bytes`, because
+virtual address spaces cannot be bounded by file length alone.
+These checks establish report *well-formedness*, not proof that its
+producer observed the alleged bytes. No wall clock, local input path,
+proprietary binary dump or potentially meaningless confidence percentage
+is included by default.
+
+Next work: derive reproducible run IDs from producer configuration,
+create an actual extraction consumer with deliberate coverage rules,
+test evaluator/producer correspondence, evaluate mixed/overlapping
+domains and ordinal/delay-import information without reconstructing
+facts lost by v1. Preserve critical P1.5-A work and issue #9.

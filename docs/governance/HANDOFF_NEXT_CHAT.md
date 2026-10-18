@@ -169,3 +169,18 @@ Branch `fix/p15a-second-pass-input-check` updates `tools/rel-inspect/src/input.r
 [PR #47](https://github.com/ELITEAYOTO/REL/pull/47) merged as [`f26b34d`](https://github.com/ELITEAYOTO/REL/commit/f26b34d557e5bd892a7855bc253a6b07880c9709). The allocation-free preflight check `crates/rel-pe/src/preflight/directories.rs` rejects `NumberOfRvaAndSizes` that claims more 8-byte records than fit in the optional header. Earlier code checked only the first one/two slots. Exact-capacity and over-capacity regressions exercise PE32 and PE32+, plus a public `rel_pe::inspect` failure; Windows job logs showed the new tests as `ok`. [Final PR CI #39173751519](https://github.com/ELITEAYOTO/REL/actions/runs/39173751519), [bounded fuzz CI #39173751518](https://github.com/ELITEAYOTO/REL/actions/runs/39173751518) and [post-merge main #39173973900](https://github.com/ELITEAYOTO/REL/actions/runs/39173973900) succeeded on their respective environments. No parser, ABI, manifest v1.0.0 or dependency change.
 
 **Scope:** declaration inconsistency only, not an import-thunk bound, parse-time CPU/RSS isolation, universal PE validation or arbitrary hostile-binary sandbox. Preserve the existing roadmap order P1.5 critical → EX-01 → EX-02, and leave [issue #9](https://github.com/ELITEAYOTO/REL/issues/9) open.
+
+## Current candidate: EX-01 experimental envelope schema and validator (PR pending CI)
+
+Branch `feat/ex01-experimental-envelope-contract` introduces a separate
+`contracts/experimental/observation-envelope.schema.json` (version
+`0.1.0-experimental`), `scripts/validate_observation_envelope.py`,
+five examples with the verified synthetic PE32 fixture identity and
+negative semantics tests. The Python validator checks JSON Schema and
+cross-field integrity (file-offset bounds, evidence references/identity,
+coverage scope, diagnostics). Both Windows/Linux CI paths run the new
+test stage. **This does not implement an EX-01 producer, a decompiler,
+or an import-absence inference**; `binary-manifest v1.0.0` remains
+unchanged. Verify the final PR-head and post-merge `main` CI before
+claiming this contract pilot is integrated. Overall P1.5-A, EX-01,
+EX-02, Ghidra and P3 remain open.

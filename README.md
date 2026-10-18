@@ -6,6 +6,17 @@ A **modular, reproducible, offline-first reverse-engineering platform** for auth
 
 **Current status (2026-10-18): P1 alpha validated; P1.5 partial hardening verified (mutation regression, cross-platform CLI timings, independent Windows PE oracle, and bounded libFuzzer smoke after upgrading goblin). Not production-hardened.** The original [CI run](https://github.com/ELITEAYOTO/REL/actions/runs/39096882395) passed on Ubuntu and Windows. P1.5 evidence is recorded in [CHANGELOG](CHANGELOG.md). See [P1 evidence](docs/P1_VALIDATION.md).
 
+## Experimental EX-01 observation contract (prototype only)
+
+An independent `contracts/experimental/observation-envelope.schema.json` and validation script now describe *scoped observations* with explicit coverage/uncertainty and bounded file-offset evidence. To validate a controlled example after installing the existing CI `jsonschema>=4,<5` dependency:
+
+```sh
+python scripts/validate_observation_envelope.py fixtures/experimental/observation/present.json
+python scripts/test_observation_envelope.py
+```
+
+These hand-authored examples demonstrate contract semantics on an owned synthetic fixture; **REL does not yet generate EX-01 reports or infer that absent imports prove absent capabilities**. The existing CLI still emits only `binary-manifest` v1.0.0. EX-01 remains experimental and not complete. See [scope](docs/specs/OBSERVATION_ENVELOPE_DRAFT.md).
+
 ## Existing modules
 
 | Crate | Responsibilities |

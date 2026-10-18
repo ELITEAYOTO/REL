@@ -2,8 +2,9 @@
 """Opt-in REL CLI watchdog; this runs the analyzer, never the inspected PE.
 
 It kills the direct child after a wall-time breach and checks sampled RSS.
-On Linux, an optional RLIMIT_AS limit constrains virtual address space at exec.
-It is not a resident-memory or process-tree limit, nor a sandbox.
+On Linux, optional RLIMIT_AS and RLIMIT_CPU constrain virtual address space
+and per-process CPU time before exec. These are not resident-memory or
+process-tree limits, nor a sandbox.
 """
 from __future__ import annotations
 
@@ -40,6 +41,7 @@ def supervise(
     wall_seconds: float,
     max_sampled_rss_bytes: int,
     max_address_space_bytes: int | None = None,
+    max_cpu_seconds: int | None = None,
     max_job_memory_bytes: int | None = None,
     poll_seconds: float = POLL_SECONDS,
     max_stdout_bytes: int = MAX_STDOUT_BYTES,
@@ -57,22 +59,33 @@ def supervise(
             raise ValueError("Windows Job Object budget requires Windows")
 
     child_options = {}
-    if max_address_space_bytes is not None:
-        if max_address_space_bytes <= 0:
-            raise ValueError("address-space limit must be positive")
+    if max_address_space_bytes is not None or max_cpu_seconds is not None:
         if not sys.platform.startswith("linux"):
-            raise ValueError("RLIMIT_AS option requires Linux")
+            if max_address_space_bytes is not None:
+                raise ValueError("RLIMIT_AS option requires Linux")
+            raise ValueError("RLIMIT_CPU option requires Linux")
+        if max_address_space_bytes is not None and max_address_space_bytes <= 0:
+            raise ValueError("address-space limit must be positive")
+        if max_cpu_seconds is not None and not 1 <= max_cpu_seconds <= 300:
+            raise ValueError("CPU-time limit must be between 1 and 300 seconds")
         import resource
 
-        # Applied by the kernel to the direct child BEFORE exec. preexec_fn
+        # Set both kernel limits on the direct child BEFORE exec. preexec_fn
         # is used only in this intentionally single-threaded CLI wrapper.
-        def apply_address_space_limit() -> None:
-            resource.setrlimit(
-                resource.RLIMIT_AS,
-                (max_address_space_bytes, max_address_space_bytes),
-            )
+        def apply_linux_limits() -> None:
+            if max_address_space_bytes is not None:
+                resource.setrlimit(
+                    resource.RLIMIT_AS,
+                    (max_address_space_bytes, max_address_space_bytes),
+                )
+            if max_cpu_seconds is not None:
+                # SIGXCPU is delivered at the soft boundary; the hard
+                # boundary stops a child that catches/ignores SIGXCPU.
+                resource.setrlimit(
+                    resource.RLIMIT_CPU, (max_cpu_seconds, max_cpu_seconds + 1)
+                )
 
-        child_options["preexec_fn"] = apply_address_space_limit
+        child_options["preexec_fn"] = apply_linux_limits
 
     with tempfile.TemporaryFile() as stdout, tempfile.TemporaryFile() as stderr:
         child = None
@@ -147,6 +160,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--max-job-memory-mib", type=int,
         help="Windows only: aggregate Job Object memory commit cap (MiB)",
     )
+    parser.add_argument(
+        "--max-cpu-seconds", type=int,
+        help="Linux only: optional per-process kernel RLIMIT_CPU budget (seconds)",
+    )
     args = parser.parse_args(argv)
     if not 0 < args.wall_seconds <= 600:
         parser.error("--wall-seconds must be > 0 and <= 600")
@@ -158,6 +175,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         if not 128 <= args.max_address_space_mib <= 8192:
             parser.error("--max-address-space-mib must be between 128 and 8192")
 
+    if args.max_cpu_seconds is not None:
+        if not sys.platform.startswith("linux"):
+            parser.error("--max-cpu-seconds is supported only on Linux")
+        if not 1 <= args.max_cpu_seconds <= 300:
+            parser.error("--max-cpu-seconds must be between 1 and 300")
     if args.max_job_memory_mib is not None:
         if os.name != "nt":
             parser.error("--max-job-memory-mib is supported only on Windows")
@@ -178,6 +200,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 args.max_job_memory_mib * 1024 * 1024
                 if args.max_job_memory_mib is not None else None
             ),
+            max_cpu_seconds=args.max_cpu_seconds,
         )
     except LimitExceeded as error:
         print(f"rel-watchdog: {error}", file=sys.stderr)

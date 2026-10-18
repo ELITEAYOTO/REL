@@ -61,3 +61,8 @@ The optional Python supervisor may install `RLIMIT_AS` in the Linux analyzer chi
 ## Native Windows Job Object watchdog (PR CI verified)
 
 The optional Windows watchdog proposes a Job Object with job-wide committed-memory limit and kill-on-last-handle-close, applied to the analyzer created suspended before it can execute. This is not an RSS bound, CPU-time limit or arbitrary hostile-code sandbox. Child job membership, memory allocation denial, and descendant cleanup were demonstrated by [Windows/Linux PR CI #39151722498](https://github.com/ELITEAYOTO/REL/actions/runs/39151722498). This does not establish complete hostile-process containment. Ancestor job policies, handle duplication and descendants that can break away under other policies remain possible risks. Read [supervisor V0](P15A_SUPERVISOR_V0.md) and keep issue #9 open.
+
+
+## Linux RLIMIT_CPU option (PR CI verified)
+
+The separate opt-in watchdog now requests a Linux **per-process** CPU-time soft/hard `RLIMIT_CPU` before executing the REL analyzer. The kernel can signal/stop a busy process, unlike sampled CPU metrics, but the limit does not cap wall time, multiple descendants' total CPU, memory, disk output or malicious-process behavior. Direct `rel-inspect` and Windows remain unchanged. Kernel-observed CPU limits, SIGXCPU termination, manifest compatibility and both CI platforms were verified on [Windows/Linux CI #39152737826](https://github.com/ELITEAYOTO/REL/actions/runs/39152737826). See [supervisor V0](P15A_SUPERVISOR_V0.md) and issue #9.

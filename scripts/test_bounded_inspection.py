@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import os
+import signal
 import subprocess
 import sys
 import time
@@ -143,6 +144,73 @@ class WatchdogTests(unittest.TestCase):
         self.assertIn(b"supported only on Linux", result.stderr)
         self.assertEqual(result.stdout, b"")
 
+    @unittest.skipUnless(sys.platform.startswith("linux"), "Linux RLIMIT_CPU only")
+    def test_linux_cpu_budget_installed_before_exec_with_address_limit(self) -> None:
+        output = supervise(
+            [
+                sys.executable, "-c",
+                "import resource;"
+                "print(resource.getrlimit(resource.RLIMIT_CPU));"
+                "print(resource.getrlimit(resource.RLIMIT_AS))",
+            ],
+            wall_seconds=8,
+            max_sampled_rss_bytes=256 * 1024 * 1024,
+            max_address_space_bytes=512 * 1024 * 1024,
+            max_cpu_seconds=3,
+        )
+        self.assertEqual(output.splitlines(), [
+            b"(3, 4)",
+            f"({512 * 1024 * 1024}, {512 * 1024 * 1024})".encode(),
+        ])
+
+    @unittest.skipUnless(sys.platform.startswith("linux"), "Linux RLIMIT_CPU only")
+    def test_linux_kernel_interrupts_busy_child_at_cpu_limit(self) -> None:
+        with self.assertRaisesRegex(
+            WorkerFailed, f"status {-signal.SIGXCPU}"
+        ):
+            supervise(
+                [sys.executable, "-c", "while True: pass"],
+                wall_seconds=15,
+                max_sampled_rss_bytes=256 * 1024 * 1024,
+                max_cpu_seconds=1,
+            )
+
+    def test_rejects_native_cpu_budget_on_unsupported_platform(self) -> None:
+        if sys.platform.startswith("linux"):
+            with self.assertRaisesRegex(ValueError, "between 1 and 300"):
+                python_child("print('not launched')", max_cpu_seconds=0)
+        else:
+            with self.assertRaisesRegex(ValueError, "RLIMIT_CPU option requires Linux"):
+                python_child("print('not launched')", max_cpu_seconds=1)
+
+    @unittest.skipUnless(sys.platform.startswith("linux"), "Linux RLIMIT_CPU only")
+    def test_linux_cli_rejects_invalid_cpu_seconds(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable, str(ROOT / "scripts" / "run_bounded_inspection.py"),
+                "--binary", str(BINARY), "--input", str(ROOT / "fixtures/pe64-basic.exe"),
+                "--max-cpu-seconds", "0",
+            ],
+            capture_output=True, check=False, timeout=10,
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn(b"between 1 and 300", result.stderr)
+        self.assertEqual(result.stdout, b"")
+
+    @unittest.skipIf(sys.platform.startswith("linux"), "Linux supports RLIMIT_CPU")
+    def test_nonlinux_cli_rejects_cpu_seconds(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable, str(ROOT / "scripts" / "run_bounded_inspection.py"),
+                "--binary", str(BINARY), "--input", str(ROOT / "fixtures/pe64-basic.exe"),
+                "--max-cpu-seconds", "3",
+            ],
+            capture_output=True, check=False, timeout=10,
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn(b"supported only on Linux", result.stderr)
+        self.assertEqual(result.stdout, b"")
+
     @unittest.skipUnless(os.name == "nt", "Windows Job Objects only")
     def test_windows_job_runs_assigned_child(self) -> None:
         result = supervise(
@@ -234,7 +302,7 @@ class WatchdogTests(unittest.TestCase):
             "--wall-seconds", "30", "--max-sampled-rss-mib", "512",
         ]
         if sys.platform.startswith("linux"):
-            command.extend(["--max-address-space-mib", "2048"])
+            command.extend(["--max-address-space-mib", "2048", "--max-cpu-seconds", "10"])
         if os.name == "nt":
             command.extend(["--max-job-memory-mib", "512"])
         done = subprocess.run(

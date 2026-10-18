@@ -196,7 +196,12 @@ mod tests {
         let path = test_path("second-pass-truncated");
         fs::write(&path, b"MZ 12345678").unwrap();
         let mut reader = File::open(&path).unwrap();
-        fs::OpenOptions::new().write(true).open(&path).unwrap().set_len(3).unwrap();
+        fs::OpenOptions::new()
+            .write(true)
+            .open(&path)
+            .unwrap()
+            .set_len(3)
+            .unwrap();
         let error = verify_second_pass(&mut reader, b"MZ 12345678").unwrap_err();
         assert_eq!(error.kind(), io::ErrorKind::InvalidData);
         drop(reader);

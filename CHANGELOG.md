@@ -2,11 +2,14 @@
 
 ## [Unreleased] — 2026-10-18
 
-### P1.5 — Coverage-guided fuzzing (verification pending)
-- Added independent nightly libFuzzer harness with unchanged synthetic seeds.
-- [Run 39100602574](https://github.com/ELITEAYOTO/REL/actions/runs/39100602574) **FAILED** after revealing third-party goblin 0.9.3 TLS parser panic (F001).
-- Preserved original 1104-byte crashing input, original SHA-256 and regression test.
-- Added a limited catch_unwind boundary around the dependency, recording its limitations. Passing CI on this mitigation remains to be confirmed.
+### P1.5 — Fuzzing and verified TLS regression resolution (bounded)
+
+- Introduced a separate nightly libFuzzer workspace, using unmodified synthetic PE32/PE32+ seeds.
+- **F001 discovered:** [fuzz run 39100602574](https://github.com/ELITEAYOTO/REL/actions/runs/39100602574) failed with an out-of-bounds TLS index panic inside `goblin 0.9.3`. Original 1,104-byte input saved unchanged and SHA-256 documented.
+- A first `catch_unwind` mitigation was **insufficient under libFuzzer's panic strategy**, as demonstrated by the second failed run; this is recorded, not concealed.
+- Updated existing parser dependency to **pinned goblin 0.10.7**, with regenerated root `Cargo.lock` and evidence-based ADR-0012.
+- **Verified:** [fuzz run 39101228893](https://github.com/ELITEAYOTO/REL/actions/runs/39101228893) succeeded: 688,395 instrumented executions over 31 seconds, no detected crash; [standard CI 39101228912](https://github.com/ELITEAYOTO/REL/actions/runs/39101228912) green on Windows and Ubuntu, including saved F001 regression.
+- No claim of comprehensive parser safety. Extended fuzzing, toolchain pinning, sandbox isolation and larger PE corpus remain outstanding.
 
 ### P1.5 — Verified increments, hardening still in progress
 

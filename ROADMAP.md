@@ -25,7 +25,8 @@ Every item requires test evidence before the checkbox is marked complete. ADRs g
 - [ ] Expand corpus: license-verified redistributable PE samples spanning multiple compilers and unusual edge cases.
 - [x] Verify native Windows PE self-inspection against independent pinned `pefile` ([PR #6](https://github.com/ELITEAYOTO/REL/pull/6), CI 39098961562).
 - [x] Run deterministic seeded mutation/truncation regressions against synthetic PE32/PE32+ fixtures ([PR #4](https://github.com/ELITEAYOTO/REL/pull/4), CI 39098578436).
-- [ ] Validate coverage-guided libFuzzer smoke and preserved regression F001 (initial run exposed a real goblin TLS panic; mitigation submitted, CI pending).
+- [x] Validate bounded coverage-guided libFuzzer smoke using the preserved F001 regression and pinned goblin 0.10.7 ([PR #10](https://github.com/ELITEAYOTO/REL/pull/10), fuzz CI 39101228893 and regular CI 39101228912).
+- [ ] Pin fuzz-specific Cargo.lock and nightly compiler, then conduct longer campaigns with coverage trend tracking.
 - [ ] Minimize F001 and investigate upstream fix; preserve original input evidence.
 - [ ] Run extended fuzz campaigns and persist new distinct failures.
 - [ ] Establish representative runtime **and memory** benchmarks across complex PE files.

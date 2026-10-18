@@ -1,28 +1,27 @@
-# F001 — Unwinding dependency panic on malformed PE TLS directory
+# F001 — Malformed PE TLS panic in goblin 0.9.3
 
-**Status:** Confirmed in prior job; REL mitigation pending new CI. **Dependency:** goblin 0.9.3, under `goblin = "0.9"` in Cargo.toml. **Scope:** intentionally malformed synthetic PE, not a real-world executable.
+**Status:** Historical failure verified; the saved reproducer is handled by REL with pinned goblin 0.10.7 in tested configurations. Upstream/root-cause tracking continues under [issue #11](https://github.com/ELITEAYOTO/REL/issues/11).
 
-## Direct evidence
+## Original reproduction (source of truth)
 
-- First coverage-guided run: https://github.com/ELITEAYOTO/REL/actions/runs/39100602574 (failure).
-- Fuzzer reported a Rust panic in `goblin-0.9.3/src/pe/tls.rs:228:35`: `range start index 383194904 out of range for slice of length 1104`.
-- Original crashing input: GitHub Actions artifact `rel-pe-fuzz-artifacts-6039fd910f821381aa93e33a8578bc05e22b2022`, artifact ID `12125854899`.
-- Original input: 1104 bytes; SHA-256 `f65f21c07542483584cf156f1171ef6d02af1ce7168c573da79f8b81b96cc59e`.
-- Preserved unmodified in `fixtures/regressions/goblin-0.9.3-tls-oob.bin`, Git blob `ab7b5e918bce1b89fa1acb2fc65236b6597a981c`.
-- Regression: `crates/rel-pe/tests/fuzz_tls_regression.rs`.
+- [Fuzz run 39100602574](https://github.com/ELITEAYOTO/REL/actions/runs/39100602574) exited in failure with a panic from `goblin-0.9.3/src/pe/tls.rs:228:35`.
+- Panic message: `range start index 383194904 out of range for slice of length 1104`.
+- Original crash artifact: Actions artifact ID `12125854899` (run 39100602574).
+- Original input: **1104 bytes**, SHA-256 `f65f21c07542483584cf156f1171ef6d02af1ce7168c573da79f8b81b96cc59e`.
+- Preserved byte-for-byte at `fixtures/regressions/goblin-0.9.3-tls-oob.bin`; verified Git blob `ab7b5e918bce1b89fa1acb2fc65236b6597a981c`.
+- Permanent regression test: `crates/rel-pe/tests/fuzz_tls_regression.rs` plus CLI negative check.
 
-## Containment (not root-cause fix)
+## Investigated mitigations
 
-REL's `rel-pe::inspect` now calls `goblin::pe::PE::parse` at an explicit `std::panic::catch_unwind` boundary and maps *unwinding* dependency panics to `PeError::DependencyPanic`. The calling CLI will return an error instead of allowing such an unwind to propagate. The Rust panic hook can still print a diagnostic.
+1. A `std::panic::catch_unwind` boundary around `goblin::pe::PE::parse` converts **unwinding** parser panics to `PeError::DependencyPanic` in normal Rust builds. This alone did **not** prevent the sanitizer fuzz process from aborting.
+2. Upstream goblin changelog documents TLS integer overflow/OOB fixes in **0.10.0** (#448) and raw-data correction in **0.10.1** (#473).
+3. REL upgraded the existing adapter (no API contract change) to pinned `goblin 0.10.7` with a regenerated `Cargo.lock`. See [ADR-0012](../adr/ADR-0012-goblin-tls-upgrade.md).
+4. [Fuzz CI 39101228893](https://github.com/ELITEAYOTO/REL/actions/runs/39101228893) succeeded after 688,395 cases; [standard CI 39101228912](https://github.com/ELITEAYOTO/REL/actions/runs/39101228912) passed on Windows and Ubuntu.
 
-This is **not a security boundary** and cannot contain aborting panics, process termination, arbitrary native memory corruption or out-of-memory termination. Future hostile-input processing requires subprocess isolation and resource limits. The underlying `goblin` bug remains until an upstream version is confirmed fixed or the offending field is validated pre-parse.
+## What this does not prove
 
-## Follow-up
+- Absence of other input-triggered goblin bugs, crashes, hangs or exploitability.
+- Effectiveness of `catch_unwind` against aborting panic strategies, memory unsafety, OOM, or subprocess failures.
+- Correctness of PE semantics on arbitrary binaries. The original seed is deliberately malformed.
 
-1. Re-run the exact saved reproducer through the library tests and CLI; verify `Err`, no propagated panic.
-2. Re-run bounded libFuzzer; preserve any distinct crash artifacts.
-3. Check upstream goblin fixes/advisories and test upgrades against the full existing corpus before deciding an ADR.
-4. Minimize the failing input with `cargo fuzz tmin`, if reproducible on a dedicated environment; preserve the original bytes for provenance.
-5. Build proper input isolation (not just catch_unwind) before handling hostile files.
-
-**Do not mark the underlying third-party panic resolved merely because REL returns an error.**
+Follow-up: minimize F001 if useful, pin the fuzz-specific toolchain and lock, extend coverage-guided runs, and add separate process-level isolation for truly hostile binaries.

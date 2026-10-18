@@ -2,7 +2,7 @@
 
 A **modular, reproducible, offline-first** research suite for analyzing binaries that users are authorized to inspect, with future comparison across software versions.
 
-**Current status (2026-10-18): P1 alpha validated; P1.5 partial hardening verified (mutation regression, cross-platform CLI timings, and independent Windows PE oracle). Not production-hardened.** The original [CI run](https://github.com/ELITEAYOTO/REL/actions/runs/39096882395) passed on Ubuntu and Windows. P1.5 evidence is recorded in [CHANGELOG](CHANGELOG.md). See [P1 evidence](docs/P1_VALIDATION.md).
+**Current status (2026-10-18): P1 alpha validated; P1.5 partial hardening verified (mutation regression, cross-platform CLI timings, independent Windows PE oracle, and bounded libFuzzer smoke after upgrading goblin). Not production-hardened.** The original [CI run](https://github.com/ELITEAYOTO/REL/actions/runs/39096882395) passed on Ubuntu and Windows. P1.5 evidence is recorded in [CHANGELOG](CHANGELOG.md). See [P1 evidence](docs/P1_VALIDATION.md).
 
 ## Existing modules
 

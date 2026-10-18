@@ -27,6 +27,9 @@ jobs:
         run: cargo clippy --locked --workspace --all-targets -- -D warnings
       - name: Test
         run: cargo test --locked --workspace --all-targets
+      - name: Windows final-component symlink regression (visible)
+        if: runner.os == 'Windows'
+        run: cargo test --locked -p rel-inspect --bin rel-inspect input::tests::refuses_final_component_symlink_after_preflight_swap -- --nocapture
       - name: Build
         run: cargo build --locked --release --workspace
       - name: JSON Schema validator

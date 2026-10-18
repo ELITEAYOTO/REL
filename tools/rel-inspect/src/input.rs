@@ -277,12 +277,16 @@ mod tests {
                     "a final-component reparse point must not be followed"
                 );
                 assert_eq!(fs::read(&destination).unwrap(), b"MZ target");
+                println!("PASS Windows final-component symlink was created and refused");
                 fs::remove_file(&candidate).unwrap();
             }
             Err(error) => {
                 // Developer Mode/SeCreateSymbolicLinkPrivilege may be unavailable.
-                // Explicitly report the skipped setup, never claim this exercised
-                // symlink rejection on an unprivileged runner.
+                // Require this regression to exercise a real link on hosted CI,
+                // while allowing unsupported local developer environments to skip.
+                if std::env::var_os("GITHUB_ACTIONS").is_some() {
+                    panic!("Windows CI must create a symbolic link for this test: {error}");
+                }
                 println!("SKIP Windows symlink swap scenario: {error}");
             }
         }

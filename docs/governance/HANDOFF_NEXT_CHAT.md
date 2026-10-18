@@ -147,3 +147,7 @@ Branch `fix/p15a-second-pass-input-check` updates `tools/rel-inspect/src/input.r
 ## Current candidate: Unix input identity check (PR pending validation)
 
 Branch `fix/p15a-unix-preopen-file-identity` adds Unix `st_dev/st_ino` equality verification between path preflight and opened-handle metadata and a same-size/same-mtime regular-file swap regression. Windows remains unchanged. No atomic snapshot or ancestor-path confinement is claimed. Check this branch's PR CI, merge state and `main` CI before treating it as validated. Security details: [bounded input](../security/P15A_BOUNDED_INPUT.md).
+
+## Current candidate: Unix no-follow ancestor walk (PR not yet validated)
+
+Branch `fix/p15a-unix-ancestor-nofollow` adds `tools/rel-inspect/src/input/unix_open.rs` for descriptor-relative Unix `openat` traversal that refuses parent and leaf symlinks. Existing input size and double-read limits, Unix `(dev, ino)` and Windows logic are untouched. Three new Unix tests exercise success and rejection paths. CI and eventual post-merge validation must be verified before claims of integration. Compatibility: execute-only ancestor directories may now be rejected; `..` is still accepted and no root-bound sandbox is provided. [Security policy](../security/P15A_BOUNDED_INPUT.md).

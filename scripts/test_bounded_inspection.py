@@ -5,9 +5,11 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import subprocess
 import sys
 import time
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -141,6 +143,88 @@ class WatchdogTests(unittest.TestCase):
         self.assertIn(b"supported only on Linux", result.stderr)
         self.assertEqual(result.stdout, b"")
 
+    @unittest.skipUnless(os.name == "nt", "Windows Job Objects only")
+    def test_windows_job_runs_assigned_child(self) -> None:
+        result = supervise(
+            [sys.executable, "-c", "print('assigned before run')"],
+            wall_seconds=5,
+            max_sampled_rss_bytes=512 * 1024 * 1024,
+            max_job_memory_bytes=256 * 1024 * 1024,
+        )
+        self.assertEqual(result.strip(), b"assigned before run")
+
+    @unittest.skipUnless(os.name == "nt", "Windows Job Objects only")
+    def test_windows_job_rejects_oversized_memory_commit(self) -> None:
+        script = (
+            "import sys\n"
+            "try:\n"
+            "    data = bytearray(512 * 1024 * 1024)\n"
+            "except MemoryError:\n"
+            "    sys.exit(73)\n"
+            "sys.exit(0)\n"
+        )
+        # A successful 512 MiB allocation under a 128 MiB job budget
+        # would violate the native job-commit policy.
+        with self.assertRaises(WorkerFailed):
+            supervise(
+                [sys.executable, "-c", script],
+                wall_seconds=5,
+                max_sampled_rss_bytes=1024 * 1024 * 1024,
+                max_job_memory_bytes=128 * 1024 * 1024,
+            )
+
+    @unittest.skipUnless(os.name == "nt", "Windows Job Objects only")
+    def test_windows_job_closing_terminates_descendant(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="rel-job-test-") as folder:
+            ready = Path(folder) / "ready"
+            escaped = Path(folder) / "escaped"
+            descendant = (
+                "import time,pathlib;"
+                "time.sleep(4);"
+                f"pathlib.Path({str(escaped)!r}).write_text('survived')"
+            )
+            parent = (
+                "import pathlib,subprocess,sys,time;"
+                f"subprocess.Popen([sys.executable,'-c',{descendant!r}]);"
+                f"pathlib.Path({str(ready)!r}).write_text('spawned');"
+                "time.sleep(20)"
+            )
+            with self.assertRaises(LimitExceeded) as limit:
+                supervise(
+                    [sys.executable, "-c", parent],
+                    wall_seconds=2.0,
+                    max_sampled_rss_bytes=512 * 1024 * 1024,
+                    max_job_memory_bytes=256 * 1024 * 1024,
+                )
+            self.assertEqual(limit.exception.kind, "wall")
+            self.assertTrue(ready.exists(), "test descendant was never spawned")
+            time.sleep(4.2)
+            self.assertFalse(
+                escaped.exists(), "descendant survived kill-on-close"
+            )
+
+    def test_rejects_native_job_cap_on_unsupported_platform(self) -> None:
+        if os.name != "nt":
+            with self.assertRaisesRegex(ValueError, "requires Windows"):
+                python_child("print('never started')", max_job_memory_bytes=1024)
+        else:
+            with self.assertRaisesRegex(ValueError, "positive"):
+                python_child("print('never started')", max_job_memory_bytes=0)
+
+    @unittest.skipUnless(os.name != "nt", "Windows supports this flag")
+    def test_nonwindows_cli_rejects_job_option_before_launch(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable, str(ROOT / "scripts" / "run_bounded_inspection.py"),
+                "--binary", str(BINARY), "--input", str(ROOT / "fixtures/pe64-basic.exe"),
+                "--max-job-memory-mib", "512",
+            ],
+            capture_output=True, check=False, timeout=10,
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn(b"supported only on Windows", result.stderr)
+        self.assertEqual(result.stdout, b"")
+
     def test_real_rel_cli_manifest_preserved(self) -> None:
         self.assertIsNotNone(BINARY)
         fixture = ROOT / "fixtures" / "pe64-basic.exe"
@@ -151,6 +235,8 @@ class WatchdogTests(unittest.TestCase):
         ]
         if sys.platform.startswith("linux"):
             command.extend(["--max-address-space-mib", "2048"])
+        if os.name == "nt":
+            command.extend(["--max-job-memory-mib", "512"])
         done = subprocess.run(
             command,
             capture_output=True,

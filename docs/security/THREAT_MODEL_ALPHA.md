@@ -48,3 +48,7 @@ The CLI now proposes opening the final Windows input component with `FILE_FLAG_O
 ## Windows input read-sharing (PR CI verified)
 
 A small P1.5-A increment asks Windows to share only read access while REL holds its file input descriptor, so ordinary conflicting writer/delete opens fail rather than silently mutating bytes during analysis. This is a compatibility tradeoff on live files and is not a hostile-file sandbox, kernel-verified coherent snapshot, guarantee against memory-mapped writes or CPU/RAM limit. Controlled Windows/Linux CI and regressions passed [Windows/Linux CI #39146872882](https://github.com/ELITEAYOTO/REL/actions/runs/39146872882), but no snapshot or hostile-file guarantee is implied; see [bounded input](P15A_BOUNDED_INPUT.md).
+
+## P1.5-A opt-in direct-child watchdog (candidate CI pending)
+
+The Python wrapper scripts/run_bounded_inspection.py launches REL as one direct child, kills it when wall-clock time exceeds the configured limit, and kills when a polled RSS observation exceeds a threshold. It withholds stdout until a successful exit and bounds the returned JSON bytes. This is **not** a strict OS RAM or CPU budget: fast transient spikes can be missed; child descendants and temp disk usage remain uncontrolled; the native REL CLI still runs without a worker boundary unless explicitly launched through the wrapper. See [supervisor v0](P15A_SUPERVISOR_V0.md).

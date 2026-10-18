@@ -14,7 +14,7 @@ REL previously measured overall CLI wall time on synthetic PE input sizes, not R
 - Launches the child process using `psutil.Popen`; samples the child's RSS and cumulative user+system CPU time at a nominal **2 ms** interval.
 - Uses temporary files for stdout/stderr to prevent pipe deadlocks; checks the resulting manifest's SHA-256 and declared size against the source bytes.
 - Measures elapsed wall time per process; terminates a run that exceeds **30 seconds** and returns an error.
-- Controlled corpus: hash-validated 2 KiB PE32 and PE64 synthetic seeds and zero-filled overlays at 1 MiB and 4 MiB for each architecture. On Windows additionally inspects the locally compiled REL Release EXE. See [corpus provenance](security/P15A_CORPUS_PROVENANCE.md).
+- Controlled corpus: hash-validated 2 KiB PE32 and PE64 synthetic seeds and zero-filled overlays at 1 MiB and 4 MiB for each architecture. On Windows additionally inspects the locally compiled REL Release EXE and the separate CI-built MSVC x64 probe from tracked source. See [corpus provenance](security/P15A_CORPUS_PROVENANCE.md).
 - Performs one warmup and five measured executions per scenario; stores **all measurements**, medians, maximum observed RSS/CPU and environment information.
 - Pins `psutil==7.0.0` **in CI** and uploads `rel-resources.json` as a per-platform artifact. Local use may require installing this version explicitly.
 
@@ -34,7 +34,7 @@ Windows binary: `target/release/rel-inspect.exe`. Output-file creation refuses s
 - `last_sampled_cpu_ms` is not a perfect final process CPU total; short-lived jobs may exit between samples. Process startup, I/O, hashing, parse, and serialization are included.
 - The nominal 2 ms poll cadence is not guaranteed; runner scheduling differs by OS. Report CPU/RSS as observations, **not guaranteed upper bounds**.
 - Hosted GitHub runners vary in hardware/load. Do not draw cross-run speedup conclusions or assert memory safety from these samples.
-- Hash-validated PE32 and PE64 seeds and their zero-filled overlays exercise two architectures, file I/O and hashing, **not** complex import/resource/relocation tables. The CI-built Windows EXE adds one genuine PE but is not a representative corpus.
+- Hash-validated PE32 and PE64 seeds and their zero-filled overlays exercise two architectures, file I/O and hashing, **not** complex import/resource/relocation tables. The CI-built Windows REL EXE and MSVC C probe add two genuine compiler-produced layouts but are not a representative cross-compiler corpus.
 - The profiler's **own** CPU/RSS overhead is not included in child-process memory measurements; it contributes to observed wall time and runner load.
 - The 30-second timeout applies to this profiling harness only. The REL CLI **does not yet enforce its own timeout, RSS ceiling, or process isolation**.
 

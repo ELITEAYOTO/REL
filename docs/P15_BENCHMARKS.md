@@ -4,7 +4,7 @@
 
 `scripts/benchmark_cli.py` measures an **entire invocation** of the compiled `rel-inspect analyze` command, including process creation, reading input, hashing, parsing and JSON printing. The benchmark does not execute the analyzed PE and has no access to Apex or its services.
 
-Controlled fixtures: tracked, SHA-256-verified 2 KiB PE32 and PE64, each with generated zero-filled overlays to reach 1 MiB and 4 MiB; additionally the current CI-compiled Windows REL EXE on Windows. See [provenance policy](security/P15A_CORPUS_PROVENANCE.md). The padded scenarios test file size on hashing/I/O, **not** PE structural complexity. Per-case stable identifiers and origins are included in result JSON. The report validates both input size and SHA-256 returned by the CLI each time.
+Controlled fixtures: tracked, SHA-256-verified 2 KiB PE32 and PE64, each with generated zero-filled overlays to reach 1 MiB and 4 MiB; additionally the current CI-compiled Windows REL EXE and a CI-built MSVC x64 C probe on Windows. See [provenance policy](security/P15A_CORPUS_PROVENANCE.md). The padded scenarios test file size on hashing/I/O, **not** PE structural complexity. The MSVC-built probe has a distinct native compiler layout, imports and exports, but is not a representative compiler corpus. Per-case stable identifiers and origins are included in result JSON. The report validates both input size and SHA-256 returned by the CLI each time.
 
 The script performs two default warmups and nine timed iterations per size, recording every value, the median and a nearest-rank p95. No hard speed target is enforced: hosted CI runner performance varies.
 

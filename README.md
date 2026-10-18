@@ -61,6 +61,10 @@ The standalone CLI now has a **provisional 16 MiB JSON report budget** enforced 
 
 A separate [resource profiler](docs/P15_RESOURCE_PROFILING.md) records observed child-process RSS, CPU time and wall time on synthetic PE samples and on REL's compiled Windows EXE. The profiler uses a 30-second test timeout but **does not impose a production runtime limit**. Sampling cannot establish actual peak memory. [CI #39104870706](https://github.com/ELITEAYOTO/REL/actions/runs/39104870706) passed on Windows/Ubuntu; per-platform JSON observation artifacts were uploaded.
 
+## PE header preflight (P1.5-A, validated on controlled samples)
+
+Before handing an authorized PE to the third-party parser, `rel-pe` now validates minimal header offsets, section count (1–96), optional-header declaration (2–4096 bytes, PE32/PE32+) and the bounds of the section-header table, without allocating. These are conservative alpha compatibility limits, **not** general parsing safety or resource isolation. See [preflight policy and limitations](docs/security/P15A_PE_PREFLIGHT.md); The narrow gate passed [Windows/Linux CI #39105600717](https://github.com/ELITEAYOTO/REL/actions/runs/39105600717) and [libFuzzer #39105600726](https://github.com/ELITEAYOTO/REL/actions/runs/39105600726). Header budgets do **not** constrain downstream parser CPU, allocations or RSS.
+
 ## Project maturity / risks
 
 - Two synthetic fixtures are insufficient to infer quality on complex modern Windows binaries.

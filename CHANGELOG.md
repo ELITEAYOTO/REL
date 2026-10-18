@@ -2,6 +2,14 @@
 
 ## [Unreleased] — 2026-10-18
 
+### P1.5-A — Paired CLI/resource measurement evidence gate (PR CI verified)
+
+- New independent `scripts/check_measurement_evidence.py` matches the existing timing and sampled RSS/CPU reports by case ID, exact input SHA-256 and size, source/licensing metadata, runner OS/machine and commit; rejects inconsistent sample counts, nonfinite/negative metrics, corrupt aggregate medians/p95 and sampled maxima.
+- Emits `rel-measurement-evidence-v1` observations with benchmark wall-spread, RSS/CPU sampling coverage and explicit missing-sample flags, uploaded as a separate per-OS CI artifact. Windows expects 11 cases, Linux 6; fail closed if cases silently disappear.
+- Add cross-platform negative/unit regressions for corrupted evidence and missing samples (12 new tests) with actual paired artifact uploads verified by [Windows/Linux CI #39158995252](https://github.com/ELITEAYOTO/REL/actions/runs/39158995252) and [CI #39158999274](https://github.com/ELITEAYOTO/REL/actions/runs/39158999274), **without declaring an RSS peak, CPU total, stable cross-run baseline or hard performance threshold**. Existing P1.5-A measured inputs and binary-manifest v1.0.0 remain unchanged.
+
+
+
 ### P1.5-A — Source-built structured PE resource/relocation cases (PR CI verified)
 
 - Add a controlled C exported-pointer and RC RCDATA source pair; build ephemeral Windows PE32+ x64 variants with MSVC and Clang-cl using `/DYNAMICBASE /FIXED:NO`.

@@ -51,3 +51,18 @@ See [ROADMAP](../ROADMAP.md), [alpha threats](security/THREAT_MODEL_ALPHA.md), [
 ## Structured Windows PE resource/relocation cases (candidate)
 
 When the CI provides the two new source-built Windows PE paths, this profiler includes 11 Windows scenarios rather than 9; Linux remains at 6. The source-built `.rsrc` and `.reloc` inputs are independently checked by pefile and then passed to REL **only as data**. Sampled RSS and CPU are observations, not hard ceilings or a claim that REL semantically decodes resources or relocations. Corpus licensing is unresolved. See [source and rights policy](security/P15A_CORPUS_PROVENANCE.md).
+
+## Paired measurement evidence gate (PR CI verified)
+
+The separate `scripts/check_measurement_evidence.py` cross-checks the **already generated** `rel-benchmark.json` and `rel-resources.json` of the **same CI OS job**. It requires identical case sets, exact source/binary fingerprints and provenance, consistent sample counts, wall-time medians and maximum sampled resources; it rejects duplicate cases, NaN/infinite values and malformed measurements. It does not call REL and it **never executes the inspected PE**.
+
+Run on the reports generated in the same job:
+
+```bash
+python scripts/test_measurement_evidence.py
+python scripts/check_measurement_evidence.py --benchmark rel-benchmark.json --resources rel-resources.json --expected-cases 6 --output rel-measurement-evidence.json
+```
+
+For Windows use `--expected-cases 11`. Both platforms upload `rel-measurement-evidence.json` as an additional artifact; CI passed [Windows/Linux CI #39158995252](https://github.com/ELITEAYOTO/REL/actions/runs/39158995252) and [CI #39158999274](https://github.com/ELITEAYOTO/REL/actions/runs/39158999274) at the documented PR scope. Post-merge `main` CI must still be verified. The `rel-measurement-evidence-v1` contract is **only a Python QA observation artifact**, not a new REL native binary-manifest schema. It includes per-case `benchmark_relative_wall_spread`, RSS/CPU observed run counts and explicit missing-sample flags. Resource sampling missed during short child lifetimes must remain **missing**, never silently become zero.
+
+Passing these checks only establishes *internal integrity of paired reports from one hosted runner job*. They do **not** calibrate CPU/RAM budgets, quantify true peak RSS, certify final CPU totals, ensure reproducibility across runner images, compare different CPUs fairly or create a sandbox. In particular, spread within five timing samples is descriptive, not a statistically validated performance regression threshold. Fixed-hardware repeated independent runs and licensed structurally diverse PEs remain open.

@@ -1,6 +1,6 @@
 # P1.5-A — Opt-in direct-child watchdog (v0)
 
-**Status: bounded direct-child supervision tested on [Windows/Linux PR CI #39147845060](https://github.com/ELITEAYOTO/REL/actions/runs/39147845060), main integration pending.** This is an optional controlled-input runner, not a sandbox or a hard memory/CPU cap.
+**Status: optional direct-child watchdog integrated on `main` ([Windows/Linux post-merge CI #39148186718](https://github.com/ELITEAYOTO/REL/actions/runs/39148186718)); native Linux cap scoped PR CI verified, merge pending.** This is an optional controlled-input runner, not a sandbox or a hard memory/CPU cap.
 
 ## Scope
 
@@ -40,10 +40,16 @@ The cross-platform suite exercises exact successful stdout bytes, withholding pa
 Keep issue #9 open. See resource profiling, threat model, ADR-0013 and ROADMAP.
 
 
-## Linux native virtual address-space cap (candidate — CI pending)
+## Linux native virtual address-space cap (scoped PR CI verified)
 
 The optional `--max-address-space-mib N` argument (Linux only, `128 <= N <= 8192`) installs a **kernel-enforced RLIMIT_AS soft and hard limit** in the analyzer child *before* `exec` using Python `resource.setrlimit`. Existing watchdog usage stays unchanged unless this new flag is supplied; Windows rejects the flag before spawning the analyzer. The flag limits the child process's **virtual address space**, which includes mapped and reserved address ranges, **not physical RAM/RSS**. On a denied allocation the analyzer may return an ordinary nonzero exit or fail to start; no universal "limit exceeded" status can be deduced from an exit code. The prior sampled RSS guard and wall timeout remain separate checks.
 
-Proposed dedicated Linux tests inspect `resource.getrlimit(RLIMIT_AS)` from the subprocess and cause a Python allocation larger than its enforced limit, expecting `MemoryError`/a known exit status. The standard REL PE64 manifest smoke also runs with a 2048 MiB address-space ceiling on Linux. Existing Windows tests and the ordinary CLI are unaffected.
+The native-cap regressions passed [Windows/Linux PR CI #39149771201](https://github.com/ELITEAYOTO/REL/actions/runs/39149771201) in the controlled Ubuntu job. Dedicated Linux tests inspect `resource.getrlimit(RLIMIT_AS)` from the subprocess and cause a Python allocation larger than its enforced limit, expecting `MemoryError`/a known exit status. The standard REL PE64 manifest smoke also runs with a 2048 MiB address-space ceiling on Linux. Existing Windows tests and the ordinary CLI are unaffected.
 
 This is **not** a cgroup aggregate RAM cap, a strict RSS threshold, a CPU-time limit, process-tree isolation or a sandbox. Each process has its own address-space limit; the test wrapper is single-threaded because Python's `preexec_fn` is unsafe in a multithreaded parent. Settings below a binary's required mappings may cause legitimate failures. Boundaries on other Unix platforms, Windows Job Objects, descendants and disk-output quotas remain future work.
+
+### Reproduce Linux native address-space cap
+
+    python scripts/run_bounded_inspection.py --binary target/release/rel-inspect --input fixtures/pe64-basic.exe --wall-seconds 30 --max-sampled-rss-mib 512 --max-address-space-mib 2048
+
+The added cap is off by default. A too-small virtual-address-space ceiling may cause ordinary analyzer failure rather than a distinguished budget exception; do not present error code 1 as proof of an RSS breach. The effective kernel limit and an intentionally rejected allocation were checked by dedicated Ubuntu tests in [Windows/Linux PR CI #39149771201](https://github.com/ELITEAYOTO/REL/actions/runs/39149771201); this is not a system-wide memory bound.

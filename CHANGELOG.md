@@ -2,11 +2,11 @@
 
 ## [Unreleased] — 2026-10-18
 
-### P1.5-A — Optional Linux RLIMIT_AS native address-space cap (candidate; CI pending)
+### P1.5-A — Optional Linux RLIMIT_AS native address-space cap (scoped PR CI verified)
 
 - Add an opt-in Linux-only `--max-address-space-mib` flag to the existing Python supervised runner; install a kernel soft/hard RLIMIT_AS ceiling in the child before exec.
 - Add Linux tests for actual inherited limits and allocation rejection, plus PE64 manifest smoke under a 2048 MiB address-space ceiling. Windows behavior and binary-manifest v1.0.0 unchanged.
-- RLIMIT_AS caps *virtual address space*, not RSS/aggregate RAM or CPU time. No descendant containment, Windows Job Objects, general OS sandbox or disk-output quota.
+- Linux native-limit regressions and existing Windows/Linux checks passed [Windows/Linux PR CI #39149771201](https://github.com/ELITEAYOTO/REL/actions/runs/39149771201) on the implementation commit. RLIMIT_AS caps *virtual address space*, not RSS/aggregate RAM or CPU time. No descendant containment, Windows Job Objects, general OS sandbox or disk-output quota.
 
 
 

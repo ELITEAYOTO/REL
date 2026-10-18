@@ -1,6 +1,10 @@
 use rel_contracts::{BinaryManifest, MANIFEST_SCHEMA};
 use sha2::{Digest, Sha256};
-use std::{env, fs, io::{self, Write}, path::Path};
+use std::{
+    env, fs,
+    io::{self, Write},
+    path::Path,
+};
 
 const MAX_SIZE: u64 = 512 * 1024 * 1024;
 
@@ -28,7 +32,9 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
             if let Some(ref target) = output {
-                let same = fs::canonicalize(&input).ok().zip(fs::canonicalize(target).ok())
+                let same = fs::canonicalize(&input)
+                    .ok()
+                    .zip(fs::canonicalize(target).ok())
                     .is_some_and(|(a, b)| a == b);
                 if same || input == *target {
                     return Err("output must not overwrite the analyzed binary".into());
@@ -58,7 +64,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             match output {
                 Some(path) => {
                     // Refuse implicit overwrite.
-                    let mut file = fs::OpenOptions::new().write(true).create_new(true).open(Path::new(&path))?;
+                    let mut file = fs::OpenOptions::new()
+                        .write(true)
+                        .create_new(true)
+                        .open(Path::new(&path))?;
                     file.write_all(&serialized)?;
                 }
                 None => {

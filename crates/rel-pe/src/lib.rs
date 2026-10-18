@@ -36,22 +36,37 @@ pub fn inspect(data: &[u8]) -> Result<PeInspection, PeError> {
         0x014c => "x86",
         0xaa64 => "aarch64",
         _ => "unknown",
-    }.to_string();
+    }
+    .to_string();
 
-    let sections = pe.sections.iter().map(|s| BinarySection {
-        name: s.name().unwrap_or("<invalid>").trim_end_matches('\0').to_string(),
-        offset: u64::from(s.pointer_to_raw_data),
-        size: u64::from(s.size_of_raw_data),
-        virtual_address: Some(u64::from(s.virtual_address)),
-    }).collect();
+    let sections = pe
+        .sections
+        .iter()
+        .map(|s| BinarySection {
+            name: s
+                .name()
+                .unwrap_or("<invalid>")
+                .trim_end_matches('\0')
+                .to_string(),
+            offset: u64::from(s.pointer_to_raw_data),
+            size: u64::from(s.size_of_raw_data),
+            virtual_address: Some(u64::from(s.virtual_address)),
+        })
+        .collect();
 
-    let mut imports: Vec<_> = pe.imports.iter()
-        .map(|i| format!("{}!{}", i.dll, i.name)).collect();
+    let mut imports: Vec<_> = pe
+        .imports
+        .iter()
+        .map(|i| format!("{}!{}", i.dll, i.name))
+        .collect();
     imports.sort();
     imports.dedup();
 
-    let mut exports: Vec<_> = pe.exports.iter()
-        .filter_map(|e| e.name.map(str::to_owned)).collect();
+    let mut exports: Vec<_> = pe
+        .exports
+        .iter()
+        .filter_map(|e| e.name.map(str::to_owned))
+        .collect();
     exports.sort();
     exports.dedup();
 

@@ -20,10 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SIZES = (2048, 1024 * 1024, 4 * 1024 * 1024)
 
 
-def measure(binary: Path, fixture: bytes, target: Path, count: int, warmup: int) -> dict:
-    target.write_bytes(fixture)
-    with target.open("r+b") as output:
-        output.truncate(target.stat().st_size)
+def measure(binary: Path, target: Path, count: int, warmup: int) -> dict:
     digest = hashlib.sha256(target.read_bytes()).hexdigest()
     observations: list[float] = []
     for iteration in range(warmup + count):
@@ -77,8 +74,7 @@ def run(binary: Path, count: int, warmup: int) -> dict:
             with target.open("wb") as output:
                 output.write(fixture)
                 output.truncate(size)
-            results.append(measure(binary, fixture, target, count, warmup))
-            # measure() reopens file and preserves its requested size.
+            results.append(measure(binary, target, count, warmup))
     return {"environment": metadata, "results": results}
 
 

@@ -43,7 +43,10 @@ fn cli_compares_two_reports_and_rejects_incomplete_inputs() {
         .output()
         .expect("run CLI");
     assert!(!rejected.status.success());
-    assert!(rejected.stdout.is_empty(), "invalid input must not publish report");
+    assert!(
+        rejected.stdout.is_empty(),
+        "invalid input must not publish report"
+    );
     assert!(String::from_utf8_lossy(&rejected.stderr).contains("extraction warnings"));
     fs::remove_dir_all(dir).expect("cleanup");
 }

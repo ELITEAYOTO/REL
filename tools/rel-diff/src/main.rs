@@ -139,12 +139,14 @@ fn section_status(a: &[Section], b: &[Section]) -> SectionDelta {
         .collect();
     let changed: Vec<String> = left
         .iter()
-        .filter(|(name, section)| right.get(**name).is_some_and(|other| {
+        .filter(|(name, section)| {
+            right.get(**name).is_some_and(|other| {
                 section.name != other.name
                     || section.offset != other.offset
                     || section.size != other.size
                     || section.virtual_address != other.virtual_address
-            }))
+            })
+        })
         .map(|(name, _)| (*name).to_owned())
         .collect();
     let status = if added.is_empty() && removed.is_empty() && changed.is_empty() {

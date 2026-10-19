@@ -61,6 +61,16 @@ def check_provenance(report: dict, mode: str) -> None:
 
 
 
+def unique_json_keys(pairs: list[tuple[str, object]]) -> dict:
+    """Reject ambiguous evidence documents with duplicate JSON member names."""
+    value = {}
+    for key, item in pairs:
+        if key in value:
+            raise ValueError(f"duplicate JSON object key: {key}")
+        value[key] = item
+    return value
+
+
 def check_report_structure(report: dict) -> None:
     """Reject incomplete/mislabeled evidence before comparing build identities."""
     cases = report.get("cases")
@@ -69,7 +79,12 @@ def check_report_structure(report: dict) -> None:
     if not isinstance(cases, list) or len(cases) != 8:
         raise ValueError("expected exactly eight corpus build cases")
     ids = [row.get("id") for row in cases if isinstance(row, dict)]
-    if len(ids) != 8 or set(ids) != EXPECTED_IDS or len(set(ids)) != 8:
+    if (
+        len(ids) != 8
+        or any(not isinstance(key, str) for key in ids)
+        or set(ids) != EXPECTED_IDS
+        or len(set(ids)) != 8
+    ):
         raise ValueError("missing or duplicate variant IDs")
     for row in cases:
         case_id = row["id"]
@@ -97,6 +112,8 @@ def check_report_structure(report: dict) -> None:
         if not isinstance(pair, dict):
             raise ValueError("malformed pair observation")
         identity = (pair.get("left"), pair.get("right"))
+        if any(not isinstance(key, str) for key in identity):
+            raise ValueError("malformed A/B pair identity")
         if identity not in EXPECTED_PAIRS or identity in seen:
             raise ValueError("missing, duplicated or unexpected A/B pair")
         seen.add(identity)
@@ -139,7 +156,9 @@ def load_report(path: Path, mode: str) -> dict:
             payload = member.read(MAX_EVIDENCE_BYTES + 1)
     if len(payload) > MAX_EVIDENCE_BYTES:
         raise ValueError("evidence report exceeds 2 MiB")
-    report = json.loads(payload)
+    report = json.loads(payload, object_pairs_hook=unique_json_keys)
+    if not isinstance(report, dict):
+        raise ValueError("evidence report must be a JSON object")
     if report.get("schema_version") != "rel-ex02-compiler-pair-evidence-v1":
         raise ValueError("incompatible corpus evidence version")
     if report.get("link_mode") != mode:
@@ -150,6 +169,8 @@ def load_report(path: Path, mode: str) -> dict:
 
 
 def compare_reports(first: dict, second: dict, *, require_identical: bool) -> dict:
+    if require_identical and first.get("link_mode") != "brepro":
+        raise ValueError("strict raw reproducibility requires /Brepro mode")
     check_provenance(first, first.get("link_mode"))
     check_provenance(second, second.get("link_mode"))
     check_report_structure(first)

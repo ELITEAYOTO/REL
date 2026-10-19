@@ -49,7 +49,9 @@ struct Report {
 }
 
 fn load(path: &str) -> Result<Manifest, String> {
-    let size = fs::metadata(path).map_err(|e| format!("{path}: {e}"))?.len();
+    let size = fs::metadata(path)
+        .map_err(|e| format!("{path}: {e}"))?
+        .len();
     if size > MAX_INPUT {
         return Err(format!("{path}: input exceeds 16 MiB"));
     }
@@ -57,10 +59,11 @@ fn load(path: &str) -> Result<Manifest, String> {
     if bytes.len() as u64 > MAX_INPUT {
         return Err(format!("{path}: input exceeds 16 MiB"));
     }
-    let manifest: Manifest =
-        serde_json::from_slice(&bytes).map_err(|e| format!("{path}: {e}"))?;
+    let manifest: Manifest = serde_json::from_slice(&bytes).map_err(|e| format!("{path}: {e}"))?;
     if manifest.schema_version != "1.0.0" || manifest.format != "PE" {
-        return Err(format!("{path}: only PE binary-manifest v1.0.0 is supported"));
+        return Err(format!(
+            "{path}: only PE binary-manifest v1.0.0 is supported"
+        ));
     }
     if manifest.binary_sha256.len() != 64
         || !manifest
@@ -73,10 +76,17 @@ fn load(path: &str) -> Result<Manifest, String> {
     // All section fields are parsed, but are NOT compared in this first increment.
     // Read them here to ensure no future refactor silently discards required data.
     for section in &manifest.sections {
-        let _ = (&section.name, section.offset, section.size, section.virtual_address);
+        let _ = (
+            &section.name,
+            section.offset,
+            section.size,
+            section.virtual_address,
+        );
     }
     if !manifest.warnings.is_empty() {
-        return Err(format!("{path}: extraction warnings require explicit coverage handling"));
+        return Err(format!(
+            "{path}: extraction warnings require explicit coverage handling"
+        ));
     }
     Ok(manifest)
 }
@@ -137,14 +147,26 @@ mod tests {
     fn sets_are_order_independent_and_inverse() {
         let a = vec!["B".into(), "A".into()];
         let b = vec!["C".into(), "B".into()];
-        assert_eq!(delta(&a, &a), Delta { added: vec![], removed: vec![] });
+        assert_eq!(
+            delta(&a, &a),
+            Delta {
+                added: vec![],
+                removed: vec![]
+            }
+        );
         assert_eq!(
             delta(&a, &b),
-            Delta { added: vec!["C".into()], removed: vec!["A".into()] }
+            Delta {
+                added: vec!["C".into()],
+                removed: vec!["A".into()]
+            }
         );
         assert_eq!(
             delta(&b, &a),
-            Delta { added: vec!["A".into()], removed: vec!["C".into()] }
+            Delta {
+                added: vec!["A".into()],
+                removed: vec!["C".into()]
+            }
         );
     }
 }

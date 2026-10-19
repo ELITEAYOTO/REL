@@ -226,6 +226,30 @@ mod tests {
     }
 
     #[test]
+    fn golden_manifest_comparison_reports_observed_changes() {
+        let parse = |sha: char, size: u64, imports: &str| {
+            let raw = format!(
+                r#"{{"schema_version":"1.0.0","binary_sha256":"{}","size_bytes":{},"format":"PE","arch":"x86_64","sections":[{{"name":".text","offset":512,"size":100,"virtual_address":4096}}],"imports":[{}],"exports":[],"warnings":[]}}"#,
+                sha.to_string().repeat(64),
+                size,
+                imports
+            );
+            serde_json::from_str::<Manifest>(&raw).expect("controlled valid manifest")
+        };
+        let left = parse('a', 1000, r#""KERNEL32.dll!ReadFile""#);
+        let right = parse('b', 1200, r#""KERNEL32.dll!WriteFile""#);
+        let result = compare(left, right);
+        assert!(result.size_changed);
+        assert!(!result.arch_changed);
+        assert_eq!(result.sections.status, "unchanged");
+        assert_eq!(result.imports.added, vec!["KERNEL32.dll!WriteFile"]);
+        assert_eq!(result.imports.removed, vec!["KERNEL32.dll!ReadFile"]);
+        let json = serde_json::to_value(&result).expect("serializable report");
+        assert_eq!(json["schema_version"], "0.1.0-experimental");
+        assert_eq!(json["sections"]["status"], "unchanged");
+    }
+
+    #[test]
     fn section_order_does_not_change_delta() {
         let section = |name: &str, size| Section {
             name: name.into(),

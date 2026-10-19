@@ -37,3 +37,16 @@ fn original_f001_truncations_and_single_byte_corruptions_do_not_unwind() {
         changed[offset] ^= 0xff;
     }
 }
+
+#[test]
+fn minimized_legacy_tls_panic_input_is_rejected_without_unwinding() {
+    // A budgeted ddmin reduction of the unchanged, preserved original F001.
+    // The legacy goblin 0.9.3 parser crashes at tls.rs:228 on these bytes.
+    // Current REL must not accept this malformed source or propagate a panic.
+    const MINIMIZED_TLS: &[u8] =
+        include_bytes!("../../../fixtures/regressions/goblin-0.9.3-tls-oob-minimized.bin");
+    assert_eq!(MINIMIZED_TLS.len(), 1048);
+    let attempt = std::panic::catch_unwind(|| inspect(MINIMIZED_TLS));
+    assert!(attempt.is_ok(), "REL exposed the legacy TLS panic");
+    assert!(attempt.unwrap().is_err(), "malformed minimized F001 input was accepted");
+}

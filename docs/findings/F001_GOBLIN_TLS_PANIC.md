@@ -57,6 +57,53 @@ process, if worth the complexity, and complete a focused upstream
 regression provenance review. Do not introduce the vulnerable old crate
 into REL's production dependency graph or infer broad security guarantees.
 
+## Independent old-version replay and bounded minimization (2026-10-19)
+
+To complete source-level root-cause investigation without reintroducing the
+vulnerable crate into REL, an isolated GitHub Actions experiment compiled
+**goblin = 0.9.3** in a **separate Cargo project under the Ubuntu runner's
+temporary directory**. It read the historical 1104-byte F001 as bytes and
+called the old PE parser. It **did not execute the imported PE**. The exact
+F001 SHA-256 was checked before replay. Individual probe processes had
+Linux virtual-address-space 1 GiB / CPU 2s limits and a parent timeout
+of 3s; these are scoped Linux controls, not a security sandbox.
+
+- [Evidence run #39338392072](https://github.com/ELITEAYOTO/REL/actions/runs/39338392072)
+  **completed/success**, with the panic reproduced at
+  `goblin-0.9.3/src/pe/tls.rs:228:35`.
+- The observed panic was **`range end index 517412631 out of range for
+  slice of length 1104`**, whereas the 2026-10-18 original fuzz run
+  reported **`range start index 383194904`**. This is the same unchecked
+  TLS slice source location and fault class, **not an identical index
+  diagnostic**. The first strict-index experiment
+  [#39338140557](https://github.com/ELITEAYOTO/REL/actions/runs/39338140557)
+  therefore failed as designed; the acceptance predicate was corrected
+  to preserve the **same old source line and observed end-index subtype**.
+- A bounded delta deletion search (1501 probe invocations, 0 timeouts,
+  3.171 seconds of trial work) reduced the sample from **1104 to 1048
+  bytes**, SHA-256
+  `687718a1765dd0ef0322879c4e5f89bf3ae6920cbf6b7c464ff4571ef17fcbed`.
+  The last candidate was replayed successfully against the old parser
+  at the same line and end-index type. **The 1500-mutation budget was
+  exhausted, so this is a reduced witness, not a proof of global minimum.**
+- The unchanged original remains at
+  `fixtures/regressions/goblin-0.9.3-tls-oob.bin`. The **separate reduced
+  witness** is now retained at
+  `fixtures/regressions/goblin-0.9.3-tls-oob-minimized.bin`, and the
+  normal `rel-pe` test suite checks the new sample is rejected without
+  propagated unwinding under pinned Goblin 0.10.7.
+- The [original/reduced panic transcripts, candidate and transient Cargo
+  provenance](https://github.com/ELITEAYOTO/REL/actions/runs/39338392072/artifacts/12227477489)
+  were archived from the isolated experiment.
+  [Test PR #87](https://github.com/ELITEAYOTO/REL/pull/87) was explicitly
+  **closed without merge**; production `Cargo.toml`, `Cargo.lock`
+  and parser implementation remain free of Goblin 0.9.3.
+
+**Interpretation:** a direct old-library slice bounds bug, with linked
+upstream fixes and observed safe rejection by the REL production adapter
+in the tested configurations. This does **not** prove all Goblin 0.10.7
+input parsing is panic-free, nor provide hard process isolation.
+
 ## What this does not prove
 
 - Absence of other input-triggered goblin bugs, crashes, hangs or exploitability.

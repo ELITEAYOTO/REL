@@ -21,14 +21,18 @@ class ByteDifferenceTests(unittest.TestCase):
 
     def test_region_assignment_from_first_build(self):
         regions = {
+            "coff_timestamp_offset": 8,
+            "debug_directory_timestamps": [{"offset": 105, "value": 123}],
             "sections": [{"name": ".text", "offset": 64, "size": 20}],
             "debug_blobs": [{"offset": 100, "size": 10}],
         }
-        self.assertEqual(category(10, regions), "header-or-overlay")
+        self.assertEqual(category(10, regions), "coff-timestamp")
+        self.assertEqual(category(12, regions), "header-or-overlay")
         self.assertEqual(category(64, regions), "section:.text")
         self.assertEqual(category(83, regions), "section:.text")
         self.assertEqual(category(84, regions), "header-or-overlay")
         self.assertEqual(category(101, regions), "debug-data")
+        self.assertEqual(category(106, regions), "debug-directory-timestamp")
 
     def test_capture_preserves_exact_raw_bytes(self):
         with tempfile.TemporaryDirectory() as temp:

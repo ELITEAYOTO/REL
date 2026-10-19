@@ -1,6 +1,6 @@
 # CI — Épinglage des actions GitHub
 
-**État : décision d'hygiène CI en attente d'acceptation dans la PR dédiée**  
+**État : actions GitHub épinglées et fusionnées via PR #73 ; verrouillage direct des dépendances Python proposé dans la PR suivante.**  
 **Vérifié le : 2026-10-19**  
 **Suivi : [issue #72](https://github.com/ELITEAYOTO/REL/issues/72)**
 
@@ -19,7 +19,7 @@ Réduire les variations silencieuses des actions utilisées pour générer les p
 ## Limites
 
 - Le workflow utilise toujours des versions de runners et SDK hébergées par GitHub (`ubuntu-latest`, `windows-latest`) : leurs images changent. Les outils de développement Rust, Microsoft, Python et les packages système ne sont pas entièrement immobilisés.
-- `jsonschema>=4,<5` et ses dépendances transitives restent non verrouillés. Il s'agit d'un **point ouvert de l'issue #72** à traiter dans une étape séparée, avec une méthode d'actualisation et une vérification Windows/Linux. `pefile` et `psutil` ont une version directe précise, pas un lock complet des transitives.
+- Les six distributions Python liées à la validation JSON Schema sont désormais fixées en versions exactes dans [`scripts/ci-jsonschema-requirements.txt`](../../scripts/ci-jsonschema-requirements.txt), d'après **deux installations CI réussies sur Windows et Linux** : `jsonschema 4.26.0`, `attrs 26.1.0`, `jsonschema-specifications 2025.9.1`, `referencing 0.37.0`, `rpds-py 2026.9.1`, `typing-extensions 4.16.0`. La CI utilise aussi `pip check`. Le changement reste à accepter avec CI sur le **dernier commit**. C'est un **verrouillage de versions**, pas un verrouillage des empreintes des roues Python : leurs octets diffèrent selon les plateformes et peuvent encore être servis par l'index. `pefile` et `psutil` ont une version directe précise, sans garantie hermétique de leurs éventuelles dépendances.
 - L'épinglage d'une action sur un commit ne constitue ni audit de sécurité de son code, ni protection contre toutes les dépendances qu'elle exécute.
 - Le job de fuzzing nocturne utilise `nightly`, une autre source de variabilité ; ne pas prétendre que l'exercice reproduit exactement les mêmes octets de campagne.
 - La PR EX-02 [#62](https://github.com/ELITEAYOTO/REL/pull/62) modifie également `ci.yml`, mais reste **en brouillon**. Après une fusion de cet épinglage sur `main`, **vérifier le net diff et les références réellement utilisées** avant une éventuelle fusion de #62.
@@ -28,4 +28,4 @@ Réduire les variations silencieuses des actions utilisées pour générer les p
 
 Lorsqu'un changement de version d'action est justifié : consulter le dépôt éditeur, vérifier l'objet tag/release, documenter le commit complet et la raison du changement, appliquer en PR isolée, faire passer les CI Linux et Windows **sur le dernier commit**, puis les CI de `main` après fusion. Si le job fuzzing s'exécute à cause du changement de son propre workflow, vérifier son résultat sans confondre un crash fuzz de bibliothèque et une erreur du pinning.
 
-**Critère de sortie du changement présent :** aucun `uses: actions/...@v4` / `@v5` mutable ne reste dans ces deux workflows, et les tests réellement déclenchés par GitHub Actions se terminent avec succès. Ne pas clôturer l'issue #72 tant que les contraintes Python ne sont pas évaluées.
+**Critère de sortie :** conserver les trois actions épinglées sur SHAs, installer les six versions Python contrôlées sur Windows et Linux sans régression de contrat et documenter la procédure d'actualisation. Toute montée de version passe par une PR dédiée et une observation des CI. L'issue #72 peut être clôturée pour ces deux critères **après vérification post-fusion** ; l'absence de verrouillage des hashes de roues, l'image runner variable et le fuzz `nightly` restent des limites explicites.

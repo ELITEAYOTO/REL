@@ -9,7 +9,7 @@
 - Future behavior testing must be opt-in, isolated and on authorized targets.
 - Refactoring is evidence-led; breaking interfaces require ADR, migration plan and tests.
 
-## Adopted target direction — ADR-0013 (not yet implemented)
+## Adopted target direction — ADR-0013 (partially implemented)
 
 P1 runtime modules are `rel-contracts`, `rel-pe`, and `rel-inspect`; EX-01 adds the **separate, experimental** `rel-observe` producer rather than coupling its output into the existing P1 CLI. REL is a general reverse-engineering research platform targeting explainable change-tracking and provenance for **authorized** binary software.
 

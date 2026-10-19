@@ -2,11 +2,11 @@
 
 ## [Unreleased] — 2026-10-18
 
-### EX-01 — First real controlled byte-evidence producer (candidate, CI pending)
+### EX-01 — First real controlled byte-evidence producer (PR #51 merged; scoped CI verified)
 
 - New standalone Rust `rel-observe` CLI with `dos-magic` command, reading bounded real file bytes and producing experimental EX-01 JSON. The two signed observations are **only** `equals.MZ` present and `equals.NE` absent within file bytes [0,2) of minimally signature-checked PE inputs. File SHA-256, size and evidence refer to that same in-memory buffer.
 - A documented SHA-256 run-ID preimage binds the input digest, config digest, exact scope and tool version, with no timestamps or machine-local paths. Standalone integration tests validate output through the Python cross-field validator, independently reproduce the run ID, compare PE32/PE32+ reference fixtures, check relocation to another path, and reject truncated, oversized and unsupported inputs.
-- **Limits:** this does not provide comprehensive PE validation or parsing, snapshot-safe input acquisition, arbitrary hostile input isolation, imports analysis, negative network-capability conclusions, EX-02 or decompilation. New crate is executable/tested rather than speculative; legacy `rel-inspect` and `binary-manifest v1.0.0` remain unchanged. CI validation pending.
+- **Limits:** this does not provide comprehensive PE validation or parsing, snapshot-safe input acquisition, arbitrary hostile input isolation, imports analysis, negative network-capability conclusions, EX-02 or decompilation. New crate is executable/tested rather than speculative; legacy `rel-inspect` and `binary-manifest v1.0.0` remain unchanged. [PR #51](https://github.com/ELITEAYOTO/REL/pull/51) merged as [`10f38c8`](https://github.com/ELITEAYOTO/REL/commit/10f38c807668a6a7b5afd46c4d1936afc7125109), final-head [branch CI #39179309964](https://github.com/ELITEAYOTO/REL/actions/runs/39179309964), [PR CI #39179314336](https://github.com/ELITEAYOTO/REL/actions/runs/39179314336), and [post-merge `main` CI #39179499279](https://github.com/ELITEAYOTO/REL/actions/runs/39179499279) all passed Windows/Linux, including observed real-producer integration assertions.
 
 ### EX-01 — Experimental standalone observation contract (PR #49 merged, CI verified)
 

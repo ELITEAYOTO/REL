@@ -176,17 +176,10 @@ Branch `fix/p15a-second-pass-input-check` updates `tools/rel-inspect/src/input.r
 
 Standalone `contracts/experimental/observation-envelope.schema.json` (`0.1.0-experimental`), Python semantic validation and five hand-authored examples based on owned PE32 fixture bytes are available. These validate report shape, integrity and specifically scoped negative observations, **not** an actual extraction engine or truth of arbitrary reports. The existing Rust CLI remains v1-only, no manifest v1.0.0 change. Next implement a minimal controlled-source EX-01 producer that computes actual byte evidence and reproducible run IDs; only then consider broader extraction/coverage. **Overall EX-01, P1.5-A, EX-02, Ghidra and P3 remain open.** [Issue #14](https://github.com/ELITEAYOTO/REL/issues/14) tracks EX-01.
 
-## Candidate: real controlled-source EX-01 DOS magic producer — CI pending
+## EX-01 first real controlled-source DOS-magic producer — MERGED, SCOPED CI VERIFIED
 
-Branch `feat/ex01-real-dos-magic-producer` adds standalone Rust
-`tools/rel-observe` with a real `dos-magic` command and integration tests,
-registered in Cargo workspace and lockfile. It produces the experimental
-`0.1.0-experimental` envelope for PE-like **controlled** input up to 2 MiB,
-with actual SHA-256, byte-accurate file-offset evidence and a documented,
-deterministic config/input/domain/version run ID. It only asserts MZ
-present and NE absent within bytes [0,2); it does not extract imports,
-prove absent behaviors, or implement full EX-01. Rejects unsupported or
-truncated input without JSON; no atomic snapshot or sandbox safety.
-`rel-inspect` and `binary-manifest v1.0.0` remain unchanged. Run the
-Windows/Linux CLI+Python oracle and confirm final-head/pr/post-merge CI
-before claiming integration. Keep EX-01 #14 and P1.5-A #9 open.
+[PR #51](https://github.com/ELITEAYOTO/REL/pull/51) merged as [`10f38c8`](https://github.com/ELITEAYOTO/REL/commit/10f38c807668a6a7b5afd46c4d1936afc7125109). Final-head [branch CI #39179309964](https://github.com/ELITEAYOTO/REL/actions/runs/39179309964), [PR CI #39179314336](https://github.com/ELITEAYOTO/REL/actions/runs/39179314336) and [post-merge `main` CI #39179499279](https://github.com/ELITEAYOTO/REL/actions/runs/39179499279) passed on both Windows and Linux. Windows/Linux real binary smoke logs explicitly show the producer's SHA, byte-evidence, deterministic run-ID and unsupported/short/oversize rejection assertions succeeding.
+
+New standalone Rust `tools/rel-observe` CLI (Cargo workspace+lock) emits `0.1.0-experimental` observations from real controlled PE32/PE32+ bytes. It reports file SHA and size, verified two-byte offsets, and a run-ID built from file/config/domain/version with Python independent verification. The **only** truthful claims are `MZ` present and `NE` absent at DOS offsets [0,2); a two-byte negative conclusion is not about imports or program capability. A 2 MiB limit applies, with minimal MZ/PE signature checks and no hostile-input sandbox or atomic file snapshot. Files are **never executed**. `rel-inspect` and `binary-manifest v1.0.0` remain unchanged.
+
+[Issue #14](https://github.com/ELITEAYOTO/REL/issues/14) remains open: broader real extraction domains, confidence/coverage semantics and failure-mode output still required. P1.5-A [issue #9](https://github.com/ELITEAYOTO/REL/issues/9) remains open. EX-02, external Ghidra integration and function matching not implemented; preserve ADR-0013 ordering. Next choose a single provable static PE-domain expansion with fixtures, error/abstention cases and independent validation, not Apex-specific reverse engineering.

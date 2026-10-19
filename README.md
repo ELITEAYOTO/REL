@@ -4,7 +4,7 @@ A **modular, reproducible, offline-first reverse-engineering platform** for auth
 
 **Strategic decision:** [RFC-0001](docs/rfc/RFC-0001-EVIDENCE-EVOLUTION.md), accepted with [ADR-0013](docs/adr/ADR-0013-vision-evidence-evolution.md). [Milestone gates](docs/governance/STRATEGY_AND_GATES.md).
 
-**Current status (2026-10-18): P1 alpha validated; P1.5 partial hardening verified (mutation regression, cross-platform CLI timings, independent Windows PE oracle, and bounded libFuzzer smoke after upgrading goblin). Not production-hardened.** The original [CI run](https://github.com/ELITEAYOTO/REL/actions/runs/39096882395) passed on Ubuntu and Windows. P1.5 evidence is recorded in [CHANGELOG](CHANGELOG.md). See [P1 evidence](docs/P1_VALIDATION.md).
+**Current status (2026-10-19): P1 alpha and P1.5 selected hardening verified on controlled fixtures; EX-01 contract and one narrow real DOS-magic producer verified on Windows/Linux. Full EX-01 and P1.5-A remain open; not production-hardened.** The original [CI run](https://github.com/ELITEAYOTO/REL/actions/runs/39096882395) passed on Ubuntu and Windows. P1.5 evidence is recorded in [CHANGELOG](CHANGELOG.md). See [P1 evidence](docs/P1_VALIDATION.md).
 
 ## Experimental EX-01 observation contract (prototype only)
 

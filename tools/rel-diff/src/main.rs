@@ -15,6 +15,7 @@ struct Manifest {
     binary_sha256: String,
     size_bytes: u64,
     format: String,
+    #[serde(deserialize_with = "required_nullable")]
     arch: Option<String>,
     sections: Vec<Section>,
     imports: Vec<String>,
@@ -28,6 +29,7 @@ struct Section {
     name: String,
     offset: u64,
     size: u64,
+    #[serde(deserialize_with = "required_nullable")]
     virtual_address: Option<u64>,
 }
 
@@ -58,6 +60,16 @@ struct Report {
     exports: Delta,
     sections: SectionDelta,
     limitations: Vec<&'static str>,
+}
+
+// JSON Schema requires these keys even when their values are null.
+// Serde's default Option behavior would otherwise accept an omitted key.
+fn required_nullable<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    Option::<T>::deserialize(deserializer)
 }
 
 fn load(path: &str) -> Result<Manifest, String> {
@@ -243,6 +255,7 @@ mod tests {
         );
         assert!(serde_json::from_str::<Manifest>(&valid).is_ok());
         assert!(serde_json::from_str::<Manifest>(&valid.replace(r#","warnings":[]"#, "")).is_err());
+        assert!(serde_json::from_str::<Manifest>(&valid.replace(r#","arch":null"#, "")).is_err());
         assert!(serde_json::from_str::<Manifest>(
             &valid.replace(r#""warnings":[]}"#, r#""warnings":[],"unknown":1}"#)
         )

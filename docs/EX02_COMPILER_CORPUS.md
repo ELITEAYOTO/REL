@@ -46,6 +46,19 @@ python scripts\check_windows_diff_pairs.py --inspector target\release\rel-inspec
 
 Les tests Linux continuent à couvrir les oracles Rust et JSON indépendants ainsi que la chaîne `rel-inspect` / `rel-diff` sur les deux PE synthétiques suivis en Git. La compilation native du corpus C dépend du toolchain Windows, donc n'est pas annoncée comme testée par la CI Linux.
 
+## Première exécution vérifiée
+
+Le workflow [#39209103249](https://github.com/ELITEAYOTO/REL/actions/runs/39209103249), au commit [`36419af`](https://github.com/ELITEAYOTO/REL/commit/36419af32cc5a52e80a84db21db5ab425bb485bf), a réussi sur Windows et Linux. La CI Windows a exécuté le builder et l'oracle ; Ubuntu exécute les autres tests, mais **pas** le builder MSVC/Clang-cl. Le contenu de l'artefact `rel-ex02-compiler-pairs-windows` a été relu :
+
+- **8 PE x64** compilés depuis `fixtures/probes/diff_version_probe.c`, empreinte de source `5fa642567cd392572364cecd542d3b3cfa57623c430902e5499190d3621515cf`.
+- Compilateurs : **MSVC 19.51.36260 x64** et **Clang-cl 20.1.8**.
+- **16 paires A/B** testées dans les deux sens, plus 8 vérifications A/A : tous les deltas rapportés correspondent aux listes PE observées indépendamment par `pefile`.
+- Sur les 16 paires : 10 ont un delta d'imports directs, 12 un delta d'exports nommés et 4 des changements de métadonnées de sections. Les groupes peuvent se recouvrir ; ces comptes ne sont **pas** des taux de précision sur logiciel réel.
+- L'API `GetComputerNameW` de la variante v3 remplace un autre import ; pour certaines paires, des métadonnées de sections changent aussi. Trois comparaisons entre compilateurs de même variante ne montrent aucune modification de sections alors que l'autre en montre une : la notion de delta est limitée au **contrat de métadonnées observables**.
+- Aucun PE généré n'a été exécuté. Le SHA de chaque PE figure dans l'artefact pour rendre la vérification de cette exécution reproductible.
+
+Ces preuves s'appliquent à **ce commit de la PR et ce job Windows**, non aux futurs exécutables compilés avec d'autres versions d'outils.
+
 ## Limites et prochaines étapes
 
 - Deux compilateurs sur le même environnement Windows et une **seule source C** paramétrée n'établissent pas la diversité réelle des programmes commerciaux/open source, des options de compilation, ni des différents changements entre releases.

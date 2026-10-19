@@ -101,7 +101,6 @@ fn unknown_machine_is_reported_as_raw_hex_not_made_up_architecture() {
     assert!(rel_observe::observe_coff_machine_bytes(&[]).is_err());
 }
 
-
 fn section_fields(bytes: &[u8]) -> (usize, usize) {
     let coff_start = coff_offset(bytes);
     let coff = &bytes[coff_start..coff_start + 20];
@@ -125,7 +124,10 @@ fn section_records_match_exact_fixture_bytes_without_inferring_payload_validity(
             assert_eq!(report["evidence"][index]["location"]["start"], offset);
             assert_eq!(report["evidence"][index]["location"]["length"], 40);
             assert_eq!(
-                report["observations"][index]["raw_value"].as_str().unwrap().len(),
+                report["observations"][index]["raw_value"]
+                    .as_str()
+                    .unwrap()
+                    .len(),
                 80
             );
         }
@@ -141,7 +143,12 @@ fn section_truncations_abstain_with_diagnostics() {
     let (count, table) = section_fields(PE32);
     assert!(count > 0);
     let coff = coff_offset(PE32);
-    for end in [coff + 19, table.saturating_sub(1), table, table + count * 40 - 1] {
+    for end in [
+        coff + 19,
+        table.saturating_sub(1),
+        table,
+        table + count * 40 - 1,
+    ] {
         let report = rel_observe::observe_section_headers_bytes(&PE32[..end]).unwrap();
         assert_eq!(report["scope"]["status"], "partial");
         assert_eq!(report["observations"][0]["status"], "indeterminate");

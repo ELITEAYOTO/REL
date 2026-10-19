@@ -75,10 +75,14 @@ fn hex(data: &[u8]) -> String {
 pub fn observe_section_headers_bytes(bytes: &[u8]) -> Result<Value, String> {
     let nt = pe_nt_offset(bytes)?;
     let coff_start = nt.checked_add(4).ok_or("COFF offset overflow")?;
-    let coff_end = coff_start.checked_add(COFF_SIZE).ok_or("COFF end overflow")?;
+    let coff_end = coff_start
+        .checked_add(COFF_SIZE)
+        .ok_or("COFF end overflow")?;
     let Some(coff) = bytes.get(coff_start..coff_end) else {
         return Ok(abstain(
-            bytes, "partial", "SECTION_COFF_TRUNCATED",
+            bytes,
+            "partial",
+            "SECTION_COFF_TRUNCATED",
             "Complete 20-byte COFF header unavailable; section count cannot be established.",
         ));
     };
@@ -86,7 +90,9 @@ pub fn observe_section_headers_bytes(bytes: &[u8]) -> Result<Value, String> {
     let optional_size = u16::from_le_bytes([coff[16], coff[17]]) as usize;
     if count > MAX_SECTIONS {
         return Ok(abstain(
-            bytes, "unsupported", "SECTION_COUNT_LIMIT",
+            bytes,
+            "unsupported",
+            "SECTION_COUNT_LIMIT",
             "Declared section count exceeds this experimental 32-record limit.",
         ));
     }
@@ -96,10 +102,14 @@ pub fn observe_section_headers_bytes(bytes: &[u8]) -> Result<Value, String> {
     let span = count
         .checked_mul(RECORD_SIZE)
         .ok_or("section table length overflow")?;
-    let end = start.checked_add(span).ok_or("section table end overflow")?;
+    let end = start
+        .checked_add(span)
+        .ok_or("section table end overflow")?;
     if bytes.get(coff_end..start).is_none() || bytes.get(start..end).is_none() {
         return Ok(abstain(
-            bytes, "partial", "SECTION_TABLE_TRUNCATED",
+            bytes,
+            "partial",
+            "SECTION_TABLE_TRUNCATED",
             "Declared optional-header or complete section-header table bytes are unavailable.",
         ));
     }
@@ -107,7 +117,8 @@ pub fn observe_section_headers_bytes(bytes: &[u8]) -> Result<Value, String> {
     let subject_sha = hash(bytes);
     if count == 0 {
         return Ok(report(
-            bytes, "complete",
+            bytes,
+            "complete",
             vec![json!({
                 "id": "section-headers-empty",
                 "predicate": "pe.section_headers.records",

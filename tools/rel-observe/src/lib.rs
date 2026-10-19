@@ -9,8 +9,7 @@ use std::{
 };
 
 pub const MAX_INPUT_BYTES: usize = 2 * 1024 * 1024;
-pub const CONFIG: &str =
-    "rel-observe:dos-magic:v1;limit=2097152;require-mz-and-pe-signatures";
+pub const CONFIG: &str = "rel-observe:dos-magic:v1;limit=2097152;require-mz-and-pe-signatures";
 const DOMAIN: &str = "pe.dos_magic";
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -31,7 +30,9 @@ pub fn observe_bytes(bytes: &[u8]) -> Result<Value, String> {
         .get(0x3c..0x40)
         .ok_or("EX-01 requires a complete DOS e_lfanew field")?;
     let nt_offset = u32::from_le_bytes(
-        offset_bytes.try_into().map_err(|_| "invalid e_lfanew bytes")?,
+        offset_bytes
+            .try_into()
+            .map_err(|_| "invalid e_lfanew bytes")?,
     ) as usize;
     let nt_end = nt_offset
         .checked_add(4)

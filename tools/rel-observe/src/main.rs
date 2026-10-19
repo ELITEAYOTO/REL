@@ -1,5 +1,9 @@
 //! Separate experimental CLI; rel-inspect's binary-manifest v1 is unchanged.
-use std::{env, io::{self, Write}, path::Path};
+use std::{
+    env,
+    io::{self, Write},
+    path::Path,
+};
 
 fn run() -> Result<(), String> {
     let mut args = env::args().skip(1);

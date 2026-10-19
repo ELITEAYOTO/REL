@@ -117,6 +117,13 @@ def sections_expected(left: list, right: list) -> dict:
     }
 
 
+def ascii_lower_dll(name: str) -> str:
+    """Match Rust to_ascii_lowercase: leave non-ASCII codepoints unchanged."""
+    return "".join(
+        chr(ord(char) + 32) if "A" <= char <= "Z" else char for char in name
+    )
+
+
 def case_only(left: list[str], right: list[str]) -> bool:
     if set(left) == set(right):
         return False
@@ -125,7 +132,7 @@ def case_only(left: list[str], right: list[str]) -> bool:
         answer = set()
         for item in items:
             dll, separator, symbol = item.partition("!")
-            answer.add(f"{dll.lower()}!{symbol}" if separator and dll and symbol else item)
+            answer.add(f"{ascii_lower_dll(dll)}!{symbol}" if separator and dll and symbol else item)
         return answer
 
     a, b = normalized(left), normalized(right)

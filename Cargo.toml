@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/rel-contracts", "crates/rel-pe", "tools/rel-inspect", "tools/rel-observe"]
+members = ["crates/rel-contracts", "crates/rel-pe", "tools/rel-inspect", "tools/rel-observe", "tools/rel-diff"]
 
 [workspace.package]
 version = "0.1.0"

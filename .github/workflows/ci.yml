@@ -46,6 +46,24 @@ jobs:
         run: |
           python -m pip install -r scripts/ci-jsonschema-requirements.txt
           python -m pip check
+      - name: EX-02 independent manifest diff oracle (Windows)
+        if: runner.os == 'Windows'
+        run: python scripts/test_manifest_diff_cli.py --binary target/release/rel-diff.exe --inspector target/release/rel-inspect.exe
+      - name: EX-02 independent manifest diff oracle (Linux)
+        if: runner.os == 'Linux'
+        run: python scripts/test_manifest_diff_cli.py --binary target/release/rel-diff --inspector target/release/rel-inspect
+      - name: EX-02 controlled metadata diff resource profile (Windows)
+        if: runner.os == 'Windows'
+        run: python scripts/profile_manifest_diff.py --binary target/release/rel-diff.exe --samples 3 --warmup 1 --output rel-diff-profile.json
+      - name: EX-02 controlled metadata diff resource profile (Linux)
+        if: runner.os == 'Linux'
+        run: python scripts/profile_manifest_diff.py --binary target/release/rel-diff --samples 3 --warmup 1 --output rel-diff-profile.json
+      - name: Upload EX-02 experimental resource observations
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: rel-diff-resource-profile-${{ matrix.os }}
+          path: rel-diff-profile.json
+          if-no-files-found: error
       - name: EX-01 experimental envelope contract regressions
         run: python scripts/test_observation_envelope.py
       - name: EX-01 real producer smoke (Windows)
@@ -101,6 +119,82 @@ jobs:
       - name: Independent structured Clang-cl PE resource/relocation oracle
         if: runner.os == 'Windows'
         run: python scripts/check_windows_structured_probe.py --binary target/release/rel-inspect.exe --probe compiler-probes/rel-clang-structured.exe --compiler-label Clang-cl
+      - name: Build source-defined EX-02 A/B PE variants (Windows; never execute)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: call scripts\build_windows_diff_pairs.cmd
+      - name: Independent EX-02 compiler-built PE pair oracle (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          python -m pip install pefile==2024.8.26
+          python scripts/test_windows_diff_pairs_helpers.py
+          python scripts/check_windows_diff_pairs.py --inspector target/release/rel-inspect.exe --diff target/release/rel-diff.exe --corpus corpus-pairs --output rel-ex02-compiler-pairs.json
+      - name: EX-02 byte-diagnostic unit regressions
+        run: python scripts/test_windows_diff_repro.py
+      - name: EX-02 cross-run report comparison regressions
+        run: python scripts/test_compare_ex02_corpus_runs.py
+      - name: Capture first EX-02 PE compiler output (Windows)
+        if: runner.os == 'Windows'
+        run: python scripts/check_windows_diff_repro.py --capture --corpus corpus-pairs --snapshot corpus-pairs-first
+      - name: Repeat same-source compiler builds (Windows; PE files never executed)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: call scripts\build_windows_diff_pairs.cmd
+      - name: Compare repeated PE bytes and field fingerprints (Windows)
+        if: runner.os == 'Windows'
+        run: python scripts/check_windows_diff_repro.py --compare --corpus corpus-pairs --snapshot corpus-pairs-first --output rel-ex02-repeat-build.json
+      - name: Verify repeated-build PE manifest and diff oracle (Windows)
+        if: runner.os == 'Windows'
+        run: python scripts/check_windows_diff_pairs.py --inspector target/release/rel-inspect.exe --diff target/release/rel-diff.exe --corpus corpus-pairs --output rel-ex02-compiler-pairs-repeat.json
+      - name: Upload EX-02 same-run byte diagnostic
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: rel-ex02-repeat-build-windows
+          path: |
+            rel-ex02-repeat-build.json
+            rel-ex02-compiler-pairs-repeat.json
+          if-no-files-found: error
+      - name: Build experimental /Brepro PE variants (Windows; never execute)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: call scripts\build_windows_diff_pairs.cmd repro
+      - name: Independent /Brepro compiler-built PE pair oracle (Windows)
+        if: runner.os == 'Windows'
+        run: python scripts/check_windows_diff_pairs.py --inspector target/release/rel-inspect.exe --diff target/release/rel-diff.exe --corpus corpus-pairs-repro --link-mode brepro --output rel-ex02-brepro-pairs.json
+      - name: Capture first /Brepro PE byte sequence (Windows)
+        if: runner.os == 'Windows'
+        run: python scripts/check_windows_diff_repro.py --capture --corpus corpus-pairs-repro --snapshot corpus-pairs-repro-first
+      - name: Repeat /Brepro builds with identical source and flags (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: call scripts\build_windows_diff_pairs.cmd repro
+      - name: Compare /Brepro repeated PE byte sequences (Windows)
+        if: runner.os == 'Windows'
+        run: python scripts/check_windows_diff_repro.py --compare --corpus corpus-pairs-repro --snapshot corpus-pairs-repro-first --output rel-ex02-brepro-repeat.json
+      - name: Verify repeated /Brepro PE oracle (Windows)
+        if: runner.os == 'Windows'
+        run: python scripts/check_windows_diff_pairs.py --inspector target/release/rel-inspect.exe --diff target/release/rel-diff.exe --corpus corpus-pairs-repro --link-mode brepro --output rel-ex02-brepro-pairs-repeat.json
+      - name: Enforce matching /Brepro corpus byte identities within job (Windows)
+        if: runner.os == 'Windows'
+        run: python scripts/compare_ex02_corpus_runs.py --first rel-ex02-brepro-pairs.json --second rel-ex02-brepro-pairs-repeat.json --mode brepro --require-identical
+      - name: Upload /Brepro controlled experiment
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: rel-ex02-brepro-experiment-windows
+          path: |
+            rel-ex02-brepro-pairs.json
+            rel-ex02-brepro-pairs-repeat.json
+            rel-ex02-brepro-repeat.json
+          if-no-files-found: error
+      - name: Upload EX-02 compiler-built A/B pair evidence
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: rel-ex02-compiler-pairs-windows
+          path: rel-ex02-compiler-pairs.json
+          if-no-files-found: error
       - name: Benchmark CLI (Windows)
         if: runner.os == 'Windows'
         run: python scripts/benchmark_cli.py --binary target/release/rel-inspect.exe --samples 5 --warmup 1 --windows-msvc-probe compiler-probes/rel-msvc-probe.exe --windows-clang-probe compiler-probes/rel-clang-cl-probe.exe --windows-msvc-structured compiler-probes/rel-msvc-structured.exe --windows-clang-structured compiler-probes/rel-clang-structured.exe --output rel-benchmark.json

@@ -1,6 +1,6 @@
 # EX-02 — Prototype de diff des manifestes PE (brouillon de spécification)
 
-**Statut : PROTOTYPE APPROUVÉ À DÉVELOPPER, NON IMPLÉMENTÉ.**  
+**Statut : pilote partiel implémenté sur la PR #62 en brouillon ; non fusionné, gate EX-02 NON VALIDÉE.**  
 Décision et gates : [ADR-0013](../adr/ADR-0013-vision-evidence-evolution.md), [STRATEGY_AND_GATES](../governance/STRATEGY_AND_GATES.md).
 
 ## Contrat
@@ -29,3 +29,29 @@ Diff sur format, architecture, taille, sections, imports directs *tels qu'observ
 7. Valider Windows/Linux CI ; tester sur 10–20 paires de builds autorisés lorsque possibles ; enregistrer l'oracle de chaque changement.
 
 Une nouvelle crate+CLI Rust n'est créée qu'au moment de la PR d'implémentation, indépendante du parseur et de Ghidra. La sortie ne modifie **jamais** le schéma manifeste v1.
+
+## Avancement du pilote isolé (PR #62, non fusionnée)
+
+Le prototype Rust `rel-diff` compare les champs `size_bytes`, `arch`, les chaînes exactes des imports/exports, ainsi que les sections appariées uniquement par nom exact unique. Les noms de sections dupliqués provoquent une abstention `ambiguous`, sans delta partiel. Un booléen expérimental signale le cas global où seule la casse ASCII du préfixe DLL change, sans supprimer les chaînes d'origine. La sortie est contractée séparément par `contracts/experimental/manifest-diff.schema.json` en `0.1.0-experimental`; elle ne transforme pas le manifeste public v1.
+
+La PR comporte des tests Rust et un oracle indépendant du binaire release validant les sorties par JSON Schema sur Windows/Linux, dont l'issue doit être vérifiée sur le **dernier** commit avant promotion. Les fixtures de cet oracle sont synthétiques et utilisent des empreintes de forme valide, sans attestation d'octets PE réels. Ce n'est pas une validation complète des paires compilées autorisées, de l'exactitude d'extraction, du temps/RSS, de l'atomicité des lectures ou de la sécurité d'entrées hostiles.
+
+## Consolidation de l'audit (contrôlée, gate toujours ouverte)
+
+- [#67](https://github.com/ELITEAYOTO/REL/issues/67) : le contrat JSON Schema public v1 admet mathématiquement tout entier non négatif, y compris les valeurs hors `u64` et certaines écritures `1.0`. Le pilote `rel-diff` refuse ces valeurs qui ne se désérialisent pas exactement en `u64` ; l'oracle teste la borne maximale acceptée, la valeur juste au-delà et `1.0`. C'est **une limitation de compatibilité d'un consommateur expérimental**, pas une modification du schéma public.
+- [#68](https://github.com/ELITEAYOTO/REL/issues/68) : sérialisation JSON de la sortie dans un tampon borné à 16 Mio, incluant le saut de ligne final, **avant** la première écriture sur stdout. Une sortie calculée trop grande échoue sans JSON partiel. Aucun plafonnement global du CPU, de la mémoire des structures intermédiaires ou des erreurs d'écriture de stdout n'est revendiqué.
+- Des mesures répétées et contextualisées (temps écoulé, CPU échantillonné, RSS échantillonné) sont prévues par `scripts/profile_manifest_diff.py` sur deux scénarios synthétiques, publiées en artefacts de CI Windows/Linux. Ce sont des observations limitées par l'échantillonnage, pas des benchmarks représentatifs de binaires réels ou une garantie de plafond mémoire.
+
+## Corpus PE réellement compilé (pilotage partiel, sans promotion de la gate)
+
+La CI Windows construit désormais, **sans les exécuter**, quatre variantes de `fixtures/probes/diff_version_probe.c` à l'aide de MSVC et de Clang-cl : huit exécutables PE au total, donnant lieu à seize comparaisons A/B (douze entre variantes d'un même compilateur et quatre entre compilateurs sur une variante identique). Pour chaque binaire, `pefile` vérifie les structures PE indépendamment de Goblin et les recoupe avec les manifestes `rel-inspect`. Les sorties `rel-diff` sont validées contre le schéma expérimental, avec chaque direction A/B, A/A et preuve de provenance compilateur/source/octets.
+
+Le premier artefact Windows contrôlé ([CI #39209103249](https://github.com/ELITEAYOTO/REL/actions/runs/39209103249)) confirme huit builds, seize paires et des différences indépendamment observées d'imports/exports/sections. Voir [protocole et limites du corpus](../EX02_COMPILER_CORPUS.md). **Seize paires d'un même petit source C ne constituent pas seize projets indépendants**, ni un corpus représentatif de builds autorisés de logiciels réels. Les performances et la précision du produit sur un éventail plus large de binaires restent à établir.
+
+## Audit #69 — Compilations identiques et horodatages PE
+
+La comparaison de deux compilations successives dans le même job Windows a identifié **exactement deux octets différents par PE normal**, appartenant exclusivement au `COFF TimeDateStamp` et à un `IMAGE_DEBUG_DIRECTORY.TimeDateStamp` (`8/8` binaires affectés). Cette localisation est contrôlée par des offsets `pefile` explicites. Une expérience isolée `/INCREMENTAL:NO /Brepro` a produit `8/8` fichiers byte-à-byte identiques dans le même job, et les huit SHA ont aussi coïncidé dans deux jobs distincts à source/bannières compilateurs déclarées identiques. Voir [preuve et limites](../EX02_COMPILER_CORPUS.md) et [issue #69](https://github.com/ELITEAYOTO/REL/issues/69).
+
+Le comparateur indépendant `scripts/compare_ex02_corpus_runs.py` refuse les comparaisons de provenance incompatible ; le mode strict `--require-identical` est réservé aux builds `brepro`. Il ne modifie **aucun** octet ni empreinte SHA-256 originale et ne revendique ni équivalence fonctionnelle ni garantie de reproductibilité sous une autre configuration SDK/runner. Ces diagnostics ne clôturent pas la gate EX-02 globale.
+
+**Critères toujours ouverts :** corpus représentatif de 10–20 paires autorisées avec oracles de vérité terrain, benchmarks répétés temps/RSS, décisions sur couverture incomplète et ordinals non représentés, revue des collisions et adéquation complète au schéma public. Ne pas cocher le jalon EX-02 sur `main` pour cette PR seule.

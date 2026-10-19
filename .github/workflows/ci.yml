@@ -132,7 +132,7 @@ jobs:
       - name: Repeat same-source compiler builds (Windows; PE files never executed)
         if: runner.os == 'Windows'
         shell: cmd
-        run: call scripts\\build_windows_diff_pairs.cmd
+        run: call scripts\build_windows_diff_pairs.cmd
       - name: Compare repeated PE bytes and field fingerprints (Windows)
         if: runner.os == 'Windows'
         run: python scripts/check_windows_diff_repro.py --compare --corpus corpus-pairs --snapshot corpus-pairs-first --output rel-ex02-repeat-build.json

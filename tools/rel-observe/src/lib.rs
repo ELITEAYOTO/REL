@@ -9,7 +9,7 @@ use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use std::{
     fs::{self, File},
-    io::Read,
+    io::{Read, Seek, SeekFrom},
     path::Path,
 };
 
@@ -136,8 +136,28 @@ pub fn observe_bytes(bytes: &[u8]) -> Result<Value, String> {
     ))
 }
 
-/// Read an ordinary, currently non-symlinked controlled input. Not an
-/// atomic snapshot or race-free path resolver; do not feed hostile files.
+/// Re-read on the SAME already-open handle, comparing to the initial buffer.
+/// This detects observed in-place mutations without allocating a second
+/// whole-file copy; it is not a filesystem snapshot or concurrency lock.
+fn verify_second_pass<R: Read>(reader: &mut R, expected: &[u8]) -> Result<(), String> {
+    let mut scratch = [0_u8; 64 * 1024];
+    for chunk in expected.chunks(scratch.len()) {
+        reader
+            .read_exact(&mut scratch[..chunk.len()])
+            .map_err(|_| "EX-01 input shortened or unreadable during verification")?;
+        if scratch[..chunk.len()] != *chunk {
+            return Err("EX-01 input bytes changed during verification".to_owned());
+        }
+    }
+    let mut extra = [0_u8; 1];
+    if reader.read(&mut extra).map_err(|e| e.to_string())? != 0 {
+        return Err("EX-01 input grew during verification".to_owned());
+    }
+    Ok(())
+}
+
+/// Read a bounded controlled file with a second, same-descriptor byte check.
+/// Neither the parent path nor this check provides an atomic snapshot.
 pub(crate) fn load_controlled_file(path: &Path) -> Result<Vec<u8>, String> {
     let before = fs::symlink_metadata(path).map_err(|e| e.to_string())?;
     if !before.file_type().is_file() {
@@ -146,21 +166,73 @@ pub(crate) fn load_controlled_file(path: &Path) -> Result<Vec<u8>, String> {
     if before.len() > MAX_INPUT_BYTES as u64 {
         return Err("EX-01 input exceeds 2 MiB prototype limit".to_owned());
     }
-    let file = File::open(path).map_err(|e| e.to_string())?;
+    let mut file = File::open(path).map_err(|e| e.to_string())?;
     let opened = file.metadata().map_err(|e| e.to_string())?;
     if !opened.is_file() || opened.len() > MAX_INPUT_BYTES as u64 {
         return Err("EX-01 input is not a bounded regular file".to_owned());
     }
+    if opened.len() != before.len() {
+        return Err("EX-01 input size changed before opening".to_owned());
+    }
     let mut bytes = Vec::new();
-    file.take((MAX_INPUT_BYTES + 1) as u64)
+    (&mut file)
+        .take((MAX_INPUT_BYTES + 1) as u64)
         .read_to_end(&mut bytes)
         .map_err(|e| e.to_string())?;
     if bytes.len() > MAX_INPUT_BYTES || bytes.len() as u64 != opened.len() {
         return Err("EX-01 input changed size during read or exceeded limit".to_owned());
+    }
+    file.seek(SeekFrom::Start(0)).map_err(|e| e.to_string())?;
+    verify_second_pass(&mut file, &bytes)?;
+    let after = file.metadata().map_err(|e| e.to_string())?;
+    if !after.is_file() || after.len() != opened.len() {
+        return Err("EX-01 input metadata changed during verification".to_owned());
+    }
+    if let (Ok(initial), Ok(final_stamp)) = (opened.modified(), after.modified()) {
+        if initial != final_stamp {
+            return Err("EX-01 input timestamp changed during verification".to_owned());
+        }
     }
     Ok(bytes)
 }
 
 pub fn observe_file(path: &Path) -> Result<Value, String> {
     observe_bytes(&load_controlled_file(path)?)
+}
+
+#[cfg(test)]
+mod second_pass_tests {
+    use super::verify_second_pass;
+    use std::io::Cursor;
+
+    #[test]
+    fn unchanged_bytes_and_multichunk_buffer_succeed() {
+        let bytes = vec![0x5a; 128 * 1024 + 7];
+        assert!(verify_second_pass(&mut Cursor::new(&bytes), &bytes).is_ok());
+        assert!(verify_second_pass(&mut Cursor::new(&[]), &[]).is_ok());
+    }
+
+    #[test]
+    fn in_place_same_size_mutation_is_rejected() {
+        let bytes = vec![0x5a; 128 * 1024 + 7];
+        for offset in [0, 64 * 1024, bytes.len() - 1] {
+            let mut mutated = bytes.clone();
+            mutated[offset] ^= 0xff;
+            assert!(verify_second_pass(&mut Cursor::new(mutated), &bytes)
+                .unwrap_err()
+                .contains("bytes changed"));
+        }
+    }
+
+    #[test]
+    fn truncated_or_extended_second_read_is_rejected() {
+        let bytes = vec![7; 65537];
+        let short = &bytes[..bytes.len() - 1];
+        assert!(verify_second_pass(&mut Cursor::new(short), &bytes).is_err());
+        let mut long = bytes.clone();
+        long.push(8);
+        assert!(verify_second_pass(&mut Cursor::new(long), &bytes)
+            .unwrap_err()
+            .contains("grew"));
+    }
 }

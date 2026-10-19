@@ -207,3 +207,23 @@ This is **header data observation only**: no proof that section payloads/RVAs ar
 The new opt-in standalone `scripts/verify_observation_evidence.py` independently cross-checks a saved `0.1.0-experimental` report against a caller-supplied controlled source binary (≤2 MiB). For `pe.dos_magic`, `pe.coff_machine` and `pe.section_headers`, it validates schema and source length/SHA, deterministic config/run ID, all raw+normalized values, precise evidence offsets/lengths/methods, observation counts and scope/diagnostic truth claims. Deliberate falsification tests reject fake records, shifted proof offsets, wrong identities, false negative and false complete claims and incorrect truncation diagnostics. Unknown domains or producers are rejected, not guessed.
 
 **Limits:** agreement between a report and supplied bytes is NOT proof of authenticity, publisher identity, digital signature, file snapshot atomicity, supply-chain integrity, general PE correctness, sandbox safety or program behavior. A party controlling both report and file can produce matching contents. No Rust extractor, `binary-manifest v1.0.0`, experimental schema, dependency, or architecture changes. Keep overall EX-01 [#14](https://github.com/ELITEAYOTO/REL/issues/14) and P1.5-A [#9](https://github.com/ELITEAYOTO/REL/issues/9) open. Continue toward deliberate coverage/provenance and resource limits, then EX-02 under ADR-0013.
+
+## Candidate: EX-01 same-descriptor second-pass consistency — CI pending
+
+Branch `fix/ex01-same-descriptor-second-pass` strengthens the shared
+`rel-observe` file reader without altering report schemas: after the
+initial bounded ≤2 MiB read, it seeks to offset zero and compares every
+byte on the same file descriptor using a 64 KiB fixed scratch buffer,
+checks for trailing bytes and compares file metadata. Unit tests
+deterministically simulate same-size changed bytes across chunk
+boundaries, early EOF and appended bytes; existing CLI and Python
+oracles verify output regression across all three EX-01 domains.
+
+This detects *observed* mutations, **not** atomicity or guaranteed
+protection against concurrent writers, path-ancestor swaps or hostile
+filesystems. Successful input IO roughly doubles; bounded allocation
+is the original input plus the fixed scratch and report.
+No dependency, `binary-manifest v1.0.0`, experimental schema, producer
+configuration or run-ID changes. Confirm final-head Windows/Linux CI
+and post-merge main before claiming verification. Keep P1.5-A/#9
+and EX-01/#14 open.

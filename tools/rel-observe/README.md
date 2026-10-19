@@ -45,8 +45,18 @@ Only local controlled inputs are intended. Current limit is **2 MiB**;
 oversized, short, non-`MZ`, missing minimal `PE\\0\\0` signature, directories
 and observable final-component symlinks are rejected without JSON output.
 Minimal signature checks do not establish overall PE validity.
-Files could be changed by concurrent writers between stat/open/read;
-ancestor paths are not descriptor-confined, and this is **not a sandbox**.
+The reader now compares a second complete byte pass through the **same
+already-open file handle**, using a fixed 64 KiB scratch buffer. It rejects
+observed same-size content changes, truncation, extension, and length/timestamp
+inconsistencies before emitting a JSON report. The total read work roughly
+doubles on successful inputs; memory remains bounded by the original ≤2 MiB
+input buffer, the 64 KiB scratch buffer and report allocations.
+
+This is **not an atomic snapshot**: a concurrent writer can alter bytes
+between, during or after these passes and evade detection. Path ancestors
+are not descriptor-confined, and a leaf symlink swapped between the initial
+check and open is not race-proof. Do not treat this as a sandbox or a
+guarantee against hostile filesystem manipulation.
 For hostile files use a separately justified OS isolation boundary.
 Input binaries are never executed.
 

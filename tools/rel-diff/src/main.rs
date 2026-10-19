@@ -72,8 +72,25 @@ where
     Option::<T>::deserialize(deserializer)
 }
 
+// Nonblocking Unix open prevents a FIFO or device substituted at the leaf
+// from stalling *before* the opened-handle regular-file check can reject it.
+// O_NOFOLLOW protects the leaf only, not ancestor components or filesystem races.
+fn open_manifest(path: &str) -> Result<File, String> {
+    #[cfg(unix)]
+    let opened = {
+        use std::os::unix::fs::OpenOptionsExt;
+        std::fs::OpenOptions::new()
+            .read(true)
+            .custom_flags(libc::O_NONBLOCK | libc::O_NOFOLLOW)
+            .open(path)
+    };
+    #[cfg(not(unix))]
+    let opened = File::open(path);
+    opened.map_err(|e| format!("{path}: {e}"))
+}
+
 fn load(path: &str) -> Result<Manifest, String> {
-    let file = File::open(path).map_err(|e| format!("{path}: {e}"))?;
+    let file = open_manifest(path)?;
     let metadata = file.metadata().map_err(|e| format!("{path}: {e}"))?;
     if !metadata.is_file() {
         return Err(format!("{path}: input must be a regular file"));

@@ -4,3 +4,4 @@
 /corpus/pe_inspect/*
 !/corpus/pe_inspect/pe32-basic.exe
 !/corpus/pe_inspect/pe64-basic.exe
+!/corpus/pe_inspect/f001-goblin-tls-oob.bin

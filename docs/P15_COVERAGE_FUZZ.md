@@ -10,16 +10,18 @@ This is the **first independently executable libFuzzer harness** for `rel-pe::in
 - Rust Fuzz Book CI: https://rust-fuzz.github.io/book/cargo-fuzz/ci.html
 - Fuzzer tool: `cargo-fuzz 0.13.2`; `libfuzzer-sys 0.4` (semver range), nightly Rust required.
 - Ubuntu x86_64 only initially for the coverage-guided gate. Existing normal CI still covers stable Rust on Windows and Linux.
-- Nightly compiler and full fuzz dependencies are **not pinned yet**. Record the exact compiler and dependency versions in later reproducibility work.
+- Nightly compiler and full fuzz dependencies are **not pinned yet**; recording an exact compiler version does not make the run reproducible across future toolchain updates. This increment fixes historical crash-seed coverage only; the dependency lock and extended campaign remain issue #12. Record the exact compiler and dependency versions in later reproducibility work.
 
 ## Corpus
 
-`fuzz/corpus/pe_inspect/pe32-basic.exe` and `pe64-basic.exe` reuse the SHA-identical synthetic source fixtures in `fixtures/`. They are valid seeds, not proprietary game binaries. libFuzzer mutates those seeds and collects code-coverage feedback.
+`fuzz/corpus/pe_inspect/pe32-basic.exe` and `pe64-basic.exe` reuse the SHA-identical synthetic source fixtures in `fixtures/`. The third seed, `f001-goblin-tls-oob.bin`, reuses **the exact Git blob** from `fixtures/regressions/goblin-0.9.3-tls-oob.bin` (1104 bytes; SHA-256 `f65f21c07542483584cf156f1171ef6d02af1ce7168c573da79f8b81b96cc59e`). The fuzz workflow checks that checksum **before** building the instrumented target, and records the actual nightly compiler version. All three seeds are controlled evidence, never executable inputs run as programs. libFuzzer loads and mutates the seed corpus to collect code-coverage feedback. The known crash is still covered separately by `crates/rel-pe/tests/fuzz_tls_regression.rs`.
 
 ## Reproduce on a supported Unix host
 
 ```bash
 rustup toolchain install nightly --profile minimal
+printf '%s  %s\n' 'f65f21c07542483584cf156f1171ef6d02af1ce7168c573da79f8b81b96cc59e' 'fuzz/corpus/pe_inspect/f001-goblin-tls-oob.bin' | sha256sum --check -
+rustc +nightly --version --verbose
 cargo +nightly install cargo-fuzz --version 0.13.2 --locked
 cargo +nightly fuzz build pe_inspect
 mkdir -p fuzz/artifacts/pe_inspect

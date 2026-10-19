@@ -10,6 +10,7 @@
 - Original input: **1104 bytes**, SHA-256 `f65f21c07542483584cf156f1171ef6d02af1ce7168c573da79f8b81b96cc59e`.
 - Preserved byte-for-byte at `fixtures/regressions/goblin-0.9.3-tls-oob.bin`; verified Git blob `ab7b5e918bce1b89fa1acb2fc65236b6597a981c`.
 - Permanent regression test: `crates/rel-pe/tests/fuzz_tls_regression.rs` plus CLI negative check.
+- The coverage-guided seed corpus now also contains the **same byte-for-byte Git blob** as `fuzz/corpus/pe_inspect/f001-goblin-tls-oob.bin`, with a pre-run CI SHA-256 check. This supplements, rather than replaces, the deterministic regression.
 
 ## Investigated mitigations
 

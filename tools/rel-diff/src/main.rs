@@ -111,6 +111,9 @@ fn delta(left: &[String], right: &[String]) -> Delta {
 }
 
 fn section_status(a: &[Section], b: &[Section]) -> SectionDelta {
+    for section in a.iter().chain(b) {
+        let _ = (section.offset, section.size, section.virtual_address);
+    }
     let left_names: Vec<String> = a.iter().map(|s| s.name.clone()).collect();
     let right_names: Vec<String> = b.iter().map(|s| s.name.clone()).collect();
     if has_duplicates(&left_names) || has_duplicates(&right_names) {

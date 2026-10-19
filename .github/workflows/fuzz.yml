@@ -27,7 +27,7 @@ jobs:
         run: |
           rustc +"$FUZZ_TOOLCHAIN" --version --verbose
           cargo +"$FUZZ_TOOLCHAIN" metadata --manifest-path fuzz/Cargo.toml --locked --format-version 1 --no-deps >/dev/null
-          sha256sum fuzz/corpus/pe_inspect/* 
+          sha256sum fuzz/corpus/pe_inspect/*
           printf '%s  %s\n' \
             'f65f21c07542483584cf156f1171ef6d02af1ce7168c573da79f8b81b96cc59e' \
             'fuzz/corpus/pe_inspect/f001-goblin-tls-oob.bin' | sha256sum --check -

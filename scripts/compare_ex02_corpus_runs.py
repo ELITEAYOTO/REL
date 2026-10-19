@@ -20,6 +20,37 @@ REPORT_FILES = {
 HASH = re.compile(r"[0-9a-f]{64}\Z")
 
 
+def check_provenance(report: dict, mode: str) -> None:
+    """Refuse absent or malformed provenance, not just conflicting values."""
+    for key in ("source_sha256", "build_script_sha256"):
+        value = report.get(key)
+        if not isinstance(value, str) or HASH.fullmatch(value) is None:
+            raise ValueError(f"missing or invalid provenance: {key}")
+    for key in ("linker_banner", "build_script", "link_flags"):
+        value = report.get(key)
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"missing or invalid provenance: {key}")
+    if report["build_script"] != "scripts/build_windows_diff_pairs.cmd":
+        raise ValueError("unrecognized build script")
+    expected_flags = (
+        "/INCREMENTAL:NO /Brepro" if mode == "brepro" else "/INCREMENTAL:NO"
+    )
+    if report["link_flags"] != expected_flags:
+        raise ValueError("linker mode and flags disagree")
+    compilers = report.get("compilers")
+    if not isinstance(compilers, dict) or set(compilers) != {"msvc", "clang"}:
+        raise ValueError("missing or invalid provenance: compilers")
+    if not all(isinstance(x, str) and x.strip() for x in compilers.values()):
+        raise ValueError("missing compiler version")
+    environment = report.get("build_environment")
+    if not isinstance(environment, dict):
+        raise ValueError("missing build environment provenance")
+    for key in ("windows_sdk_version", "vc_tools_version", "image_os", "image_version"):
+        value = environment.get(key)
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"missing or invalid provenance: {key}")
+
+
 def load_report(path: Path, mode: str) -> dict:
     if path.suffix.lower() == ".zip":
         with zipfile.ZipFile(path) as archive:
@@ -34,6 +65,7 @@ def load_report(path: Path, mode: str) -> dict:
         raise ValueError("incompatible corpus evidence version")
     if report.get("link_mode") != mode:
         raise ValueError("wrong linker mode for comparison")
+    check_provenance(report, mode)
     cases = report.get("cases")
     if not isinstance(cases, list) or len(cases) != len(EXPECTED_IDS):
         raise ValueError("expected exactly eight corpus build cases")
@@ -49,6 +81,8 @@ def load_report(path: Path, mode: str) -> dict:
 
 
 def compare_reports(first: dict, second: dict, *, require_identical: bool) -> dict:
+    check_provenance(first, first.get("link_mode"))
+    check_provenance(second, second.get("link_mode"))
     keys = (
         "source_sha256",
         "compilers",

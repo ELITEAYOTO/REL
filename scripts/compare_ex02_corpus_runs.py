@@ -22,6 +22,8 @@ HASH = re.compile(r"[0-9a-f]{64}\Z")
 
 def check_provenance(report: dict, mode: str) -> None:
     """Refuse absent or malformed provenance, not just conflicting values."""
+    if mode not in REPORT_FILES or report.get("link_mode") != mode:
+        raise ValueError("missing or incompatible provenance: linker mode")
     for key in ("source_sha256", "build_script_sha256"):
         value = report.get(key)
         if not isinstance(value, str) or HASH.fullmatch(value) is None:

@@ -1,0 +1,56 @@
+name: REL PE Fuzz Extended (manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  extended-pe-libfuzzer:
+    name: PE libFuzzer (manual 300s)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      FUZZ_TOOLCHAIN: 'nightly-2026-10-19'
+      CARGO_FUZZ_VERSION: '0.13.2'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Install pinned nightly and cargo-fuzz
+        run: |
+          rustup toolchain install "$FUZZ_TOOLCHAIN" --profile minimal
+          cargo +"$FUZZ_TOOLCHAIN" install cargo-fuzz --version "$CARGO_FUZZ_VERSION" --locked
+      - name: Record executable, compiler and corpus provenance
+        run: |
+          {
+            echo "run_id=${GITHUB_RUN_ID}"
+            echo "commit=${GITHUB_SHA}"
+            echo "target=pe_inspect"
+            echo "time_budget_seconds=300;timeout_per_input_seconds=4;rss_limit_mb=1500;max_len=65536;seed=20261018"
+            rustc +"$FUZZ_TOOLCHAIN" --version --verbose
+            cargo +"$FUZZ_TOOLCHAIN" --version
+            cargo fuzz --version
+            sha256sum fuzz/corpus/pe_inspect/*
+          } | tee rel-fuzz-run-metadata.txt
+          cargo +"$FUZZ_TOOLCHAIN" metadata --manifest-path fuzz/Cargo.toml --locked --format-version 1 --no-deps >/dev/null
+      - name: Build instrumented PE target
+        run: cargo +"$FUZZ_TOOLCHAIN" fuzz build pe_inspect
+      - name: Run 300-second bounded campaign
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p fuzz/artifacts/pe_inspect
+          cargo +"$FUZZ_TOOLCHAIN" fuzz run pe_inspect -- -max_total_time=300 -timeout=4 -rss_limit_mb=1500 -max_len=65536 -seed=20261018 -print_final_stats=1 2>&1 | tee rel-fuzz-long.log
+      - name: Assert fuzz lock unchanged
+        if: always()
+        run: git diff --exit-code -- fuzz/Cargo.lock
+      - name: Preserve campaign logs and any crash artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: rel-pe-fuzz-long-${{ github.run_id }}
+          path: |
+            rel-fuzz-run-metadata.txt
+            rel-fuzz-long.log
+            fuzz/artifacts/pe_inspect/
+          if-no-files-found: warn

@@ -52,8 +52,13 @@ def validate(payload: dict) -> None:
             if entry["raw_value"] is None or entry["normalized_value"] is None:
                 raise ValueError("present requires raw and normalized values")
         elif status == "absent_in_scope":
-            if scope != "complete" or entry["raw_value"] is not None or entry["normalized_value"] is not None:
-                raise ValueError("absence requires complete coverage and no invented value")
+            if (
+                scope != "complete"
+                or not entry["evidence_ids"]
+                or entry["raw_value"] is not None
+                or entry["normalized_value"] is not None
+            ):
+                raise ValueError("absence requires complete coverage, evidence, and no invented value")
         else:
             if entry["raw_value"] is not None or entry["normalized_value"] is not None or entry["evidence_ids"]:
                 raise ValueError("indeterminate cannot claim a value or decisive evidence")

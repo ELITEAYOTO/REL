@@ -20,7 +20,7 @@ Le v1 contient `imports: Vec<String>`, `exports: Vec<String>`, `warnings: Vec<St
 ## Invariants
 
 1. **Absent dans une table examinée intégralement** n'est pas **impossible dans le logiciel** ; aucune conclusion « pas de réseau » à partir d'imports absents.
-2. Seul un domaine `complete` et précisément nommé peut établir `absent_in_scope` ; `failed`, `partial` et `unsupported` mènent à indéterminé.
+2. Seul un domaine `complete` et précisément nommé peut établir `absent_in_scope` ; le validateur générique exige aussi au moins une référence de preuve déclarée, sans prétendre en vérifier le contenu. `failed`, `partial` et `unsupported` mènent à indéterminé.
 3. Ne jamais inventer les ordinals, les imports retardés, les alias ni les offsets que v1 a perdus.
 4. Conserver la forme brute après normalisation, par exemple DLL insensible à la casse selon règles de comparaison explicites.
 5. Preuves de fichiers propriétaires : hashes/offsets validés plutôt que dump intégral ; ne pas divulguer des chemins/secrets privés.

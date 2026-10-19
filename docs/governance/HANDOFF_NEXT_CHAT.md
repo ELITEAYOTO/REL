@@ -1,5 +1,7 @@
 # REL — Handoff for next ChatGPT / contributor
 
+> **Start with [CURRENT_STATE.md](CURRENT_STATE.md)** for the short, current-oriented resume protocol. This long file is a multi-session **historical archive** and its older "Immediate priorities" sections are not necessarily current. Query GitHub HEADs, PRs and CI again; never infer shipping status from these logs.
+
 ## Repository and current state
 - Repository: https://github.com/ELITEAYOTO/REL
 - Source of truth: `main`; read it before suggesting changes.

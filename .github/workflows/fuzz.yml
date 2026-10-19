@@ -22,6 +22,12 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Install Rust nightly
         run: rustup toolchain install nightly --profile minimal
+      - name: Verify preserved F001 seed and record actual nightly toolchain
+        run: |
+          rustc +nightly --version --verbose
+          printf '%s  %s\n' \
+            'f65f21c07542483584cf156f1171ef6d02af1ce7168c573da79f8b81b96cc59e' \
+            'fuzz/corpus/pe_inspect/f001-goblin-tls-oob.bin' | sha256sum --check -
       - name: Install pinned cargo-fuzz
         run: cargo +nightly install cargo-fuzz --version "$CARGO_FUZZ_VERSION" --locked
       - name: Build instrumented PE fuzz target

@@ -25,6 +25,11 @@ fn cli_rejects_invalid_identity_and_schema_without_stdout() {
         base.replace(r#""format":"PE""#, r#""format":"ELF""#),
         base.replace(r#","warnings":[]"#, ""),
         base.replace(r#""size_bytes":10"#, r#""size_bytes":-2"#),
+        base.replace(r#""arch":null,"#, ""),
+        base.replace(
+            r#""sections":[]"#,
+            r#""sections":[{"name":".text","offset":0,"size":1}]"#,
+        ),
     ];
     for invalid in variants {
         fs::write(&right, invalid).expect("write invalid candidate");

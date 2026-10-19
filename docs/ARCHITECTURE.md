@@ -11,7 +11,7 @@
 
 ## Adopted target direction — ADR-0013 (not yet implemented)
 
-Current runtime remains precisely the three crates `rel-contracts`, `rel-pe`, `rel-inspect`. REL is a general reverse-engineering research platform targeting explainable change-tracking and provenance for **authorized** binary software.
+P1 runtime modules are `rel-contracts`, `rel-pe`, and `rel-inspect`; EX-01 adds the **separate, experimental** `rel-observe` producer rather than coupling its output into the existing P1 CLI. REL is a general reverse-engineering research platform targeting explainable change-tracking and provenance for **authorized** binary software.
 
 Next experiments **EX-01** (independent experimental observation/coverage contract) and **EX-02** (Rust metadata-only manifest diff) follow critical P1.5-A hardening and precede **P2 external Python Ghidra adapter**. P3 stays deep function matching. A hypothetical `rel-diff` must depend on stable contract data, not on `rel-pe` internals or a bundled Ghidra. No empty module shells just to realize diagrams.
 

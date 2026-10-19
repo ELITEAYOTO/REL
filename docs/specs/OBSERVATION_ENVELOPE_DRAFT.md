@@ -59,3 +59,23 @@ create an actual extraction consumer with deliberate coverage rules,
 test evaluator/producer correspondence, evaluate mixed/overlapping
 domains and ordinal/delay-import information without reconstructing
 facts lost by v1. Preserve critical P1.5-A work and issue #9.
+
+## First true controlled producer — candidate, final CI pending
+
+`tools/rel-observe` implements the deliberately narrow domain
+`pe.dos_magic`: it reads up to 2 MiB from an ordinary controlled file,
+checks that MZ and the minimal PE signature exist, and compares bytes
+[0,2) to `MZ` and `NE`. `present` and `absent_in_scope` therefore
+refer **only** to those two predicates at those bytes, not PE behavior.
+Actual file SHA-256, byte length and offset-backed evidence are emitted
+from the same buffer. The run-ID preimage is fully documented in the
+[tool README](../../tools/rel-observe/README.md) and checked with an
+independent Python implementation. Output is validated against the
+previously shipped experimental schema and semantic checks. The main
+`rel-inspect` v1 manifest is not changed.
+
+The CLI refuses inputs outside the scope; it does not claim an extraction
+`failed` report for every IO error, a coherent filesystem snapshot,
+complete PE correctness, or security against hostile inputs. Longer-term
+EX-01 still needs comprehensive coverage domains, diagnostics from real
+extraction errors and policy decisions for incomplete extraction.

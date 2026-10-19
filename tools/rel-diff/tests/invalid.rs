@@ -36,5 +36,16 @@ fn cli_rejects_invalid_identity_and_schema_without_stdout() {
         assert!(!result.status.success(), "invalid input was accepted");
         assert!(result.stdout.is_empty(), "failure published stdout");
     }
+    let directory_input = Command::new(env!("CARGO_BIN_EXE_rel-diff"))
+        .arg(&left)
+        .arg(&dir)
+        .output()
+        .expect("run CLI with directory");
+    assert!(!directory_input.status.success());
+    assert!(directory_input.stdout.is_empty());
+    assert!(
+        String::from_utf8_lossy(&directory_input.stderr)
+            .contains("input must be a regular file")
+    );
     fs::remove_dir_all(dir).expect("cleanup");
 }

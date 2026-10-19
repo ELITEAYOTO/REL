@@ -2,11 +2,11 @@
 
 ## [Unreleased] — 2026-10-18
 
-### EX-01 — COFF Machine observation with explicit partial coverage (candidate; CI pending)
+### EX-01 — COFF Machine observation with explicit partial coverage (PR #53 merged, CI verified)
 
 - New experimental `rel-observe coff-machine` CLI subcommand observes the actual two-byte little-endian COFF Machine field at `e_lfanew + 4`, with exact byte-offset evidence from the hashed subject buffer. Only `0x014c` (x86) and `0x8664` (x86_64) receive human-readable mappings; other values remain literal hex.
 - Truncation **after the PE signature** results in a scoped `partial` report, an `indeterminate` observation and a machine-readable `COFF_MACHINE_TRUNCATED` diagnostic with no fabricated evidence. Bad MZ/PE signatures and out-of-limit inputs are rejected without a report. Separate deterministic domain/config run IDs, independent Python oracle and Rust golden/negative tests cover controlled PE32/PE32+, unknown machine values and exact one-byte truncation.
-- Refactors only the shared `rel-observe` provenance envelope and bounded file reader to serve two independent domains; the original `dos-magic` output/run IDs, `rel-inspect` and `binary-manifest v1.0.0` are intended to remain unchanged. Not a complete PE header validator, architecture compatibility verifier, hostile binary sandbox or decompiler.
+- Refactors only the shared `rel-observe` provenance envelope and bounded file reader to serve two independent domains; the original `dos-magic` output/run IDs, `rel-inspect` and `binary-manifest v1.0.0` are intended to remain unchanged. Not a complete PE header validator, architecture compatibility verifier, hostile binary sandbox or decompiler. [PR #53](https://github.com/ELITEAYOTO/REL/pull/53) merged at [`e60e978`](https://github.com/ELITEAYOTO/REL/commit/e60e978fb7f6359122ae817f853b4629b8a34ab2); final-head [push CI #39182119983](https://github.com/ELITEAYOTO/REL/actions/runs/39182119983), [PR CI #39182124339](https://github.com/ELITEAYOTO/REL/actions/runs/39182124339) and [post-merge `main` CI #39182313199](https://github.com/ELITEAYOTO/REL/actions/runs/39182313199) succeeded Windows/Linux, including independent COFF Machine oracle and existing DOS contract tests.
 
 ### EX-01 — First real controlled byte-evidence producer (PR #51 merged; scoped CI verified)
 

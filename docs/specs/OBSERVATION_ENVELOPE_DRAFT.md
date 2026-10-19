@@ -82,7 +82,9 @@ complete PE correctness, or security against hostile inputs. Longer-term
 EX-01 still needs comprehensive coverage domains, diagnostics from real
 extraction errors and policy decisions for incomplete extraction.
 
-## Candidate: COFF Machine scope and partial semantics (CI pending)
+## COFF Machine scope and partial semantics (PR #53 merged, scoped CI verified)
+
+[PR #53](https://github.com/ELITEAYOTO/REL/pull/53) merged at `e60e978`; [post-merge CI #39182313199](https://github.com/ELITEAYOTO/REL/actions/runs/39182313199) passed Windows/Linux. Evidence is restricted to this one field and its reported truncation cases.
 
 The experimental `rel-observe coff-machine` command extracts the two-byte
 COFF Machine field at file offset `e_lfanew + 4`, only after validating

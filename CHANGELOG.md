@@ -2,11 +2,11 @@
 
 ## [Unreleased] — 2026-10-18
 
-### EX-01 — Controlled section header record observations (candidate; CI pending)
+### EX-01 — Controlled section header record observations (PR #55 merged; CI verified)
 
 - Add `rel-observe section-headers` as a third bounded observation domain `pe.section_headers`. Read the COFF section count and optional-header byte size, then report up to 32 complete, declared 40-byte headers with full raw record hex, cautious normalized fields, per-record SHA-bound file-offset evidence and deterministic domain/config-specific run ID.
 - Partial COFF/optional/section-header bytes produce `partial` and `indeterminate` with no fabricated proof; declared counts >32 yield `unsupported`. A zero count is reported `absent_in_scope` with two-byte count evidence only when the declared optional header fits. Rust and independent Python oracles cover both reference formats, exact offsets, truncation, caps, empty declarations and run-ID repeatability on Windows/Linux.
-- This validates only the **declared header bytes**. No claim of section payload correctness, RVA mapping validity, full PE parsing, hostile-input isolation or game/runtime capability. Existing DOS/COFF commands and `binary-manifest v1.0.0` remain unchanged.
+- This validates only the **declared header bytes**. No claim of section payload correctness, RVA mapping validity, full PE parsing, hostile-input isolation or game/runtime capability. Existing DOS/COFF commands and `binary-manifest v1.0.0` remain unchanged. [PR #55](https://github.com/ELITEAYOTO/REL/pull/55) merged at [`c6ca1bb`](https://github.com/ELITEAYOTO/REL/commit/c6ca1bbd57fb0a721736c150338d858a8a081e6d); final-head [branch #39184173861](https://github.com/ELITEAYOTO/REL/actions/runs/39184173861), [PR #39184179438](https://github.com/ELITEAYOTO/REL/actions/runs/39184179438) and [post-merge main #39184367267](https://github.com/ELITEAYOTO/REL/actions/runs/39184367267) all passed Windows/Linux, including the independent 40-byte section-record oracle.
 
 ### EX-01 — COFF Machine observation with explicit partial coverage (PR #53 merged, CI verified)
 

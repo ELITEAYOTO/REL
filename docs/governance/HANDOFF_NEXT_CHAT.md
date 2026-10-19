@@ -192,20 +192,10 @@ New standalone Rust `tools/rel-observe` CLI (Cargo workspace+lock) emits `0.1.0-
 
 Shared provenance and controlled file reader preserve the old `dos-magic` output and run ID (legacy oracle passes). No dependencies, `rel-inspect` or `binary-manifest v1.0.0` changes. **Do not overclaim:** the observed field is not entire PE validity, runtime architecture compatibility, decompilation, safety against hostile input or any gameplay capability. P1.5-A [#9](https://github.com/ELITEAYOTO/REL/issues/9) and overall EX-01 [#14](https://github.com/ELITEAYOTO/REL/issues/14) remain open. EX-02, Ghidra integration and function matching follow the existing roadmap.
 
-## Candidate: EX-01 declared section header domain — PR/CI pending
+## EX-01 declared PE section headers — MERGED, SCOPED CI VERIFIED
 
-Branch `feat/ex01-section-header-evidence` introduces a third real
-`rel-observe` domain `pe.section_headers`, based on COFF
-`NumberOfSections` + `SizeOfOptionalHeader`, at most 32 complete
-40-byte records, exact SHA-bound file-offset evidence, raw 40-byte
-hex values and deliberately limited normalized fields. Truncated
-COFF/optional/section record bytes yield `partial/indeterminate` with
-no fabricated data; count >32 yields `unsupported` with diagnostics.
-Zero count yields `absent_in_scope` with count-byte evidence when the
-declared optional header fits. New Rust regressions and Python oracle
-independently verify PE32/PE64, source SHA, offsets, deterministic
-domain-specific run ID, truncation, count limit and empty declaration.
-Do not mark validated before final-head Windows/Linux PR CI and
-post-merge main CI; retain existing DOS/COFF golden gates. No
-full PE validation, section payload inspection, sandbox, game-specific
-logic or contract v1.0.0 change. Issues #9 and #14 remain open.
+[PR #55](https://github.com/ELITEAYOTO/REL/pull/55) merged at [`c6ca1bb`](https://github.com/ELITEAYOTO/REL/commit/c6ca1bbd57fb0a721736c150338d858a8a081e6d). Final-head [branch CI #39184173861](https://github.com/ELITEAYOTO/REL/actions/runs/39184173861) and [PR CI #39184179438](https://github.com/ELITEAYOTO/REL/actions/runs/39184179438) passed Windows/Linux; independent Python oracle logs on both platforms show `PASS EX-01 section headers: exact 40-byte proofs, limits, partial abstention, reproducible ID`. [Post-merge main CI #39184367267](https://github.com/ELITEAYOTO/REL/actions/runs/39184367267) **also passed on Windows and Linux**. First head had rustfmt/Clippy failures, corrected on final tested head `878a6c1`; do not cite the earlier failures as final run status.
+
+Third real `rel-observe` domain `pe.section_headers` observes at most 32 declared 40-byte COFF section headers after the optional header. It reports SHA-bound file-offset evidence, original 40-byte hex per record and bounded normalized name bytes (hex), RVA/virtual size, raw file pointer/size and flags. Incomplete COFF, optional header, or any declared section record yields `partial/indeterminate`, no decisive record proof and warning. Count >32 yields `unsupported`; zero declared sections yields `absent_in_scope` backed by two count bytes only if header span is present. No new dependencies or `binary-manifest v1.0.0` changes; DOS/COFF prior CLI regressions remained green.
+
+This is **header data observation only**: no proof that section payloads/RVAs are valid, no executable behavior analysis, no safe arbitrary-hostile binary sandbox, and no decompilation. Overall EX-01 [issue #14](https://github.com/ELITEAYOTO/REL/issues/14) and P1.5-A [issue #9](https://github.com/ELITEAYOTO/REL/issues/9) remain open. Future work should prioritize evidence quality, resource containment, and broaden analysis deliberately before EX-02/P2/P3.

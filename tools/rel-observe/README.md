@@ -85,7 +85,7 @@ input only, not snapshot-safe or an arbitrary hostile-binary sandbox.
 Validate through `python scripts/test_coff_machine_cli.py --binary
 target/release/rel-observe` (or `.exe` on Windows). [PR #53](https://github.com/ELITEAYOTO/REL/pull/53) and [main CI #39182313199](https://github.com/ELITEAYOTO/REL/actions/runs/39182313199) passed on Windows/Linux.
 
-## Experimental section-header observation (candidate; CI pending)
+## Experimental section-header observation (PR #55 merged; scoped CI verified)
 
 ```sh
 cargo run --locked -p rel-observe -- section-headers fixtures/pe32-basic.exe
@@ -113,4 +113,4 @@ Run ID uses the documented preimage from the DOS command with
 configuration string
 `rel-observe:section-headers:v1;limit=2097152;max=32;record=40`
 and domain `pe.section_headers\0`. The independent cross-platform
-oracle `scripts/test_section_headers_cli.py` recomputes all values.
+oracle `scripts/test_section_headers_cli.py` recomputes all values. [PR #55](https://github.com/ELITEAYOTO/REL/pull/55) and [post-merge Windows/Linux CI #39184367267](https://github.com/ELITEAYOTO/REL/actions/runs/39184367267) passed in this narrow scope.

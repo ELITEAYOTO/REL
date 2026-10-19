@@ -107,7 +107,9 @@ executable or compatible, what imported APIs mean, or whether an
 arbitrary hostile binary can be analyzed safely. Overall EX-01 and
 P1.5-A remain incomplete; no change to manifest v1.0.0.
 
-## Candidate: controlled section-header observations (CI pending)
+## Controlled section-header observations (PR #55 merged; scoped CI verified)
+
+[PR #55](https://github.com/ELITEAYOTO/REL/pull/55) merged as `c6ca1bb`; final-head and [post-merge main CI #39184367267](https://github.com/ELITEAYOTO/REL/actions/runs/39184367267) passed Windows/Linux. This validates only the declared 40-byte section records and specified abstention cases.
 
 The bounded `rel-observe section-headers` command exposes the declared
 40-byte section headers as a separate scope `pe.section_headers`.

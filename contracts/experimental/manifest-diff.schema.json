@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ELITEAYOTO/REL/blob/main/contracts/experimental/manifest-diff.schema.json",
+  "title": "REL experimental PE manifest diff v0.1.0",
+  "description": "Descriptive metadata-only diff. Does not claim behavioral or function changes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "left_sha256",
+    "right_sha256",
+    "size_changed",
+    "arch_changed",
+    "imports",
+    "import_dll_case_only",
+    "exports",
+    "sections",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.1.0-experimental"
+    },
+    "left_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "right_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "size_changed": {
+      "type": "boolean"
+    },
+    "arch_changed": {
+      "type": "boolean"
+    },
+    "imports": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "added",
+        "removed"
+      ],
+      "properties": {
+        "added": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "removed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "import_dll_case_only": {
+      "type": "boolean"
+    },
+    "exports": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "added",
+        "removed"
+      ],
+      "properties": {
+        "added": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "removed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "sections": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "reason",
+        "added",
+        "removed",
+        "changed"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "unchanged",
+            "changed",
+            "ambiguous"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "added": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "removed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "changed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  }
+}

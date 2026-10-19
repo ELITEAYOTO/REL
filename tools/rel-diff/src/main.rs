@@ -248,7 +248,9 @@ fn run() -> Result<(), String> {
     let report = compare(load(&args[1])?, load(&args[2])?);
     let bytes = output::serialize_report(&report)?;
     use std::io::Write;
-    std::io::stdout().write_all(&bytes).map_err(|e| e.to_string())?;
+    std::io::stdout()
+        .write_all(&bytes)
+        .map_err(|e| e.to_string())?;
     Ok(())
 }
 

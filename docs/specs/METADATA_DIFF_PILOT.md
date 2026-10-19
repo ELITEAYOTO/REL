@@ -48,4 +48,10 @@ La CI Windows construit désormais, **sans les exécuter**, quatre variantes de 
 
 Le premier artefact Windows contrôlé ([CI #39209103249](https://github.com/ELITEAYOTO/REL/actions/runs/39209103249)) confirme huit builds, seize paires et des différences indépendamment observées d'imports/exports/sections. Voir [protocole et limites du corpus](../EX02_COMPILER_CORPUS.md). **Seize paires d'un même petit source C ne constituent pas seize projets indépendants**, ni un corpus représentatif de builds autorisés de logiciels réels. Les performances et la précision du produit sur un éventail plus large de binaires restent à établir.
 
+## Audit #69 — Compilations identiques et horodatages PE
+
+La comparaison de deux compilations successives dans le même job Windows a identifié **exactement deux octets différents par PE normal**, appartenant exclusivement au `COFF TimeDateStamp` et à un `IMAGE_DEBUG_DIRECTORY.TimeDateStamp` (`8/8` binaires affectés). Cette localisation est contrôlée par des offsets `pefile` explicites. Une expérience isolée `/INCREMENTAL:NO /Brepro` a produit `8/8` fichiers byte-à-byte identiques dans le même job, et les huit SHA ont aussi coïncidé dans deux jobs distincts à source/bannières compilateurs déclarées identiques. Voir [preuve et limites](../EX02_COMPILER_CORPUS.md) et [issue #69](https://github.com/ELITEAYOTO/REL/issues/69).
+
+Le comparateur indépendant `scripts/compare_ex02_corpus_runs.py` refuse les comparaisons de provenance incompatible ; le mode strict `--require-identical` est réservé aux builds `brepro`. Il ne modifie **aucun** octet ni empreinte SHA-256 originale et ne revendique ni équivalence fonctionnelle ni garantie de reproductibilité sous une autre configuration SDK/runner. Ces diagnostics ne clôturent pas la gate EX-02 globale.
+
 **Critères toujours ouverts :** corpus représentatif de 10–20 paires autorisées avec oracles de vérité terrain, benchmarks répétés temps/RSS, décisions sur couverture incomplète et ordinals non représentés, revue des collisions et adéquation complète au schéma public. Ne pas cocher le jalon EX-02 sur `main` pour cette PR seule.

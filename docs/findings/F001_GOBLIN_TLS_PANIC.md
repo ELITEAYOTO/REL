@@ -19,6 +19,44 @@
 3. REL upgraded the existing adapter (no API contract change) to pinned `goblin 0.10.7` with a regenerated `Cargo.lock`. See [ADR-0012](../adr/ADR-0012-goblin-tls-upgrade.md).
 4. [Fuzz CI 39101228893](https://github.com/ELITEAYOTO/REL/actions/runs/39101228893) succeeded after 688,395 cases; [standard CI 39101228912](https://github.com/ELITEAYOTO/REL/actions/runs/39101228912) passed on Windows and Ubuntu.
 
+## Upstream bounds failure and patch trace (2026-10-19)
+
+The reported F001 panic is at **`goblin 0.9.3/src/pe/tls.rs:228`**.
+Reviewing [that exact source](https://github.com/m4b/goblin/blob/v0.9.3/src/pe/tls.rs#L218-L229)
+confirms the TLS raw-data parser used `&bytes[offset..offset + size as usize]`
+without validating `offset <= bytes.len()` or the sum's bounds.
+The F001 panic's large starting index and 1104-byte input are **consistent
+with this unchecked slicing defect**. This source/path correspondence
+is strong evidence of the crash mechanism, but it is not a separate
+byte-for-byte upstream reproduction with the old crate.
+
+- [Goblin PR #448](https://github.com/m4b/goblin/pull/448) (merged):
+  replaces unchecked addition with `checked_add` and explicitly validates
+  both `offset` and its computed end against the input length.
+- [Goblin PR #473](https://github.com/m4b/goblin/pull/473) (merged):
+  later replaces the TLS raw-data slice with a bounded
+  `pread_with(...).ok()` lookup returning `None` when the region is
+  unavailable. This alters malformed TLS handling; it is **not**
+  evidence that all PE invalid-input paths are memory safe.
+- [ADR-0012](../adr/ADR-0012-goblin-tls-upgrade.md) records REL's
+  narrower verified dependency upgrade to pinned `goblin 0.10.7`.
+  The original F001 Rust test must still reject the original file,
+  independently of any code path taken by `catch_unwind`.
+
+The deterministic regression now also checks **all 1,104 strict
+truncations** and **all 1,104 single-byte XOR-0xff corruptions** of the
+preserved F001 sample without allowing a propagated panic. Those mutation
+cases only require the parser to return; they do **not** require each
+variant to be rejected, and they do not replace the 30-second libFuzzer
+smoke or the separately recorded 300-second campaign. Fixture bytes,
+public schemas and production parser remain unchanged.
+
+**Still open for issue #11:** independently execute/minimize the original
+failure under the old 0.9.3 parser with an appropriately isolated
+process, if worth the complexity, and complete a focused upstream
+regression provenance review. Do not introduce the vulnerable old crate
+into REL's production dependency graph or infer broad security guarantees.
+
 ## What this does not prove
 
 - Absence of other input-triggered goblin bugs, crashes, hangs or exploitability.

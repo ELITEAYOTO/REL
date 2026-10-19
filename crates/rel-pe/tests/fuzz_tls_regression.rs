@@ -13,3 +13,27 @@ fn malformed_tls_directory_is_rejected_without_unwinding() {
         "invalid TLS directory was accepted"
     );
 }
+
+#[test]
+fn original_f001_truncations_and_single_byte_corruptions_do_not_unwind() {
+    // Keep the historical bytes untouched; mutations use local copies only.
+    // Exhaustively test each truncated length and one XOR mutation per byte.
+    // Mutation may change validity, so the only invariant is no propagated panic.
+    assert_eq!(MALFORMED_TLS.len(), 1104, "F001 fixture length changed");
+    for length in 0..MALFORMED_TLS.len() {
+        assert!(
+            std::panic::catch_unwind(|| inspect(&MALFORMED_TLS[..length])).is_ok(),
+            "F001 truncated to {length} bytes caused a panic"
+        );
+    }
+
+    let mut changed = MALFORMED_TLS.to_vec();
+    for offset in 0..MALFORMED_TLS.len() {
+        changed[offset] ^= 0xff;
+        assert!(
+            std::panic::catch_unwind(|| inspect(&changed)).is_ok(),
+            "F001 one-byte corruption at offset {offset} caused a panic"
+        );
+        changed[offset] ^= 0xff;
+    }
+}

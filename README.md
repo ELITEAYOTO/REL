@@ -15,7 +15,13 @@ python scripts/validate_observation_envelope.py fixtures/experimental/observatio
 python scripts/test_observation_envelope.py
 ```
 
-These hand-authored examples demonstrate contract semantics on an owned synthetic fixture; **REL does not yet generate EX-01 reports or infer that absent imports prove absent capabilities**. The existing CLI still emits only `binary-manifest` v1.0.0. EX-01 remains experimental and not complete. See [scope](docs/specs/OBSERVATION_ENVELOPE_DRAFT.md).
+These hand-authored examples demonstrate contract semantics on an owned synthetic fixture. An additional, independent **controlled-source Rust producer** now emits real reports for only `pe.dos_magic`:
+
+```sh
+cargo run --locked -p rel-observe -- dos-magic fixtures/pe32-basic.exe
+```
+
+It computes actual file SHA-256 and two-byte evidence and uses an explicitly documented deterministic run ID; see [producer details](tools/rel-observe/README.md). The original `rel-inspect` still emits only `binary-manifest v1.0.0`. **EX-01 remains experimental and incomplete**, and no absence of runtime/game/network capabilities can be inferred from a two-byte signature. See [scope](docs/specs/OBSERVATION_ENVELOPE_DRAFT.md).
 
 ## Existing modules
 
@@ -24,6 +30,7 @@ These hand-authored examples demonstrate contract semantics on an owned syntheti
 | `rel-contracts` | Stable, serializable manifest data model |
 | `rel-pe` | Static PE32/PE32+ parsing: sections, imports, exports |
 | `rel-inspect` | Standalone CLI: file limit, SHA-256, report output |
+| `rel-observe` | Experimental standalone DOS signature evidence producer on controlled PE inputs |
 
 The parser never executes an imported EXE/DLL. Other features (decompilation, matching, knowledge graph, AI classifier, execution/emulation, desktop UI) are **not implemented**.
 

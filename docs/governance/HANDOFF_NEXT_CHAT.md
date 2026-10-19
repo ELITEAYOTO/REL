@@ -175,3 +175,18 @@ Branch `fix/p15a-second-pass-input-check` updates `tools/rel-inspect/src/input.r
 [PR #49](https://github.com/ELITEAYOTO/REL/pull/49) merged as [`bbbec20`](https://github.com/ELITEAYOTO/REL/commit/bbbec203409c478462b6fd8398640f868ee9c3c7). Final-head [push CI #39176068549](https://github.com/ELITEAYOTO/REL/actions/runs/39176068549), [PR CI #39176105548](https://github.com/ELITEAYOTO/REL/actions/runs/39176105548), and [post-merge `main` CI #39176279141](https://github.com/ELITEAYOTO/REL/actions/runs/39176279141) succeeded on Windows/Linux. The Windows logs include five golden `present / absent_in_scope / partial / failed / unsupported` examples and the legacy manifest v1 isolation check.
 
 Standalone `contracts/experimental/observation-envelope.schema.json` (`0.1.0-experimental`), Python semantic validation and five hand-authored examples based on owned PE32 fixture bytes are available. These validate report shape, integrity and specifically scoped negative observations, **not** an actual extraction engine or truth of arbitrary reports. The existing Rust CLI remains v1-only, no manifest v1.0.0 change. Next implement a minimal controlled-source EX-01 producer that computes actual byte evidence and reproducible run IDs; only then consider broader extraction/coverage. **Overall EX-01, P1.5-A, EX-02, Ghidra and P3 remain open.** [Issue #14](https://github.com/ELITEAYOTO/REL/issues/14) tracks EX-01.
+
+## Candidate: real controlled-source EX-01 DOS magic producer — CI pending
+
+Branch `feat/ex01-real-dos-magic-producer` adds standalone Rust
+`tools/rel-observe` with a real `dos-magic` command and integration tests,
+registered in Cargo workspace and lockfile. It produces the experimental
+`0.1.0-experimental` envelope for PE-like **controlled** input up to 2 MiB,
+with actual SHA-256, byte-accurate file-offset evidence and a documented,
+deterministic config/input/domain/version run ID. It only asserts MZ
+present and NE absent within bytes [0,2); it does not extract imports,
+prove absent behaviors, or implement full EX-01. Rejects unsupported or
+truncated input without JSON; no atomic snapshot or sandbox safety.
+`rel-inspect` and `binary-manifest v1.0.0` remain unchanged. Run the
+Windows/Linux CLI+Python oracle and confirm final-head/pr/post-merge CI
+before claiming integration. Keep EX-01 #14 and P1.5-A #9 open.

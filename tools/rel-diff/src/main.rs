@@ -38,6 +38,12 @@ struct Delta {
 }
 
 #[derive(Serialize)]
+struct SectionDelta {
+    status: &'static str,
+    reason: &'static str,
+}
+
+#[derive(Serialize)]
 struct Report {
     schema_version: &'static str,
     left_sha256: String,
@@ -46,6 +52,7 @@ struct Report {
     arch_changed: bool,
     imports: Delta,
     exports: Delta,
+    sections: SectionDelta,
     limitations: Vec<&'static str>,
 }
 
@@ -78,16 +85,6 @@ fn load(path: &str) -> Result<Manifest, String> {
     {
         return Err(format!("{path}: invalid SHA-256"));
     }
-    // All section fields are parsed, but are NOT compared in this first increment.
-    // Read them here to ensure no future refactor silently discards required data.
-    for section in &manifest.sections {
-        let _ = (
-            &section.name,
-            section.offset,
-            section.size,
-            section.virtual_address,
-        );
-    }
     if has_duplicates(&manifest.imports) || has_duplicates(&manifest.exports) {
         return Err(format!("{path}: duplicate import or export observations"));
     }
@@ -113,6 +110,21 @@ fn delta(left: &[String], right: &[String]) -> Delta {
     }
 }
 
+fn section_status(a: &[Section], b: &[Section]) -> SectionDelta {
+    let left_names: Vec<String> = a.iter().map(|s| s.name.clone()).collect();
+    let right_names: Vec<String> = b.iter().map(|s| s.name.clone()).collect();
+    if has_duplicates(&left_names) || has_duplicates(&right_names) {
+        return SectionDelta {
+            status: "ambiguous",
+            reason: "Repeated section names prevent unique name-based matching.",
+        };
+    }
+    SectionDelta {
+        status: "incomparable",
+        reason: "Section matching is not implemented in this pilot.",
+    }
+}
+
 fn compare(a: Manifest, b: Manifest) -> Report {
     Report {
         schema_version: "0.1.0-experimental",
@@ -122,8 +134,9 @@ fn compare(a: Manifest, b: Manifest) -> Report {
         arch_changed: a.arch != b.arch,
         imports: delta(&a.imports, &b.imports),
         exports: delta(&a.exports, &b.exports),
+        sections: section_status(&a.sections, &b.sections),
         limitations: vec![
-            "Section matching not implemented; no section conclusions.",
+            "Section status is ambiguous or incomparable; no section deltas are claimed.",
             "Imports and exports are observed strings, not runtime capabilities.",
             "Duplicates and import DLL casing are not normalized in this pilot.",
             "Unknown extraction coverage; no negative behavioral conclusions.",
@@ -155,6 +168,20 @@ fn main() -> ExitCode {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn repeated_sections_are_not_silently_matched() {
+        let section = |name: &str| Section {
+            name: name.into(),
+            offset: 0,
+            size: 10,
+            virtual_address: Some(4096),
+        };
+        let result = section_status(&[section(".text"), section(".text")], &[]);
+        assert_eq!(result.status, "ambiguous");
+        let result = section_status(&[section(".text")], &[section(".text")]);
+        assert_eq!(result.status, "incomparable");
+    }
 
     #[test]
     fn repeated_observations_are_detected() {

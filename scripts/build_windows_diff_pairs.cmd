@@ -35,6 +35,18 @@ clang-cl.exe --version > "%REL_DIFF_OUT%\clang-cl-version.txt"
 if errorlevel 1 exit /b 1
 link.exe /? > "%REL_DIFF_OUT%\linker-version.txt" 2>&1
 if not exist "%REL_DIFF_OUT%\linker-version.txt" exit /b 1
+rem VsDevCmd runs only inside this CMD process; persist *version strings* for
+rem later Python workflow steps without exposing absolute SDK install paths.
+if not defined WindowsSDKVersion (
+  echo Missing WindowsSDKVersion environment provenance 1>&2
+  exit /b 1
+)
+if not defined VCToolsVersion (
+  echo Missing VCToolsVersion environment provenance 1>&2
+  exit /b 1
+)
+> "%REL_DIFF_OUT%\windows-sdk-version.txt" echo %WindowsSDKVersion%
+> "%REL_DIFF_OUT%\vc-tools-version.txt" echo %VCToolsVersion%
 for %%V in (1 2 3 4) do (
   cl.exe /nologo /W4 /WX /O2 /MD /DREL_DIFF_VARIANT=%%V /Fe:%REL_DIFF_OUT%\msvc-v%%V.exe fixtures\probes\diff_version_probe.c /link %REL_DIFF_LINK_FLAGS%
   if errorlevel 1 exit /b 1

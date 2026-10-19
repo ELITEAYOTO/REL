@@ -122,7 +122,74 @@
             "type": "string"
           }
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "unchanged",
+                  "ambiguous"
+                ]
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "added": {
+                "maxItems": 0
+              },
+              "removed": {
+                "maxItems": 0
+              },
+              "changed": {
+                "maxItems": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "changed"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "anyOf": [
+              {
+                "properties": {
+                  "added": {
+                    "minItems": 1
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "removed": {
+                    "minItems": 1
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "changed": {
+                    "minItems": 1
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
     },
     "limitations": {
       "type": "array",

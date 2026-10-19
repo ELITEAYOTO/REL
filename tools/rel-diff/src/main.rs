@@ -259,7 +259,10 @@ mod tests {
         assert!(dll_case_only(&left, &right));
         assert_eq!(delta(&left, &right).removed, left);
         assert!(!dll_case_only(
-            &["KERNEL32.DLL!ReadFile".into(), "kernel32.dll!ReadFile".into()],
+            &[
+                "KERNEL32.DLL!ReadFile".into(),
+                "kernel32.dll!ReadFile".into()
+            ],
             &["kernel32.dll!ReadFile".into()]
         ));
         assert!(!dll_case_only(

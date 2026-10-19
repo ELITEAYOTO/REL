@@ -186,6 +186,20 @@ def verify(binary, inspector):
         assert only_case["imports"]["removed"] == ["KERNEL32.DLL!ReadFile"]
         assert only_case["imports"]["added"] == ["kernel32.dll!ReadFile"]
 
+        # Rust uses ASCII-only DLL-prefix case normalization. A Unicode
+        # case conversion must NOT silently equate distinct observed strings.
+        unicode_a = copy.deepcopy(a)
+        unicode_b = copy.deepcopy(a)
+        unicode_a["imports"] = ["Ä.DLL!ReadFile"]
+        unicode_b["imports"] = ["ä.dll!ReadFile"]
+        unicode_b["binary_sha256"] = "e" * 64
+        unicode_report, _ = accepted(
+            binary, directory, output_validator, unicode_a, unicode_b
+        )
+        assert not unicode_report["import_dll_case_only"]
+        assert unicode_report["imports"]["removed"] == ["Ä.DLL!ReadFile"]
+        assert unicode_report["imports"]["added"] == ["ä.dll!ReadFile"]
+
         collision = copy.deepcopy(a)
         collision["imports"].append("kernel32.dll!ReadFile")
         ambiguous, _ = accepted(binary, directory, output_validator, collision, case_b)

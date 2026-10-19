@@ -1,6 +1,6 @@
 # P1.5-A — Opt-in direct-child watchdog (v0)
 
-**Status: Python watchdog and optional Linux RLIMIT_AS integrated on `main` ([Linux native-cap post-merge CI #39150254312](https://github.com/ELITEAYOTO/REL/actions/runs/39150254312)); Windows Job Object increment tested on PR CI, merge pending.** This is an optional controlled-input runner, not a sandbox or a hard memory/CPU cap.
+**Status: optional watchdog, Linux native limits, Windows Job Object and sampled stdout/stderr spool controls integrated on `main`; latest combined [post-merge CI #39305827604](https://github.com/ELITEAYOTO/REL/actions/runs/39305827604) succeeded on Windows/Ubuntu.** [PR #79](https://github.com/ELITEAYOTO/REL/pull/79) added the sampled spool checks. This is a controlled-input runner, not a sandbox or a general hard memory/CPU/disk quota.
 
 ## Scope
 

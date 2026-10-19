@@ -1,10 +1,11 @@
 # REL — Input acquisition policy matrix (2026-10-19)
 
-These policies apply to **controlled alpha inputs**. None is a general
-hostile-file sandbox or an atomic filesystem snapshot. Verify current
-GitHub branches and CI before treating an experimental tool as shipped.
+These policies apply to **controlled alpha inputs** at the 2026-10-19
+post-merge checkpoint. None is a general hostile-file sandbox or atomic
+filesystem snapshot. The latest main CI [#39305827604](https://github.com/ELITEAYOTO/REL/actions/runs/39305827604)
+succeeded on Windows and Ubuntu; recheck GitHub for newer code.
 
-| Property | rel-inspect (main) | rel-observe (this candidate) | rel-diff (draft PR #62) |
+| Property | rel-inspect (main) | rel-observe (main EX-01) | rel-diff (main experimental EX-02 pilot) |
 | --- | --- | --- | --- |
 | Input bytes | PE, 512 MiB cap | PE-like, 2 MiB cap | Two PE JSON manifests, 16 MiB each |
 | Leaf symlinks | Unix no-follow; Windows reparse guard | Unix no-follow; Windows reparse guard | Unix no-follow; Windows reparse guard |
@@ -17,7 +18,7 @@ GitHub branches and CI before treating an experimental tool as shipped.
 | Output | 16 MiB preflight, no-clobber file policy | Buffered stdout JSON; no dedicated byte cap | 16 MiB buffered stdout report cap |
 | Safe for arbitrary hostile input | No | No | No |
 
-## What the targeted EX-01 change establishes
+## What the integrated targeted EX-01 change establishes
 
 - Deterministic Unix and Windows tests simulate leaf-symlink insertion
   after an ordinary-file preflight, before acquisition.

@@ -1,6 +1,6 @@
 # ADR-0014 — Empreinte binaire brute et reproductibilité contrôlée des builds PE
 
-**Statut : PROPOSÉ — document présent dans la PR #62, non adopté sur `main`**  
+**Statut : PROPOSÉ — document présent sur `main` depuis [PR #62](https://github.com/ELITEAYOTO/REL/pull/62), sans adoption formelle de cette ADR**  
 **Date : 2026-10-19**  
 **Rattachement :** [ADR-0013](ADR-0013-vision-evidence-evolution.md), [audit #69](https://github.com/ELITEAYOTO/REL/issues/69), [protocole EX-02](../EX02_COMPILER_CORPUS.md).
 

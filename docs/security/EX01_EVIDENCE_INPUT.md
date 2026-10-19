@@ -1,7 +1,9 @@
 # EX-01 — Controlled evidence-verifier input policy
 
-**Scope:** `scripts/verify_observation_evidence.py` on the proposed
-[issue #76](https://github.com/ELITEAYOTO/REL/issues/76) fix branch.
+**Scope:** `scripts/verify_observation_evidence.py` integrated through
+[PR #77](https://github.com/ELITEAYOTO/REL/pull/77), with Windows/Ubuntu
+[post-merge CI #39304522471](https://github.com/ELITEAYOTO/REL/actions/runs/39304522471).
+The narrow [issue #76](https://github.com/ELITEAYOTO/REL/issues/76) is closed.
 This is a controlled-input verifier, **not** a hostile-filesystem sandbox.
 
 - Source PE maximum: **2 MiB** read, plus one byte to detect overflow.
@@ -32,6 +34,6 @@ preflight-to-open regular-file and leaf-symlink substitutions,
 leaf symlinks on Windows/Ubuntu, and timeout-guarded Unix FIFO cases
 both before and after path preflight.
 
-**Acceptance:** latest branch HEAD must pass Windows/Ubuntu CI and the
-positive EX-01 evidence verifier smoke on real controlled fixtures;
-future platform-specific path-race hardening is a separate task.
+**Validated narrow fix:** the squashed `main` commit `5e71874` passed
+Windows/Ubuntu post-merge CI and the positive EX-01 source-backed verifier
+smoke tests. Future platform-specific path-race hardening remains separate.

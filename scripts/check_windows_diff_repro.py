@@ -62,6 +62,7 @@ def record_regions(data: bytes) -> dict:
                 "sha256": sha(data[start:end]),
             })
         debug_entries = []
+        debug_directory_timestamps = []
         parsed.parse_data_directories(
             directories=[pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_DEBUG"]]
         )
@@ -74,9 +75,15 @@ def record_regions(data: bytes) -> dict:
                     "size": size,
                     "sha256": sha(data[start:start + size]),
                 })
+            debug_directory_timestamps.append({
+                "offset": int(item.struct.get_field_absolute_offset("TimeDateStamp")),
+                "value": int(item.struct.TimeDateStamp),
+            })
         return {
             "machine": int(coff.Machine),
             "timestamp": int(coff.TimeDateStamp),
+            "coff_timestamp_offset": int(coff.get_field_absolute_offset("TimeDateStamp")),
+            "debug_directory_timestamps": debug_directory_timestamps,
             "optional_checksum": int(optional.CheckSum),
             "entry_point_rva": int(optional.AddressOfEntryPoint),
             "size_of_image": int(optional.SizeOfImage),
@@ -88,6 +95,12 @@ def record_regions(data: bytes) -> dict:
 
 
 def category(pos: int, regions: dict) -> str:
+    coff_offset = regions.get("coff_timestamp_offset")
+    if coff_offset is not None and coff_offset <= pos < coff_offset + 4:
+        return "coff-timestamp"
+    for field in regions.get("debug_directory_timestamps", []):
+        if field["offset"] <= pos < field["offset"] + 4:
+            return "debug-directory-timestamp"
     for section in regions["sections"]:
         if section["offset"] <= pos < section["offset"] + section["size"]:
             return f"section:{section['name']}"
@@ -123,8 +136,12 @@ def compare(first: Path, second: Path, output: Path) -> None:
         spans = differing_ranges(before, after)
         categories = {}
         for start, end in spans:
-            label = category(start, a)
-            categories[label] = categories.get(label, 0) + end - start
+            for pos in range(start, end):
+                label = category(pos, a)
+                categories[label] = categories.get(label, 0) + 1
+        timestamp_only = bool(spans) and set(categories) <= {
+            "coff-timestamp", "debug-directory-timestamp"
+        }
         cases.append({
             "case": name,
             "first_sha256": sha(before),
@@ -132,6 +149,7 @@ def compare(first: Path, second: Path, output: Path) -> None:
             "first_size": len(before),
             "second_size": len(after),
             "same_bytes": before == after,
+            "all_changed_bytes_in_timestamp_fields": timestamp_only,
             "first_pe_fields": a,
             "second_pe_fields": b,
             "changed_byte_count": sum(end - start for start, end in spans),
@@ -159,7 +177,8 @@ def compare(first: Path, second: Path, output: Path) -> None:
         "interpretation_limits": [
             "Only two builds per PE within one CI job; cross-run differences remain separate.",
             "PE raw SHA and section bytes are evidence, never proof of behavior.",
-            "Difference categories use first-build section offsets; they can overlap other regions.",
+            "Byte categories prioritize exact COFF/debug-directory timestamp offsets over section ranges.",
+            "Categories reflect first-build field offsets; they cannot prove a root cause.",
             "The first 32 byte ranges are a diagnostic excerpt; counts cover the entire file.",
             "No raw PE data, debug paths or absolute runner filesystem paths are published.",
             "Compiler/environment root causes require controlled experiments, not field correlation.",

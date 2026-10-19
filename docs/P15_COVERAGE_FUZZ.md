@@ -21,7 +21,7 @@ This is the **first independently executable libFuzzer harness** for `rel-pe::in
 ```bash
 rustup toolchain install nightly-2026-10-19 --profile minimal
 printf '%s  %s\n' 'f65f21c07542483584cf156f1171ef6d02af1ce7168c573da79f8b81b96cc59e' 'fuzz/corpus/pe_inspect/f001-goblin-tls-oob.bin' | sha256sum --check -
-rustc +nightly --version --verbose
+rustc +nightly-2026-10-19 --version --verbose
 cargo +nightly-2026-10-19 install cargo-fuzz --version 0.13.2 --locked
 cargo +nightly-2026-10-19 metadata --manifest-path fuzz/Cargo.toml --locked --format-version 1 --no-deps >/dev/null
 sha256sum fuzz/corpus/pe_inspect/*
@@ -39,7 +39,7 @@ This is a **bounded smoke fuzz**. Even a green job does not establish an absence
 
 See also [deterministic regression](P15_MUTATION_TESTING.md) and [roadmap](../ROADMAP.md).
 
-## Separate manual extended campaign (configured, not yet executed)
+## Separate manual extended campaign (configured; 300-second verification executed)
 
 `.github/workflows/fuzz-long.yml` adds an **opt-in manual `workflow_dispatch`**
 on Ubuntu: 300 seconds of libFuzzer mutation with `-timeout=4`,
@@ -50,11 +50,61 @@ artifacts are uploaded even if the campaign fails; a changed lockfile fails
 the job. These guards do **not** implement a strict kernel memory/disk/CPU
 quota or process-tree isolation.
 
-Run it through **Actions → REL PE Fuzz Extended (manual) → Run workflow**
-after merging the workflow onto `main`. Record the actual run ID, compiler,
-units executed, peak RSS, corpus hashes and all failures before evaluating
-issue [#12](https://github.com/ELITEAYOTO/REL/issues/12). Its presence
-is **not** evidence that 300-second coverage has been performed.
+To invoke its intended manual event, choose **Actions → REL PE Fuzz
+Extended (manual) → Run workflow** and select `main`. A real
+`workflow_dispatch` run has **not** been verified. A separate test-only
+pull-request event **did** run the same 300-second campaign on a
+`main`-equivalent source tree, as detailed below.
+
+### Extended campaign evidence (19 October 2026)
+
+[Run #39318875380](https://github.com/ELITEAYOTO/REL/actions/runs/39318875380)
+**completed/success** in GitHub Actions on Ubuntu x86_64. The exact checked-out
+PR merge ref SHA was `114328a2eed83b11042cc9067bc4570646004da0`.
+[Test-only PR #84](https://github.com/ELITEAYOTO/REL/pull/84) changed
+**only** four YAML trigger lines on top of production `main` `de4c546`;
+it was **closed without merging**. The parser, harness, F001 fixture,
+dependency lockfile and fuzz flags were identical to the shipped source.
+Do not describe this as a literal manual run or pretend the PR merge SHA
+equals the production `main` SHA.
+
+| Observation | Recorded result |
+| --- | --- |
+| Target | `pe_inspect` using `rel-pe::inspect`; three initial seeds |
+| Rust compiler | `rustc 1.101.0-nightly (b6eeb93c9 2026-10-18)`, dated `nightly-2026-10-19` |
+| Fuzzer | `cargo-fuzz 0.13.2` with pinned `libfuzzer-sys = 0.4.13` |
+| Reproduction seed | `20261018`; max input 65,536 bytes |
+| Budget | `-max_total_time=300 -timeout=4 -rss_limit_mb=1500`; overall job 20 min |
+| Measured mutation run | **2,562,113 executions / 301 seconds** |
+| libFuzzer coverage proxies | `cov: 2427`, `ft: 5809` (not line coverage or semantic accuracy) |
+| Observed peak RSS | **548 MiB** on the GitHub Ubuntu runner |
+| Exit/artifacts | success; post-run `fuzz/Cargo.lock` unchanged; 2 log/metadata files uploaded, no crash reproducer |
+
+The recorded source seed SHA-256 digests were:
+
+- F001: `f65f21c07542483584cf156f1171ef6d02af1ce7168c573da79f8b81b96cc59e`
+- PE32: `86a3634db5fbdd88527a8d7316a7133d2ec27edd05be1dcaa81bf574bfbe765b`
+- PE64: `cc752bedec1980049513e259964adb8ae0a9b6dbd83070cd887d435fd2b3b5f9`
+
+The archived [run artifact #12219746410](https://github.com/ELITEAYOTO/REL/actions/runs/39318875380/artifacts/12219746410)
+contains the execution log and metadata. Its uploaded archive's SHA-256
+was `5be640bd9c9784579161fe877826092e2d14b3259feaa380f731d78bba93f708`
+as reported by Actions. The unmerged trigger-only PR passed
+[push CI #39318851528](https://github.com/ELITEAYOTO/REL/actions/runs/39318851528)
+and [PR CI #39318875350](https://github.com/ELITEAYOTO/REL/actions/runs/39318875350)
+on both Windows and Ubuntu.
+
+**Interpretation:** no reproducible crash or timeout was observed **in this
+bounded campaign**. No distinct failure therefore required minimization.
+The pinned compiler/lock improve replayability, but a fixed seed does not
+guarantee identical mutation traces across runner versions. The 1,500 MiB
+libFuzzer RSS safeguard and 20-minute job timeout are **not** a strict
+kernel memory, CPU, disk or descendant-process sandbox; coverage remains
+limited by the three controlled seeds and one runner configuration.
+Further multi-hour campaigns and licensed corpus diversity are tracked
+by [#8](https://github.com/ELITEAYOTO/REL/issues/8) and
+[#9](https://github.com/ELITEAYOTO/REL/issues/9); historical goblin TLS
+root-cause investigation remains [#11](https://github.com/ELITEAYOTO/REL/issues/11).
 
 ## Observed failure F001 and mitigation
 

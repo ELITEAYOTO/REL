@@ -1,6 +1,6 @@
 //! Experimental EX-02: limited, deterministic differences between PE v1 manifests.
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::env;
 use std::fs::{self, File};
 use std::io::Read;
@@ -22,7 +22,7 @@ struct Manifest {
     warnings: Vec<String>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 struct Section {
     name: String,
@@ -41,6 +41,9 @@ struct Delta {
 struct SectionDelta {
     status: &'static str,
     reason: &'static str,
+    added: Vec<String>,
+    removed: Vec<String>,
+    changed: Vec<String>,
 }
 
 #[derive(Serialize)]
@@ -111,20 +114,47 @@ fn delta(left: &[String], right: &[String]) -> Delta {
 }
 
 fn section_status(a: &[Section], b: &[Section]) -> SectionDelta {
-    for section in a.iter().chain(b) {
-        let _ = (section.offset, section.size, section.virtual_address);
-    }
     let left_names: Vec<String> = a.iter().map(|s| s.name.clone()).collect();
     let right_names: Vec<String> = b.iter().map(|s| s.name.clone()).collect();
     if has_duplicates(&left_names) || has_duplicates(&right_names) {
         return SectionDelta {
             status: "ambiguous",
             reason: "Repeated section names prevent unique name-based matching.",
+            added: Vec::new(),
+            removed: Vec::new(),
+            changed: Vec::new(),
         };
     }
+    let left: BTreeMap<_, _> = a.iter().map(|s| (s.name.as_str(), s)).collect();
+    let right: BTreeMap<_, _> = b.iter().map(|s| (s.name.as_str(), s)).collect();
+    let added: Vec<String> = right
+        .keys()
+        .filter(|name| !left.contains_key(**name))
+        .map(|name| (*name).to_owned())
+        .collect();
+    let removed: Vec<String> = left
+        .keys()
+        .filter(|name| !right.contains_key(**name))
+        .map(|name| (*name).to_owned())
+        .collect();
+    let changed: Vec<String> = left
+        .iter()
+        .filter(|(name, section)| {
+            right.get(**name).is_some_and(|other| *section != other)
+        })
+        .map(|(name, _)| (*name).to_owned())
+        .collect();
+    let status = if added.is_empty() && removed.is_empty() && changed.is_empty() {
+        "unchanged"
+    } else {
+        "changed"
+    };
     SectionDelta {
-        status: "incomparable",
-        reason: "Section matching is not implemented in this pilot.",
+        status,
+        reason: "Sections matched only by unique exact name; metadata, not behavior.",
+        added,
+        removed,
+        changed,
     }
 }
 
@@ -139,7 +169,7 @@ fn compare(a: Manifest, b: Manifest) -> Report {
         exports: delta(&a.exports, &b.exports),
         sections: section_status(&a.sections, &b.sections),
         limitations: vec![
-            "Section status is ambiguous or incomparable; no section deltas are claimed.",
+            "Sections compared by unique exact name only; duplicate names cause abstention.",
             "Imports and exports are observed strings, not runtime capabilities.",
             "Duplicates and import DLL casing are not normalized in this pilot.",
             "Unknown extraction coverage; no negative behavioral conclusions.",
@@ -201,7 +231,28 @@ mod tests {
         let result = section_status(&[section(".text"), section(".text")], &[]);
         assert_eq!(result.status, "ambiguous");
         let result = section_status(&[section(".text")], &[section(".text")]);
-        assert_eq!(result.status, "incomparable");
+        assert_eq!(result.status, "unchanged");
+    }
+
+    #[test]
+    fn unique_sections_have_deterministic_metadata_deltas() {
+        let section = |name: &str, size| Section {
+            name: name.into(),
+            offset: 0,
+            size,
+            virtual_address: Some(4096),
+        };
+        let a = vec![section(".text", 10), section(".old", 1)];
+        let b = vec![section(".new", 3), section(".text", 20)];
+        let result = section_status(&a, &b);
+        assert_eq!(result.status, "changed");
+        assert_eq!(result.added, vec![".new"]);
+        assert_eq!(result.removed, vec![".old"]);
+        assert_eq!(result.changed, vec![".text"]);
+        let reversed = section_status(&b, &a);
+        assert_eq!(reversed.added, result.removed);
+        assert_eq!(reversed.removed, result.added);
+        assert_eq!(reversed.changed, result.changed);
     }
 
     #[test]

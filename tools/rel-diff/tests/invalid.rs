@@ -44,8 +44,7 @@ fn cli_rejects_invalid_identity_and_schema_without_stdout() {
     assert!(!directory_input.status.success());
     assert!(directory_input.stdout.is_empty());
     assert!(
-        String::from_utf8_lossy(&directory_input.stderr)
-            .contains("input must be a regular file")
+        String::from_utf8_lossy(&directory_input.stderr).contains("input must be a regular file")
     );
     fs::remove_dir_all(dir).expect("cleanup");
 }

@@ -45,6 +45,7 @@ def sample(mode="brepro"):
     ]
     return {
         "schema_version": "rel-ex02-compiler-pair-evidence-v1",
+        "source": "fixtures/probes/diff_version_probe.c",
         "source_sha256": "f" * 64,
         "compilers": {"msvc": "MSVC test", "clang": "clang test"},
         "linker_banner": "LINK 14.51 test",
@@ -223,6 +224,36 @@ class CorpusCrossRunTests(unittest.TestCase):
     def test_standard_linker_mode_cannot_request_strict_gate_directly(self):
         with self.assertRaisesRegex(ValueError, "requires /Brepro"):
             compare_reports(sample("standard"), sample("standard"), require_identical=True)
+
+    def test_conflicting_metadata_for_identical_raw_pe_is_rejected(self):
+        for field in ("import_count", "export_count"):
+            changed = sample()
+            changed["cases"][0][field] += 1
+            with self.subTest(field=field), self.assertRaisesRegex(
+                ValueError, "conflicting"
+            ):
+                compare_reports(sample(), changed, require_identical=True)
+        changed = sample()
+        changed["pairs"][0]["import_added"] = ["KERNEL32.dll!Other"]
+        with self.assertRaisesRegex(ValueError, "conflicting oracle"):
+            compare_reports(sample(), changed, require_identical=True)
+
+    def test_an_actual_binary_change_does_not_assert_same_oracle(self):
+        changed = sample()
+        changed["cases"][0]["sha256"] = "b" * 64
+        changed["pairs"][0]["import_added"] = ["KERNEL32.dll!Other"]
+        result = compare_reports(sample(), changed, require_identical=False)
+        self.assertEqual(result["different_cases"], ["msvc-v1"])
+
+    def test_report_source_and_version_must_match_known_contract(self):
+        changed = sample()
+        changed["source"] = "different-source.c"
+        with self.assertRaisesRegex(ValueError, "source identity"):
+            compare_reports(sample(), changed, require_identical=True)
+        changed = sample()
+        changed["schema_version"] = "some-other-schema"
+        with self.assertRaisesRegex(ValueError, "version"):
+            compare_reports(sample(), changed, require_identical=True)
 
     def test_reject_oversized_json_and_decompressed_zip_evidence(self):
         oversized = b" " * (MAX_EVIDENCE_BYTES + 1)

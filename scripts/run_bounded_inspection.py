@@ -23,6 +23,7 @@ DEFAULT_WALL_SECONDS = 30.0
 DEFAULT_SAMPLED_RSS_MIB = 512
 POLL_SECONDS = 0.01
 MAX_STDOUT_BYTES = 16 * 1024 * 1024 + 1
+MAX_STDERR_BYTES = 1024 * 1024
 
 
 class LimitExceeded(RuntimeError):
@@ -35,6 +36,14 @@ class WorkerFailed(RuntimeError):
     """Child failure or unavailable observation."""
 
 
+def reject_oversized_spools(stdout, stderr, max_stdout: int, max_stderr: int) -> None:
+    """Sample spool lengths; this cannot enforce a hard kernel disk quota."""
+    if os.fstat(stdout.fileno()).st_size > max_stdout:
+        raise WorkerFailed("analyzer stdout exceeded bounded JSON size")
+    if os.fstat(stderr.fileno()).st_size > max_stderr:
+        raise WorkerFailed("analyzer stderr exceeded diagnostic spool budget")
+
+
 def supervise(
     command: Sequence[str],
     *,
@@ -45,11 +54,12 @@ def supervise(
     max_job_memory_bytes: int | None = None,
     poll_seconds: float = POLL_SECONDS,
     max_stdout_bytes: int = MAX_STDOUT_BYTES,
+    max_stderr_bytes: int = MAX_STDERR_BYTES,
 ) -> bytes:
     """Return complete stdout only after a successful direct-child exit."""
     if not command or not 0 < wall_seconds <= 600 or not 0 < poll_seconds <= 1:
         raise ValueError("invalid command or watchdog timing")
-    if max_sampled_rss_bytes <= 0 or max_stdout_bytes <= 0:
+    if max_sampled_rss_bytes <= 0 or max_stdout_bytes <= 0 or max_stderr_bytes <= 0:
         raise ValueError("limits must be positive")
 
     if max_job_memory_bytes is not None:
@@ -104,6 +114,11 @@ def supervise(
                 child = psutil.Popen(list(command), **child_kwargs)
             started = time.monotonic()
             while child.poll() is None:
+                # Reject a continuously writing child before it reaches the
+                # wall deadline. A poll can still miss a transient disk spike.
+                reject_oversized_spools(
+                    stdout, stderr, max_stdout_bytes, max_stderr_bytes
+                )
                 elapsed = time.monotonic() - started
                 if elapsed >= wall_seconds:
                     raise LimitExceeded("wall", f"wall time exceeded {wall_seconds:g}s")
@@ -120,6 +135,9 @@ def supervise(
                 time.sleep(min(poll_seconds, max(0.0, wall_seconds - elapsed)))
 
             status = child.wait()
+            reject_oversized_spools(
+                stdout, stderr, max_stdout_bytes, max_stderr_bytes
+            )
             if status:
                 stderr.seek(0)
                 detail = stderr.read(512).decode("utf-8", errors="replace").strip()

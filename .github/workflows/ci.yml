@@ -84,6 +84,8 @@ jobs:
       - name: EX-01 section headers producer smoke (Linux)
         if: runner.os == 'Linux'
         run: python scripts/test_section_headers_cli.py --binary target/release/rel-observe
+      - name: EX-01 bounded evidence reader regressions (Windows and Linux)
+        run: python scripts/test_evidence_verifier_io.py
       - name: EX-01 source evidence verifier (Windows)
         if: runner.os == 'Windows'
         run: python scripts/test_evidence_verifier.py --binary target/release/rel-observe.exe

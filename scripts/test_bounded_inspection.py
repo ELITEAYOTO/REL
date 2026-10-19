@@ -68,9 +68,36 @@ class WatchdogTests(unittest.TestCase):
         with self.assertRaisesRegex(WorkerFailed, "stdout exceeded"):
             python_child("import sys;sys.stdout.write('123456789')", max_stdout_bytes=8)
 
+    def test_stops_running_child_after_stdout_spool_limit(self) -> None:
+        started = time.monotonic()
+        with self.assertRaisesRegex(WorkerFailed, "stdout exceeded"):
+            python_child(
+                "import os,time;os.write(1,b'0123456789');time.sleep(10)",
+                max_stdout_bytes=8,
+            )
+        self.assertLess(time.monotonic() - started, 3)
+
+    def test_stops_running_child_after_stderr_spool_limit(self) -> None:
+        started = time.monotonic()
+        with self.assertRaisesRegex(WorkerFailed, "stderr exceeded"):
+            python_child(
+                "import os,time;os.write(2,b'0123456789');time.sleep(10)",
+                max_stderr_bytes=8,
+            )
+        self.assertLess(time.monotonic() - started, 3)
+
+    def test_rejects_successful_child_with_overbudget_stderr(self) -> None:
+        with self.assertRaisesRegex(WorkerFailed, "stderr exceeded"):
+            python_child(
+                "import sys;sys.stderr.write('0123456789')",
+                max_stderr_bytes=8,
+            )
+
     def test_rejects_invalid_limits_before_launch(self) -> None:
         with self.assertRaises(ValueError):
             python_child("print('never launched')", poll_seconds=0)
+        with self.assertRaises(ValueError):
+            python_child("print('never launched')", max_stderr_bytes=0)
 
     @unittest.skipUnless(sys.platform.startswith("linux"), "Linux RLIMIT_AS only")
     def test_linux_kernel_address_space_limit_is_installed_before_exec(self) -> None:

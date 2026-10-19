@@ -82,6 +82,20 @@ Références externes : [LLVM, *Deterministic builds with clang and lld*](https:
 
 **Garde-fou CI ajouté :** `scripts/compare_ex02_corpus_runs.py` accepte deux rapports JSON (ou deux ZIP d'artefacts téléchargés) et vérifie le même schéma, la source, les bannières des compilateurs, les flags de lien et les huit identités PE. Son mode `--require-identical` s'applique **uniquement au mode `brepro`**, pour éviter d'imposer au mode normal une promesse qu'il ne remplit pas. La CI teste la commande sur deux compilations `/Brepro` dans un seul job, sans hardcoder de SHA de PE entre futures versions d'outils. Les validations du dernier commit doivent toujours être consultées avant d'affirmer que ce nouveau garde-fou est vert.
 
+### Vérification de provenance complète sur deux jobs de même commit
+
+L'outil Windows **capture maintenant les versions SDK/Visual C++ dans le shell initialisé par `VsDevCmd`**, les conserve sous forme de fichiers texte ne contenant ni chemin absolu ni secret, puis les inclut dans la preuve publiée. Il relève aussi le linker, le SHA-256 du script de compilation et la version de l'image du runner GitHub. Le comparateur de rapports refuse de rapprocher des builds qui divergent sur ces champs.
+
+Deux artefacts téléchargés de [CI #39213276412](https://github.com/ELITEAYOTO/REL/actions/runs/39213276412) et [CI #39213281869](https://github.com/ELITEAYOTO/REL/actions/runs/39213281869), provenant du même commit, contiennent exactement les mêmes valeurs :
+- Linker : `Microsoft (R) Incremental Linker Version 14.51.36260.0`.
+- Windows SDK : `10.0.26100.0` ; Visual C++ tools : `14.51.36231`.
+- Image GitHub : `win25-vs2026` / `20261007.264.1`.
+- SHA du script de compilation : `d76f9f3124899f17d64d0a1b28c69e1d5061424d4aa9151f6831b7526fb8bf89`.
+- SHA de la source C : `5fa642567cd392572364cecd542d3b3cfa57623c430902e5499190d3621515cf`.
+- **Huit SHA de PE identiques sur huit**, dans le mode expérimental `brepro`, entre ces deux jobs.
+
+Le premier prototype de collecte interrogeait les variables SDK dans le script Python exécuté lors d'une étape CI différente : elles étaient alors absentes. Ce problème de traçabilité a été corrigé en enregistrant les versions **au moment de la compilation**, là où l'environnement est effectivement présent. Même cette provenance enrichie ne fige pas l'ensemble des dépendances système ; éviter toute affirmation de reproductibilité universelle.
+
 ## Limites et prochaines étapes
 
 - Deux compilateurs sur le même environnement Windows et une **seule source C** paramétrée n'établissent pas la diversité réelle des programmes commerciaux/open source, des options de compilation, ni des différents changements entre releases.

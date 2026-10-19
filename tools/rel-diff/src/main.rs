@@ -85,7 +85,32 @@ fn open_manifest(path: &str) -> Result<File, String> {
             .custom_flags(libc::O_NONBLOCK | libc::O_NOFOLLOW)
             .open(path)
     };
-    #[cfg(not(unix))]
+    #[cfg(windows)]
+    let opened = {
+        use std::os::windows::fs::{MetadataExt, OpenOptionsExt};
+        // Open the final component itself rather than following a reparse
+        // point. Keep ordinary writers out while the descriptor is live.
+        const FILE_FLAG_OPEN_REPARSE_POINT: u32 = 0x0020_0000;
+        const FILE_ATTRIBUTE_REPARSE_POINT: u32 = 0x0000_0400;
+        const FILE_SHARE_READ: u32 = 0x0000_0001;
+
+        std::fs::OpenOptions::new()
+            .read(true)
+            .share_mode(FILE_SHARE_READ)
+            .custom_flags(FILE_FLAG_OPEN_REPARSE_POINT)
+            .open(path)
+            .and_then(|file| {
+                if file.metadata()?.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT != 0 {
+                    Err(std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        "input final-component reparse points are unsupported",
+                    ))
+                } else {
+                    Ok(file)
+                }
+            })
+    };
+    #[cfg(not(any(unix, windows)))]
     let opened = File::open(path);
     opened.map_err(|e| format!("{path}: {e}"))
 }

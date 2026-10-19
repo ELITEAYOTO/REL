@@ -36,7 +36,8 @@ Future assistants must not claim these modules exist: source decompiler, version
 - **Accepted:** [RFC-0001](../rfc/RFC-0001-EVIDENCE-EVOLUTION.md) with explicit amendments in [ADR-0013](../adr/ADR-0013-vision-evidence-evolution.md) and [STRATEGY_AND_GATES](STRATEGY_AND_GATES.md).
 - REL continues as a **full reverse-engineering platform**. The Evidence & Evolution approach focuses on source-backed, version-aware, reproducible findings, without reducing product scope.
 - Official milestones: **P1.5-A critical input hardening -> EX-01 minimal observation/coverage contract -> EX-02 PE manifest metadata diff -> P2 Ghidra -> P3 deep matching**. P1.5-B continuous hardening remains incomplete.
-- **NOT BUILT:** EX-01, EX-02, Ghidra, advanced classifier, behavior lab, UI, graph engine. Do not silently mark them complete or change existing v1.0.0 schema.
+- **PARTIALLY BUILT (EXPERIMENTAL):** EX-01 has three narrow controlled-file producers (`dos-magic`, `coff-machine`, `section-headers`) plus a source-backed evidence verifier; see the later verified EX-01 sections and PRs #57/#59. EX-01 remains incomplete and does not establish atomic snapshots or hostile-input safety.
+- **NOT BUILT:** EX-02, Ghidra, advanced classifier, behavior lab, UI, graph engine. Do not silently mark these complete or change existing v1.0.0 schema.
 - First inspect [EX-01 spec](../specs/OBSERVATION_ENVELOPE_DRAFT.md), [EX-02 spec](../specs/METADATA_DIFF_PILOT.md), [alpha threats](../security/THREAT_MODEL_ALPHA.md) before implementation.
 - Source license is **not yet decided**. Need dependency/license review and a separate deliberate policy decision.
 - F001 preserved and mitigated for the tested goblin 0.10.7 version, not a claim of universal hostile-input safety.

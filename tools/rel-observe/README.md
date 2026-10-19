@@ -56,7 +56,7 @@ independent Python contract validator and fixture bytes. Overall EX-01 is
 still incomplete; only the `pe.dos_magic` domain has a real producer.
 
 
-## Experimental COFF Machine observation (candidate; CI pending)
+## Experimental COFF Machine observation (PR #53 merged; scoped CI verified)
 
 `coff-machine` reads a second, independent domain `pe.coff_machine`.
 It uses `e_lfanew` (DOS offset `0x3c`) to locate the four-byte
@@ -83,4 +83,4 @@ These two bytes do **not** establish general PE validity,
 compatibility, or executable behavior. The reader remains controlled
 input only, not snapshot-safe or an arbitrary hostile-binary sandbox.
 Validate through `python scripts/test_coff_machine_cli.py --binary
-target/release/rel-observe` (or `.exe` on Windows).
+target/release/rel-observe` (or `.exe` on Windows). [PR #53](https://github.com/ELITEAYOTO/REL/pull/53) and [main CI #39182313199](https://github.com/ELITEAYOTO/REL/actions/runs/39182313199) passed on Windows/Linux.

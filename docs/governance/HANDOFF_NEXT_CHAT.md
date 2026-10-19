@@ -184,20 +184,10 @@ New standalone Rust `tools/rel-observe` CLI (Cargo workspace+lock) emits `0.1.0-
 
 [Issue #14](https://github.com/ELITEAYOTO/REL/issues/14) remains open: broader real extraction domains, confidence/coverage semantics and failure-mode output still required. P1.5-A [issue #9](https://github.com/ELITEAYOTO/REL/issues/9) remains open. EX-02, external Ghidra integration and function matching not implemented; preserve ADR-0013 ordering. Next choose a single provable static PE-domain expansion with fixtures, error/abstention cases and independent validation, not Apex-specific reverse engineering.
 
-## Candidate: EX-01 controlled COFF Machine observation — CI pending
+## EX-01 COFF Machine observation and scoped partial abstention — MERGED, CI VERIFIED
 
-Branch `feat/ex01-coff-machine-evidence` introduces the second real
-`rel-observe` domain, `pe.coff_machine`: machine value at
-`e_lfanew + 4` (two bytes, little endian), source SHA, provenance
-and domain-specific deterministic run ID. The original `dos-magic`
-bytes/output/run ID are preserved through a shared envelope function.
-Recognized `0x014c`/`0x8664` map only to x86/x86_64; other codes
-stay hex. If there are zero or one machine bytes after the four-byte
-PE signature, status=`partial`, observation=`indeterminate` with null
-values and empty evidence, plus `COFF_MACHINE_TRUNCATED` diagnostic.
-A malformed DOS or PE signature is rejected without JSON output.
-Both Rust golden tests and a cross-OS Python oracle cover field offsets,
-source hashes, repeatable IDs and abstentions. No arbitrary hostile-file
-guarantee, decompiler, parser completeness, or change to the v1.0.0
-manifest. Verify PR-head and post-merge Windows/Linux CI before marking
-this incremental gate verified. EX-01 #14 and P1.5-A #9 remain open.
+[PR #53](https://github.com/ELITEAYOTO/REL/pull/53) merged to `main` as [`e60e978`](https://github.com/ELITEAYOTO/REL/commit/e60e978fb7f6359122ae817f853b4629b8a34ab2). Final-head [branch #39182119983](https://github.com/ELITEAYOTO/REL/actions/runs/39182119983) and [PR #39182124339](https://github.com/ELITEAYOTO/REL/actions/runs/39182124339) both passed Windows/Linux, and [post-merge `main` CI #39182313199](https://github.com/ELITEAYOTO/REL/actions/runs/39182313199) succeeded on both platforms. Actual cross-platform Python oracle logs show `PASS EX-01 COFF Machine: real offsets, partial abstention, deterministic ID`.
+
+`rel-observe coff-machine` observes **only** the two-byte little-endian COFF Machine field at file offset `e_lfanew + 4` on owned controlled PE32/PE32+ inputs. It reports actual byte-offset evidence, subject SHA, deterministic domain/config-specific run ID, and cautiously normalizes `0x014c` / `0x8664` to x86 / x86_64. Unknown values remain raw hex. If zero/one bytes remain after a valid four-byte PE signature, it emits scope `partial` with `indeterminate`, null values, no decisive evidence, and `COFF_MACHINE_TRUNCATED` warning. Invalid DOS/PE framing is rejected without JSON rather than misrepresented as a complete observation.
+
+Shared provenance and controlled file reader preserve the old `dos-magic` output and run ID (legacy oracle passes). No dependencies, `rel-inspect` or `binary-manifest v1.0.0` changes. **Do not overclaim:** the observed field is not entire PE validity, runtime architecture compatibility, decompilation, safety against hostile input or any gameplay capability. P1.5-A [#9](https://github.com/ELITEAYOTO/REL/issues/9) and overall EX-01 [#14](https://github.com/ELITEAYOTO/REL/issues/14) remain open. EX-02, Ghidra integration and function matching follow the existing roadmap.

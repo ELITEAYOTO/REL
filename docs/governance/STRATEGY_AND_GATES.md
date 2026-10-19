@@ -13,7 +13,7 @@ Plateforme **générale de reverse engineering** ; valeur cible à démontrer : 
 | P0 + P1 | `rel-contracts`, `rel-pe`, `rel-inspect`, PE v1, CI Windows/Linux | VALIDÉ dans le périmètre limité testé |
 | P1.5-A | lecture bornée, budgets CPU/RAM/sortie, gestion des chemins et fichiers changeants, corpus légal et oracle | EN COURS |
 | P1.5-B | fuzz prolongé + verrouillé, limites de worker, benchmarks variés, isolation selon OS | À POURSUIVRE, pas d'affirmation de sûreté globale |
-| EX-01 | schéma indépendant, validateur et producteur réel `pe.dos_magic` borné | PILOTE PARTIEL VÉRIFIÉ, autres domaines non implémentés ([PR #51](https://github.com/ELITEAYOTO/REL/pull/51), [CI #39179499279](https://github.com/ELITEAYOTO/REL/actions/runs/39179499279)) |
+| EX-01 | schéma indépendant, validateur, domaines réels bornés `pe.dos_magic` et `pe.coff_machine` | PILOTE PARTIEL VÉRIFIÉ, pas d'extraction PE complète ([PR #51](https://github.com/ELITEAYOTO/REL/pull/51), [PR #53](https://github.com/ELITEAYOTO/REL/pull/53), [CI #39182313199](https://github.com/ELITEAYOTO/REL/actions/runs/39182313199)) |
 | EX-02 | diff v1 de métadonnées PE, Rust CLI indépendant, cas ambigus et tests golden | PAS IMPLÉMENTÉ |
 | P2 | adaptateur externe Ghidra headless Python | PAS IMPLÉMENTÉ |
 | P3 | matching de fonctions et évaluation précision/rappel/abstention | PAS IMPLÉMENTÉ |

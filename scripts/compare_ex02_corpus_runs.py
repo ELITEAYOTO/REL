@@ -57,12 +57,24 @@ def load_report(path: Path, mode: str) -> dict:
     if path.suffix.lower() == ".zip":
         with zipfile.ZipFile(path) as archive:
             expected = REPORT_FILES[mode]
-            matches = [name for name in archive.namelist() if Path(name).name == expected]
+            matches = [
+                entry for entry in archive.infolist()
+                if not entry.is_dir() and Path(entry.filename).name == expected
+            ]
             if len(matches) != 1:
                 raise ValueError(f"{path.name}: expected exactly one {expected}")
-            report = json.loads(archive.read(matches[0]))
+            if matches[0].file_size > MAX_EVIDENCE_BYTES:
+                raise ValueError("evidence report exceeds 2 MiB")
+            with archive.open(matches[0]) as member:
+                payload = member.read(MAX_EVIDENCE_BYTES + 1)
     else:
-        report = json.loads(path.read_text(encoding="utf-8"))
+        if path.stat().st_size > MAX_EVIDENCE_BYTES:
+            raise ValueError("evidence report exceeds 2 MiB")
+        with path.open("rb") as member:
+            payload = member.read(MAX_EVIDENCE_BYTES + 1)
+    if len(payload) > MAX_EVIDENCE_BYTES:
+        raise ValueError("evidence report exceeds 2 MiB")
+    report = json.loads(payload)
     if report.get("schema_version") != "rel-ex02-compiler-pair-evidence-v1":
         raise ValueError("incompatible corpus evidence version")
     if report.get("link_mode") != mode:

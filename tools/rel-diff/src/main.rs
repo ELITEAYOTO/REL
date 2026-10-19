@@ -2,7 +2,8 @@
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 use std::env;
-use std::fs;
+use std::fs::File;
+use std::io::Read;
 use std::process::ExitCode;
 
 const MAX_INPUT: u64 = 16 * 1024 * 1024;
@@ -55,7 +56,11 @@ fn load(path: &str) -> Result<Manifest, String> {
     if size > MAX_INPUT {
         return Err(format!("{path}: input exceeds 16 MiB"));
     }
-    let bytes = fs::read(path).map_err(|e| format!("{path}: {e}"))?;
+    let file = File::open(path).map_err(|e| format!("{path}: {e}"))?;
+    let mut bytes = Vec::new();
+    file.take(MAX_INPUT + 1)
+        .read_to_end(&mut bytes)
+        .map_err(|e| format!("{path}: {e}"))?;
     if bytes.len() as u64 > MAX_INPUT {
         return Err(format!("{path}: input exceeds 16 MiB"));
     }
@@ -83,12 +88,20 @@ fn load(path: &str) -> Result<Manifest, String> {
             section.virtual_address,
         );
     }
+    if has_duplicates(&manifest.imports) || has_duplicates(&manifest.exports) {
+        return Err(format!("{path}: duplicate import or export observations"));
+    }
     if !manifest.warnings.is_empty() {
         return Err(format!(
             "{path}: extraction warnings require explicit coverage handling"
         ));
     }
     Ok(manifest)
+}
+
+fn has_duplicates(items: &[String]) -> bool {
+    let unique: BTreeSet<_> = items.iter().collect();
+    unique.len() != items.len()
 }
 
 fn delta(left: &[String], right: &[String]) -> Delta {
@@ -142,6 +155,12 @@ fn main() -> ExitCode {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn repeated_observations_are_detected() {
+        assert!(has_duplicates(&["x".into(), "x".into()]));
+        assert!(!has_duplicates(&["x".into(), "y".into()]));
+    }
 
     #[test]
     fn sets_are_order_independent_and_inverse() {

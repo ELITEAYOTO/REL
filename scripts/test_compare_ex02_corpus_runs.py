@@ -98,6 +98,14 @@ class CorpusCrossRunTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "compiler version"):
             compare_reports(a, sample(), require_identical=True)
 
+    def test_missing_link_mode_rejected_even_when_both_sides_omit_it(self):
+        a = sample()
+        b = sample()
+        del a["link_mode"]
+        del b["link_mode"]
+        with self.assertRaisesRegex(ValueError, "linker mode"):
+            compare_reports(a, b, require_identical=True)
+
     def test_invalid_linker_flags_rejected(self):
         a = sample()
         a["link_flags"] = "/INCREMENTAL:NO"

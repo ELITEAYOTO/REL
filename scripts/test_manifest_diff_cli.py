@@ -103,6 +103,14 @@ def verify(binary):
         assert all(not same[key]["added"] and not same[key]["removed"] for key in ("imports", "exports"))
         assert not same["import_dll_case_only"]
 
+        # The independent contract must reject internally inconsistent statuses.
+        impossible = copy.deepcopy(same)
+        impossible["sections"]["status"] = "changed"
+        assert not output_validator.is_valid(impossible)
+        impossible = copy.deepcopy(same)
+        impossible["sections"]["added"] = [".fake"]
+        assert not output_validator.is_valid(impossible)
+
         ab, ab_bytes = accepted(binary, directory, output_validator, a, b)
         ba, _ = accepted(binary, directory, output_validator, b, a)
         assert ab["size_changed"] and ab["arch_changed"]
@@ -166,6 +174,7 @@ def verify(binary):
             lambda v: v.update(imports=["X", "X"]),
             lambda v: v.update(warnings=["incomplete extraction"]),
             lambda v: v.pop("warnings"),
+            lambda v: v.pop("arch"),
             lambda v: v.update(unexpected=1),
             lambda v: v["sections"][0].pop("virtual_address"),
             lambda v: v["sections"][0].update(size=-1),
@@ -173,8 +182,13 @@ def verify(binary):
             candidate = copy.deepcopy(a)
             change(candidate)
             invalid.append(candidate)
-        for candidate in invalid:
-            rejected(binary, directory, a, candidate)
+        for index, candidate in enumerate(invalid):
+            try:
+                rejected(binary, directory, a, candidate)
+            except AssertionError as error:
+                raise AssertionError(
+                    f"invalid candidate {index} was not rejected: {candidate}"
+                ) from error
 
         right_path = directory / "right.json"
         left_path = directory / "left.json"

@@ -250,10 +250,7 @@ mod tests {
             size: 10,
             virtual_address: None,
         };
-        let result = section_status(
-            &[section(".text"), section(".text")],
-            &[section(".new")],
-        );
+        let result = section_status(&[section(".text"), section(".text")], &[section(".new")]);
         assert_eq!(result.status, "ambiguous");
         assert!(result.added.is_empty());
         assert!(result.removed.is_empty());

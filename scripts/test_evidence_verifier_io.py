@@ -78,6 +78,45 @@ class EvidenceInputTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "regular file"):
                 read_bounded_regular(link, MAX_REPORT)
 
+    def test_symlink_inserted_between_preflight_and_open_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path, alternate = root / "candidate.exe", root / "other.exe"
+            path.write_bytes(b"MZ original")
+            alternate.write_bytes(b"MZ different")
+            before = path.lstat()
+            path.unlink()
+            try:
+                path.symlink_to(alternate)
+            except OSError as error:
+                if os.getenv("GITHUB_ACTIONS"):
+                    self.fail(f"hosted CI must exercise symlink substitution: {error}")
+                self.skipTest(f"local symlink privilege unavailable: {error}")
+            # Unix refuses the leaf at O_NOFOLLOW open; Windows catches this
+            # particular swap through descriptor identity, not atomically.
+            with self.assertRaises((OSError, ValueError)):
+                _read_after_preflight(path, before, MAX_INPUT)
+
+    @unittest.skipUnless(hasattr(os, "mkfifo"), "Unix FIFO test")
+    def test_fifo_inserted_after_preflight_cannot_block(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "candidate.exe"
+            path.write_bytes(b"MZ original")
+            script = (
+                "import os, sys; from pathlib import Path; "
+                "from verify_observation_evidence import _read_after_preflight, MAX_INPUT; "
+                "p = Path(sys.argv[1]); before = p.lstat(); "
+                "p.unlink(); os.mkfifo(p); "
+                "_read_after_preflight(p, before, MAX_INPUT)"
+            )
+            completed = subprocess.run(
+                [sys.executable, "-c", script, str(path)],
+                cwd=SCRIPT.parent,
+                capture_output=True, text=True, timeout=5, check=False,
+            )
+            self.assertNotEqual(completed.returncode, 0)
+            self.assertIn("regular file", completed.stderr)
+
     @unittest.skipUnless(hasattr(os, "mkfifo"), "Unix FIFO test")
     def test_fifo_source_and_report_cannot_block(self):
         with tempfile.TemporaryDirectory() as directory:

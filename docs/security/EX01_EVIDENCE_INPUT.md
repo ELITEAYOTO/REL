@@ -27,9 +27,10 @@ This is a controlled-input verifier, **not** a hostile-filesystem sandbox.
   successful report semantics remain unchanged.
 
 Regression coverage includes exact-boundary reads, oversize source and
-report, nested/top-level duplicate members, non-JSON constants, a
-preflight-to-open regular-file swap, leaf symlinks on Windows/Ubuntu
-and timeout-guarded Unix FIFO CLI cases.
+report, nested/top-level duplicate members, non-JSON constants,
+preflight-to-open regular-file and leaf-symlink substitutions,
+leaf symlinks on Windows/Ubuntu, and timeout-guarded Unix FIFO cases
+both before and after path preflight.
 
 **Acceptance:** latest branch HEAD must pass Windows/Ubuntu CI and the
 positive EX-01 evidence verifier smoke on real controlled fixtures;

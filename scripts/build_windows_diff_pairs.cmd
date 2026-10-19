@@ -33,6 +33,8 @@ if not exist "%REL_DIFF_OUT%" mkdir "%REL_DIFF_OUT%"
 cl.exe /? > "%REL_DIFF_OUT%\msvc-version.txt" 2>&1
 clang-cl.exe --version > "%REL_DIFF_OUT%\clang-cl-version.txt"
 if errorlevel 1 exit /b 1
+link.exe /? > "%REL_DIFF_OUT%\linker-version.txt" 2>&1
+if not exist "%REL_DIFF_OUT%\linker-version.txt" exit /b 1
 for %%V in (1 2 3 4) do (
   cl.exe /nologo /W4 /WX /O2 /MD /DREL_DIFF_VARIANT=%%V /Fe:%REL_DIFF_OUT%\msvc-v%%V.exe fixtures\probes\diff_version_probe.c /link %REL_DIFF_LINK_FLAGS%
   if errorlevel 1 exit /b 1

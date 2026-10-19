@@ -194,7 +194,17 @@ def verify(inspector: Path, diff: Path, corpus: Path, output: Path, link_mode: s
     linker_banner = linker_lines[0][:240]
 
     def safe_version(name: str) -> str | None:
-        value = os.environ.get(name, "").strip().strip("\\\\/")
+        captured = {
+            "WindowsSDKVersion": "windows-sdk-version.txt",
+            "VCToolsVersion": "vc-tools-version.txt",
+        }
+        if name in captured:
+            version_path = corpus / captured[name]
+            assert version_path.is_file(), f"missing captured {name}"
+            value = version_path.read_text(encoding="utf-8").strip()
+        else:
+            value = os.environ.get(name, "")
+        value = value.strip().strip("\\\\/")
         if not value:
             return None
         assert len(value) <= 80 and all(

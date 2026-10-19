@@ -173,6 +173,27 @@ mod tests {
     use super::*;
 
     #[test]
+    fn invalid_manifest_shapes_fail_deserialization() {
+        let valid = format!(
+            r#"{{"schema_version":"1.0.0","binary_sha256":"{}","size_bytes":1,"format":"PE","arch":null,"sections":[],"imports":[],"exports":[],"warnings":[]}}"#,
+            "a".repeat(64)
+        );
+        assert!(serde_json::from_str::<Manifest>(&valid).is_ok());
+        assert!(serde_json::from_str::<Manifest>(
+            &valid.replace(r#""warnings":[],"#, "")
+        )
+        .is_err());
+        assert!(serde_json::from_str::<Manifest>(
+            &valid.replace(r#""warnings":[]}"#, r#""warnings":[],"unknown":1}"#)
+        )
+        .is_err());
+        assert!(serde_json::from_str::<Manifest>(
+            &valid.replace(r#""size_bytes":1"#, r#""size_bytes":-1"#)
+        )
+        .is_err());
+    }
+
+    #[test]
     fn repeated_sections_are_not_silently_matched() {
         let section = |name: &str| Section {
             name: name.into(),

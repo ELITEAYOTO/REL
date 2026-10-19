@@ -66,7 +66,13 @@ fn little_u32(record: &[u8], offset: usize) -> u32 {
 }
 
 fn hex(data: &[u8]) -> String {
-    data.iter().map(|byte| format!("{byte:02x}")).collect()
+    const DIGITS: &[u8; 16] = b"0123456789abcdef";
+    let mut result = String::with_capacity(data.len() * 2);
+    for &byte in data {
+        result.push(DIGITS[(byte >> 4) as usize] as char);
+        result.push(DIGITS[(byte & 0x0f) as usize] as char);
+    }
+    result
 }
 
 /// Inspect section header records only, from a single owned, bounded buffer.

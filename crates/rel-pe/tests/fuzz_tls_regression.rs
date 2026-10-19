@@ -48,5 +48,8 @@ fn minimized_legacy_tls_panic_input_is_rejected_without_unwinding() {
     assert_eq!(MINIMIZED_TLS.len(), 1048);
     let attempt = std::panic::catch_unwind(|| inspect(MINIMIZED_TLS));
     assert!(attempt.is_ok(), "REL exposed the legacy TLS panic");
-    assert!(attempt.unwrap().is_err(), "malformed minimized F001 input was accepted");
+    assert!(
+        attempt.unwrap().is_err(),
+        "malformed minimized F001 input was accepted"
+    );
 }

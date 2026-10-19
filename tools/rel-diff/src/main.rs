@@ -2,7 +2,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 use std::env;
-use std::fs::{self, File};
+use std::fs::File;
 use std::io::Read;
 use std::process::ExitCode;
 
@@ -61,13 +61,14 @@ struct Report {
 }
 
 fn load(path: &str) -> Result<Manifest, String> {
-    let size = fs::metadata(path)
-        .map_err(|e| format!("{path}: {e}"))?
-        .len();
-    if size > MAX_INPUT {
+    let file = File::open(path).map_err(|e| format!("{path}: {e}"))?;
+    let metadata = file.metadata().map_err(|e| format!("{path}: {e}"))?;
+    if !metadata.is_file() {
+        return Err(format!("{path}: input must be a regular file"));
+    }
+    if metadata.len() > MAX_INPUT {
         return Err(format!("{path}: input exceeds 16 MiB"));
     }
-    let file = File::open(path).map_err(|e| format!("{path}: {e}"))?;
     let mut bytes = Vec::new();
     file.take(MAX_INPUT + 1)
         .read_to_end(&mut bytes)

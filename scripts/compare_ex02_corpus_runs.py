@@ -145,6 +145,19 @@ def check_report_structure(report: dict) -> None:
             raise ValueError(f"{identity}: import both added and removed")
         if set(pair["export_added"]) & set(pair["export_removed"]):
             raise ValueError(f"{identity}: export both added and removed")
+        # A real set difference must balance the independently observed case
+        # cardinalities. This necessary invariant is not an identity oracle.
+        for kind in ("import", "export"):
+            left_count = by_id[identity[0]][f"{kind}_count"]
+            right_count = by_id[identity[1]][f"{kind}_count"]
+            added = len(pair[f"{kind}_added"])
+            removed = len(pair[f"{kind}_removed"])
+            if (
+                right_count != left_count + added - removed
+                or added > right_count
+                or removed > left_count
+            ):
+                raise ValueError(f"{identity}: inconsistent {kind} delta counts")
         # Same raw PE bytes cannot have a changed metadata delta. Repeated
         # section names can still legitimately produce an ambiguous status.
         if by_id[identity[0]]["sha256"] == by_id[identity[1]]["sha256"]:

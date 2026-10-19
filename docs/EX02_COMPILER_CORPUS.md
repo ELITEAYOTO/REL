@@ -82,6 +82,8 @@ Références externes : [LLVM, *Deterministic builds with clang and lld*](https:
 
 **Garde-fou CI ajouté :** Le comparateur rejette également les contradictions **internes à un rapport** : deux cas ayant un même SHA-256 brut doivent partager taille et nombres d'imports/exports ; une paire entre ces octets identiques ne peut déclarer d'ajouts/retraits ni un statut de sections `changed` (l'ambiguïté de noms reste possible). Des tests négatifs couvrent ces violations. Cette cohérence documentaire ne prouve pas l'authenticité de l'artefact.
 
+Le comparateur d'artefacts recoupe également les effectifs d'imports et d'exports de chaque binaire avec les listes d'ajouts/retraits des 16 paires. Pour un diff exact d'ensembles, effectif droit = effectif gauche + ajouts - retraits ; les ajouts ne peuvent dépasser l'effectif droit ni les retraits l'effectif gauche. Des tests négatifs couvrent les preuves impossibles ainsi qu'un échange équilibré valide. Cette vérification de cohérence ne remplace pas l'oracle `pefile` sur les octets réels.
+
 **Garde-fou CI historique :** `scripts/compare_ex02_corpus_runs.py` accepte deux rapports JSON (ou deux ZIP d'artefacts téléchargés) et vérifie le même schéma, la source, les bannières des compilateurs, les flags de lien et les huit identités PE. Son mode `--require-identical` s'applique **uniquement au mode `brepro`**, pour éviter d'imposer au mode normal une promesse qu'il ne remplit pas. La CI teste la commande sur deux compilations `/Brepro` dans un seul job, sans hardcoder de SHA de PE entre futures versions d'outils. Les validations du dernier commit doivent toujours être consultées avant d'affirmer que ce nouveau garde-fou est vert.
 
 ### Vérification de provenance complète sur deux jobs de même commit

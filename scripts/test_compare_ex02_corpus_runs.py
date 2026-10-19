@@ -24,8 +24,9 @@ def sample(mode="brepro"):
             "source_sha256": "f" * 64,
             "sha256": f"{variant + (10 if compiler == 'clang' else 0):064x}",
             "size_bytes": 1024,
-            "import_count": variant,
-            "export_count": variant,
+            # All synthetic pair deltas here are empty; keep counts coherent.
+            "import_count": 1,
+            "export_count": 1,
         }
         for compiler in ("msvc", "clang")
         for variant in range(1, 5)
@@ -185,6 +186,36 @@ class CorpusCrossRunTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "both added"):
             compare_reports(changed, sample(), require_identical=True)
 
+    def test_pair_delta_counts_are_internally_consistent(self):
+        changed = sample()
+        changed["cases"][1]["import_count"] += 1
+        with self.assertRaisesRegex(ValueError, "inconsistent import delta counts"):
+            compare_reports(changed, sample(), require_identical=True)
+
+        for kind in ("import", "export"):
+            for suffix in ("added", "removed"):
+                changed = sample()
+                changed["pairs"][0][f"{kind}_{suffix}"] = [f"ORACLE!{kind}"]
+                with self.subTest(kind=kind, suffix=suffix), self.assertRaisesRegex(
+                    ValueError, f"inconsistent {kind} delta counts"
+                ):
+                    compare_reports(changed, sample(), require_identical=True)
+
+            changed = sample()
+            changed["pairs"][0][f"{kind}_added"] = ["A", "B"]
+            changed["pairs"][0][f"{kind}_removed"] = ["C", "D"]
+            with self.subTest(kind=kind, reason="exceeds count"), self.assertRaisesRegex(
+                ValueError, f"inconsistent {kind} delta counts"
+            ):
+                compare_reports(changed, sample(), require_identical=True)
+
+            # Equal counts may still admit one new and one removed symbol.
+            valid = sample()
+            valid["pairs"][0][f"{kind}_added"] = ["NEW!symbol"]
+            valid["pairs"][0][f"{kind}_removed"] = ["OLD!symbol"]
+            checked = compare_reports(valid, copy.deepcopy(valid), require_identical=True)
+            self.assertEqual(checked["identical_raw_build_count"], 8)
+
     def test_reject_disagreeing_counts(self):
         changed = sample()
         changed["case_count"] = 7
@@ -229,12 +260,17 @@ class CorpusCrossRunTests(unittest.TestCase):
         for field in ("import_count", "export_count"):
             changed = sample()
             changed["cases"][0][field] += 1
+            kind = field.split("_", 1)[0]
+            for pair in changed["pairs"]:
+                if pair["left"] == "msvc-v1":
+                    pair[f"{kind}_removed"] = [f"EXTRA!{kind}"]
             with self.subTest(field=field), self.assertRaisesRegex(
                 ValueError, "conflicting"
             ):
                 compare_reports(sample(), changed, require_identical=True)
         changed = sample()
         changed["pairs"][0]["import_added"] = ["KERNEL32.dll!Other"]
+        changed["pairs"][0]["import_removed"] = ["KERNEL32.dll!Original"]
         with self.assertRaisesRegex(ValueError, "conflicting oracle"):
             compare_reports(sample(), changed, require_identical=True)
 
@@ -244,7 +280,7 @@ class CorpusCrossRunTests(unittest.TestCase):
         affected = next(
             pair for pair in changed["pairs"] if pair["left"] == "msvc-v1"
         )
-        affected["import_added"] = ["KERNEL32.dll!Other"]
+        affected["section_status"] = "changed"
         result = compare_reports(sample(), changed, require_identical=False)
         self.assertEqual(result["different_cases"], ["msvc-v1"])
 

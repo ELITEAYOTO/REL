@@ -140,7 +140,7 @@ fn section_status(a: &[Section], b: &[Section]) -> SectionDelta {
     let changed: Vec<String> = left
         .iter()
         .filter(|(name, section)| {
-            right.get(**name).is_some_and(|other| *section != other)
+            right.get(**name).is_some_and(|other| section != other)
         })
         .map(|(name, _)| (*name).to_owned())
         .collect();

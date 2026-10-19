@@ -24,7 +24,10 @@ def sample(mode="brepro"):
         "schema_version": "rel-ex02-compiler-pair-evidence-v1",
         "source_sha256": "f" * 64,
         "compilers": {"msvc": "MSVC test", "clang": "clang test"},
+        "linker_banner": "LINK 14.51 test",
+        "build_environment": {"windows_sdk_version": "10.0.1", "vc_tools_version": "14.51"},
         "build_script": "scripts/build_windows_diff_pairs.cmd",
+        "build_script_sha256": "a" * 64,
         "link_mode": mode,
         "link_flags": "/INCREMENTAL:NO /Brepro" if mode == "brepro" else "/INCREMENTAL:NO",
         "github_sha": "a" * 40,
@@ -55,6 +58,14 @@ class CorpusCrossRunTests(unittest.TestCase):
         second["compilers"]["msvc"] = "new compiler"
         with self.assertRaisesRegex(ValueError, "provenance"):
             compare_reports(baseline, second, require_identical=False)
+        second = copy.deepcopy(baseline)
+        second["build_environment"]["windows_sdk_version"] = "10.0.2"
+        with self.assertRaisesRegex(ValueError, "provenance"):
+            compare_reports(baseline, second, require_identical=True)
+        second = copy.deepcopy(baseline)
+        second["build_script_sha256"] = "b" * 64
+        with self.assertRaisesRegex(ValueError, "provenance"):
+            compare_reports(baseline, second, require_identical=True)
 
     def test_reject_missing_and_duplicate_case_ids(self):
         with tempfile.TemporaryDirectory() as work:

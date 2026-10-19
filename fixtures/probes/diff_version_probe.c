@@ -16,18 +16,32 @@ __declspec(dllexport) DWORD rel_diff_transform(DWORD value)
 {
     return value ^ GetTickCount();
 }
-#elif REL_DIFF_VARIANT == 2
+#elif REL_DIFF_VARIANT == 2 || REL_DIFF_VARIANT == 4
 __declspec(dllexport) DWORD rel_diff_transform(DWORD value)
 {
     return value ^ (DWORD)GetTickCount64();
 }
+#elif REL_DIFF_VARIANT == 3
+__declspec(dllexport) DWORD rel_diff_transform(DWORD value)
+{
+    return value ^ GetCurrentProcessId();
+}
+#else
+#error Unsupported REL_DIFF_VARIANT
+#endif
 
+#if REL_DIFF_VARIANT == 2 || REL_DIFF_VARIANT == 4
 __declspec(dllexport) DWORD rel_diff_new_api(DWORD value)
 {
     return value + 42u;
 }
-#else
-#error Unsupported REL_DIFF_VARIANT
+#endif
+
+#if REL_DIFF_VARIANT == 3 || REL_DIFF_VARIANT == 4
+__declspec(dllexport) DWORD rel_diff_other_api(DWORD value)
+{
+    return value + 91u;
+}
 #endif
 
 int main(void)

@@ -47,13 +47,15 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "uniqueItems": true
         },
         "removed": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "uniqueItems": true
         }
       }
     },
@@ -72,13 +74,15 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "uniqueItems": true
         },
         "removed": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "uniqueItems": true
         }
       }
     },
@@ -108,19 +112,22 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "uniqueItems": true
         },
         "removed": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "uniqueItems": true
         },
         "changed": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "uniqueItems": true
         }
       },
       "allOf": [

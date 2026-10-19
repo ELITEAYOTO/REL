@@ -57,9 +57,15 @@ simulate same-sized mutations, early EOF and appended bytes.
 
 This is **not an atomic snapshot**: a concurrent writer can alter bytes
 between, during or after these passes and evade detection. Path ancestors
-are not descriptor-confined, and a leaf symlink swapped between the initial
-check and open is not race-proof. Do not treat this as a sandbox or a
-guarantee against hostile filesystem manipulation.
+are not descriptor-confined. On Unix, the opened leaf now uses O_NOFOLLOW
+and O_NONBLOCK and is checked against the preflight device/inode. Windows
+rejects reparse points on the opened leaf handle and shares read access only
+with other readers. Tests simulate late leaf-symlink substitution on both
+platforms, but not atomic ancestor traversal, a filesystem snapshot or full
+protection from in-place mutation. See the
+[per-tool input policy matrix](../../docs/security/INPUT_POLICY_MATRIX.md).
+Do not treat this as a sandbox or a guarantee against hostile filesystem
+manipulation.
 For hostile files use a separately justified OS isolation boundary.
 Input binaries are never executed.
 

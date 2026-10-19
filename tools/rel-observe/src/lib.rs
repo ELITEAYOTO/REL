@@ -8,7 +8,7 @@ pub use sections::{observe_section_headers_bytes, observe_section_headers_file};
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use std::{
-    fs::{self, File},
+    fs::{self, File, Metadata},
     io::{Read, Seek, SeekFrom},
     path::Path,
 };
@@ -156,6 +156,42 @@ fn verify_second_pass<R: Read>(reader: &mut R, expected: &[u8]) -> Result<(), St
     Ok(())
 }
 
+/// Refuse final-component symlinks/reparse points even if inserted after preflight.
+/// This does not protect ancestor paths or create an atomic input snapshot.
+fn open_controlled_leaf(path: &Path) -> std::io::Result<File> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        fs::OpenOptions::new()
+            .read(true)
+            .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK)
+            .open(path)
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::{MetadataExt, OpenOptionsExt};
+        const FILE_FLAG_OPEN_REPARSE_POINT: u32 = 0x0020_0000;
+        const FILE_ATTRIBUTE_REPARSE_POINT: u32 = 0x0000_0400;
+        const FILE_SHARE_READ: u32 = 0x0000_0001;
+        let file = fs::OpenOptions::new()
+            .read(true)
+            .share_mode(FILE_SHARE_READ)
+            .custom_flags(FILE_FLAG_OPEN_REPARSE_POINT)
+            .open(path)?;
+        if file.metadata()?.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT != 0 {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "EX-01 final-component reparse points are unsupported",
+            ));
+        }
+        Ok(file)
+    }
+    #[cfg(not(any(unix, windows)))]
+    {
+        File::open(path)
+    }
+}
+
 /// Read a bounded controlled file with a second, same-descriptor byte check.
 /// Neither the parent path nor this check provides an atomic snapshot.
 pub(crate) fn load_controlled_file(path: &Path) -> Result<Vec<u8>, String> {
@@ -166,8 +202,21 @@ pub(crate) fn load_controlled_file(path: &Path) -> Result<Vec<u8>, String> {
     if before.len() > MAX_INPUT_BYTES as u64 {
         return Err("EX-01 input exceeds 2 MiB prototype limit".to_owned());
     }
-    let mut file = File::open(path).map_err(|e| e.to_string())?;
+    load_after_preflight(path, &before)
+}
+
+/// Validate and read the handle after the preflight. Tests can simulate a
+/// deterministic path swap between the two independently observable steps.
+fn load_after_preflight(path: &Path, before: &Metadata) -> Result<Vec<u8>, String> {
+    let mut file = open_controlled_leaf(path).map_err(|e| e.to_string())?;
     let opened = file.metadata().map_err(|e| e.to_string())?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt;
+        if before.dev() != opened.dev() || before.ino() != opened.ino() {
+            return Err("EX-01 input identity changed before opening".to_owned());
+        }
+    }
     if !opened.is_file() || opened.len() > MAX_INPUT_BYTES as u64 {
         return Err("EX-01 input is not a bounded regular file".to_owned());
     }
@@ -199,6 +248,9 @@ pub(crate) fn load_controlled_file(path: &Path) -> Result<Vec<u8>, String> {
 pub fn observe_file(path: &Path) -> Result<Value, String> {
     observe_bytes(&load_controlled_file(path)?)
 }
+
+#[cfg(test)]
+mod controlled_input_tests;
 
 #[cfg(test)]
 mod second_pass_tests {

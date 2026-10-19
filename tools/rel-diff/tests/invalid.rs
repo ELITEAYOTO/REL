@@ -9,7 +9,8 @@ fn cli_rejects_invalid_identity_and_schema_without_stdout() {
         .duration_since(UNIX_EPOCH)
         .expect("clock")
         .as_nanos();
-    let dir = std::env::temp_dir().join(format!("rel-diff-negative-{}-{nonce}", std::process::id()));
+    let dir =
+        std::env::temp_dir().join(format!("rel-diff-negative-{}-{nonce}", std::process::id()));
     fs::create_dir(&dir).expect("temporary directory");
     let left = dir.join("left.json");
     let right = dir.join("right.json");

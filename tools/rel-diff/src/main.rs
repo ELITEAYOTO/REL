@@ -209,7 +209,7 @@ mod tests {
             "a".repeat(64)
         );
         assert!(serde_json::from_str::<Manifest>(&valid).is_ok());
-        assert!(serde_json::from_str::<Manifest>(&valid.replace(r#""warnings":[],"#, "")).is_err());
+        assert!(serde_json::from_str::<Manifest>(&valid.replace(r#","warnings":[]"#, "")).is_err());
         assert!(serde_json::from_str::<Manifest>(
             &valid.replace(r#""warnings":[]}"#, r#""warnings":[],"unknown":1}"#)
         )

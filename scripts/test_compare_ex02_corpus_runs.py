@@ -2,6 +2,9 @@
 """Self-contained cross-run evidence-validator regressions (no external packages)."""
 import copy
 import json
+import os
+import subprocess
+import sys
 import tempfile
 import unittest
 import zipfile
@@ -345,6 +348,56 @@ class CorpusCrossRunTests(unittest.TestCase):
                 z.writestr("rel-ex02-brepro-pairs.json", oversized)
             with self.assertRaisesRegex(ValueError, "2 MiB"):
                 load_report(archive, "brepro")
+
+    def test_evidence_input_requires_regular_file_not_symlink(self):
+        with tempfile.TemporaryDirectory() as work:
+            root = Path(work)
+            target = root / "real.json"
+            target.write_text(json.dumps(sample()), encoding="utf-8")
+            link = root / "alias.json"
+            try:
+                link.symlink_to(target)
+            except OSError as error:
+                if os.environ.get("GITHUB_ACTIONS"):
+                    self.fail(f"CI must create the symlink: {error}")
+                self.skipTest(f"no local symlink privilege: {error}")
+            with self.assertRaisesRegex(ValueError, "regular file"):
+                load_report(link, "brepro")
+
+    @unittest.skipUnless(hasattr(os, "mkfifo"), "requires Unix named pipes")
+    def test_plain_and_zip_fifo_are_rejected_without_waiting_for_writer(self):
+        with tempfile.TemporaryDirectory() as work:
+            for suffix in (".json", ".zip"):
+                fifo = Path(work) / f"blocked{suffix}"
+                os.mkfifo(fifo)
+                # This subprocess timeout makes a regression (blocking open)
+                # fail promptly instead of hanging the Python CI job.
+                code = (
+                    "import sys; from pathlib import Path; "
+                    "from compare_ex02_corpus_runs import load_report; "
+                    "load_report(Path(sys.argv[1]), 'brepro')"
+                )
+                completed = subprocess.run(
+                    [sys.executable, "-c", code, str(fifo)],
+                    cwd=Path(__file__).resolve().parent,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                    timeout=3,
+                )
+                with self.subTest(suffix=suffix):
+                    self.assertNotEqual(completed.returncode, 0)
+                    self.assertIn("regular file", completed.stderr)
+
+    def test_compressed_archive_itself_has_a_size_limit(self):
+        from compare_ex02_corpus_runs import MAX_ARCHIVE_BYTES
+
+        with tempfile.TemporaryDirectory() as work:
+            oversized = Path(work) / "oversized.zip"
+            with oversized.open("wb") as file:
+                file.truncate(MAX_ARCHIVE_BYTES + 1)
+            with self.assertRaisesRegex(ValueError, "file exceeds"):
+                load_report(oversized, "brepro")
 
     def test_artifact_zip_input_and_mode_boundary(self):
         with tempfile.TemporaryDirectory() as work:

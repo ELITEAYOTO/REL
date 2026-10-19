@@ -9,8 +9,11 @@ from __future__ import annotations
 import argparse
 import itertools
 import json
+import os
 import re
+import stat
 import zipfile
+from contextlib import contextmanager
 from pathlib import Path
 
 EXPECTED_IDS = {f"{compiler}-v{variant}" for compiler in ("msvc", "clang") for variant in range(1, 5)}
@@ -20,6 +23,7 @@ REPORT_FILES = {
 }
 HASH = re.compile(r"[0-9a-f]{64}\Z")
 MAX_EVIDENCE_BYTES = 2 * 1024 * 1024
+MAX_ARCHIVE_BYTES = 32 * 1024 * 1024
 EXPECTED_PAIRS = {
     (f"{compiler}-v{left}", f"{compiler}-v{right}")
     for compiler in ("msvc", "clang")
@@ -171,24 +175,53 @@ def check_report_structure(report: dict) -> None:
         raise ValueError("incomplete pair coverage")
 
 
+@contextmanager
+def open_regular_evidence(path: Path, max_bytes: int):
+    """Open a controlled local artifact without following a Unix leaf link.
+
+    The preflight path may change, so validate the descriptor after opening.
+    This is not a protected ancestor walk or a hostile-filesystem sandbox.
+    """
+    before = path.lstat()
+    if not stat.S_ISREG(before.st_mode):
+        raise ValueError("evidence input must be a regular file (no leaf symlinks)")
+    if before.st_size > max_bytes:
+        raise ValueError(f"evidence file exceeds {max_bytes} bytes")
+
+    flags = os.O_RDONLY | getattr(os, "O_BINARY", 0)
+    if os.name == "posix":
+        flags |= os.O_NONBLOCK | os.O_NOFOLLOW | getattr(os, "O_CLOEXEC", 0)
+    descriptor = os.open(path, flags)
+    with os.fdopen(descriptor, "rb") as reader:
+        opened = os.fstat(reader.fileno())
+        if not stat.S_ISREG(opened.st_mode):
+            raise ValueError("evidence input is not a regular opened file")
+        if (before.st_dev, before.st_ino) != (opened.st_dev, opened.st_ino):
+            raise ValueError("evidence file identity changed before open")
+        if opened.st_size > max_bytes:
+            raise ValueError(f"evidence file exceeds {max_bytes} bytes")
+        yield reader
+
+
 def load_report(path: Path, mode: str) -> dict:
     if path.suffix.lower() == ".zip":
-        with zipfile.ZipFile(path) as archive:
-            expected = REPORT_FILES[mode]
-            matches = [
-                entry for entry in archive.infolist()
-                if not entry.is_dir() and Path(entry.filename).name == expected
-            ]
-            if len(matches) != 1:
-                raise ValueError(f"{path.name}: expected exactly one {expected}")
-            if matches[0].file_size > MAX_EVIDENCE_BYTES:
-                raise ValueError("evidence report exceeds 2 MiB")
-            with archive.open(matches[0]) as member:
-                payload = member.read(MAX_EVIDENCE_BYTES + 1)
+        # The compressed artifact also has a limit; no unbounded central
+        # directory is accepted merely because the desired member is small.
+        with open_regular_evidence(path, MAX_ARCHIVE_BYTES) as reader:
+            with zipfile.ZipFile(reader) as archive:
+                expected = REPORT_FILES[mode]
+                matches = [
+                    entry for entry in archive.infolist()
+                    if not entry.is_dir() and Path(entry.filename).name == expected
+                ]
+                if len(matches) != 1:
+                    raise ValueError(f"{path.name}: expected exactly one {expected}")
+                if matches[0].file_size > MAX_EVIDENCE_BYTES:
+                    raise ValueError("evidence report exceeds 2 MiB")
+                with archive.open(matches[0]) as member:
+                    payload = member.read(MAX_EVIDENCE_BYTES + 1)
     else:
-        if path.stat().st_size > MAX_EVIDENCE_BYTES:
-            raise ValueError("evidence report exceeds 2 MiB")
-        with path.open("rb") as member:
+        with open_regular_evidence(path, MAX_EVIDENCE_BYTES) as member:
             payload = member.read(MAX_EVIDENCE_BYTES + 1)
     if len(payload) > MAX_EVIDENCE_BYTES:
         raise ValueError("evidence report exceeds 2 MiB")

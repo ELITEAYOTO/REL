@@ -73,6 +73,10 @@ def unique_json_keys(pairs: list[tuple[str, object]]) -> dict:
 
 def check_report_structure(report: dict) -> None:
     """Reject incomplete/mislabeled evidence before comparing build identities."""
+    if report.get("schema_version") != "rel-ex02-compiler-pair-evidence-v1":
+        raise ValueError("incompatible corpus evidence version")
+    if report.get("source") != "fixtures/probes/diff_version_probe.c":
+        raise ValueError("unrecognized corpus source identity")
     cases = report.get("cases")
     if type(report.get("case_count")) is not int or report["case_count"] != 8:
         raise ValueError("invalid case count")
@@ -192,6 +196,26 @@ def compare_reports(first: dict, second: dict, *, require_identical: bool) -> di
     b = {item["id"]: item for item in second["cases"]}
     same = sorted(key for key in EXPECTED_IDS if (a[key]["sha256"], a[key]["size_bytes"]) == (b[key]["sha256"], b[key]["size_bytes"]))
     changed = sorted(EXPECTED_IDS - set(same))
+    # Identical PE bytes must not produce contradictory extractor or diff
+    # observations. Treat discrepancies as evidence inconsistencies, never as
+    # proof of a behavior change or a license to discard raw SHA identity.
+    same_ids = set(same)
+    for case_id in same:
+        for field in ("import_count", "export_count"):
+            if a[case_id][field] != b[case_id][field]:
+                raise ValueError(f"{case_id}: conflicting {field} for identical PE bytes")
+    left_pairs = {(x["left"], x["right"]): x for x in first["pairs"]}
+    right_pairs = {(x["left"], x["right"]): x for x in second["pairs"]}
+    for pair_id in EXPECTED_PAIRS:
+        if pair_id[0] in same_ids and pair_id[1] in same_ids:
+            for field in (
+                "import_added", "import_removed",
+                "export_added", "export_removed", "section_status",
+            ):
+                if left_pairs[pair_id][field] != right_pairs[pair_id][field]:
+                    raise ValueError(
+                        f"{pair_id}: conflicting oracle {field} for identical PE bytes"
+                    )
     summary = {
         "link_mode": first["link_mode"],
         "identical_raw_build_count": len(same),

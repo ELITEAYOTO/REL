@@ -24,7 +24,9 @@ __declspec(dllexport) DWORD rel_diff_transform(DWORD value)
 #elif REL_DIFF_VARIANT == 3
 __declspec(dllexport) DWORD rel_diff_transform(DWORD value)
 {
-    return value ^ GetCurrentProcessId();
+    wchar_t machine_name[64];
+    DWORD characters = 64u;
+    return value ^ (DWORD)GetComputerNameW(machine_name, &characters) ^ characters;
 }
 #else
 #error Unsupported REL_DIFF_VARIANT

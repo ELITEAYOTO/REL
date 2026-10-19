@@ -182,11 +182,12 @@ def open_regular_evidence(path: Path, max_bytes: int):
     The preflight path may change, so validate the descriptor after opening.
     This is not a protected ancestor walk or a hostile-filesystem sandbox.
     """
+    limit_label = "2 MiB" if max_bytes == MAX_EVIDENCE_BYTES else "32 MiB"
     before = path.lstat()
     if not stat.S_ISREG(before.st_mode):
         raise ValueError("evidence input must be a regular file (no leaf symlinks)")
     if before.st_size > max_bytes:
-        raise ValueError(f"evidence file exceeds {max_bytes} bytes")
+        raise ValueError(f"evidence file exceeds {limit_label}")
 
     flags = os.O_RDONLY | getattr(os, "O_BINARY", 0)
     if os.name == "posix":
@@ -199,7 +200,7 @@ def open_regular_evidence(path: Path, max_bytes: int):
         if (before.st_dev, before.st_ino) != (opened.st_dev, opened.st_ino):
             raise ValueError("evidence file identity changed before open")
         if opened.st_size > max_bytes:
-            raise ValueError(f"evidence file exceeds {max_bytes} bytes")
+            raise ValueError(f"evidence file exceeds {limit_label}")
         yield reader
 
 

@@ -2,6 +2,12 @@
 
 ## [Unreleased] — 2026-10-18
 
+### EX-01 — COFF Machine observation with explicit partial coverage (candidate; CI pending)
+
+- New experimental `rel-observe coff-machine` CLI subcommand observes the actual two-byte little-endian COFF Machine field at `e_lfanew + 4`, with exact byte-offset evidence from the hashed subject buffer. Only `0x014c` (x86) and `0x8664` (x86_64) receive human-readable mappings; other values remain literal hex.
+- Truncation **after the PE signature** results in a scoped `partial` report, an `indeterminate` observation and a machine-readable `COFF_MACHINE_TRUNCATED` diagnostic with no fabricated evidence. Bad MZ/PE signatures and out-of-limit inputs are rejected without a report. Separate deterministic domain/config run IDs, independent Python oracle and Rust golden/negative tests cover controlled PE32/PE32+, unknown machine values and exact one-byte truncation.
+- Refactors only the shared `rel-observe` provenance envelope and bounded file reader to serve two independent domains; the original `dos-magic` output/run IDs, `rel-inspect` and `binary-manifest v1.0.0` are intended to remain unchanged. Not a complete PE header validator, architecture compatibility verifier, hostile binary sandbox or decompiler.
+
 ### EX-01 — First real controlled byte-evidence producer (PR #51 merged; scoped CI verified)
 
 - New standalone Rust `rel-observe` CLI with `dos-magic` command, reading bounded real file bytes and producing experimental EX-01 JSON. The two signed observations are **only** `equals.MZ` present and `equals.NE` absent within file bytes [0,2) of minimally signature-checked PE inputs. File SHA-256, size and evidence refer to that same in-memory buffer.

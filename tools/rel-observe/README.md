@@ -11,6 +11,8 @@ or complete PE parser**. It does not infer game/runtime/network behavior.
 ```sh
 cargo run --locked -p rel-observe -- dos-magic fixtures/pe32-basic.exe
 cargo run --locked -p rel-observe -- dos-magic fixtures/pe64-basic.exe
+cargo run --locked -p rel-observe -- coff-machine fixtures/pe32-basic.exe
+cargo run --locked -p rel-observe -- coff-machine fixtures/pe64-basic.exe
 ```
 
 JSON is sent to standard output. Errors go to standard error with a
@@ -52,3 +54,33 @@ Run `python scripts/test_observe_cli.py --binary target/release/rel-observe`
 (on Windows use `rel-observe.exe`) to verify actual output against the
 independent Python contract validator and fixture bytes. Overall EX-01 is
 still incomplete; only the `pe.dos_magic` domain has a real producer.
+
+
+## Experimental COFF Machine observation (candidate; CI pending)
+
+`coff-machine` reads a second, independent domain `pe.coff_machine`.
+It uses `e_lfanew` (DOS offset `0x3c`) to locate the four-byte
+`PE\\0\\0` signature and then observes the **two bytes**
+at `e_lfanew + 4`, interpreted as a little-endian unsigned 16-bit
+`Machine` field. Evidence is file-offset typed and bound to the
+subject's SHA-256. It normalizes only `0x014c` as `x86` and
+`0x8664` as `x86_64`; unknown codes stay in hex (no invented family).
+
+If the PE signature is present but fewer than two machine bytes remain,
+the report has scope `partial`, observation `indeterminate`, no
+decisive evidence, and diagnostic `COFF_MACHINE_TRUNCATED`. Missing
+MZ / e_lfanew / PE signatures are refused with a nonzero exit code,
+rather than falsely implying a verified negative.
+
+The COFF configuration string for the independent SHA-256 run ID is
+`rel-observe:coff-machine:v1;limit=2097152;require-mz-and-pe-signatures`.
+The run ID uses the same documented binary preimage structure as
+`dos-magic`, substituting this config and `pe.coff_machine\\0`
+for the old domain. Different domains have different run IDs,
+including on identical file bytes.
+
+These two bytes do **not** establish general PE validity,
+compatibility, or executable behavior. The reader remains controlled
+input only, not snapshot-safe or an arbitrary hostile-binary sandbox.
+Validate through `python scripts/test_coff_machine_cli.py --binary
+target/release/rel-observe` (or `.exe` on Windows).

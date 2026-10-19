@@ -52,6 +52,12 @@ jobs:
       - name: EX-01 real producer smoke (Linux)
         if: runner.os == 'Linux'
         run: python scripts/test_observe_cli.py --binary target/release/rel-observe
+      - name: EX-01 COFF Machine producer smoke (Windows)
+        if: runner.os == 'Windows'
+        run: python scripts/test_coff_machine_cli.py --binary target/release/rel-observe.exe
+      - name: EX-01 COFF Machine producer smoke (Linux)
+        if: runner.os == 'Linux'
+        run: python scripts/test_coff_machine_cli.py --binary target/release/rel-observe
       - name: End-to-end CLI test (Windows)
         if: runner.os == 'Windows'
         run: python scripts/smoke_cli.py --binary target/release/rel-inspect.exe

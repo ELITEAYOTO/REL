@@ -81,3 +81,26 @@ The CLI refuses inputs outside the scope; it does not claim an extraction
 complete PE correctness, or security against hostile inputs. Longer-term
 EX-01 still needs comprehensive coverage domains, diagnostics from real
 extraction errors and policy decisions for incomplete extraction.
+
+## Candidate: COFF Machine scope and partial semantics (CI pending)
+
+The experimental `rel-observe coff-machine` command extracts the two-byte
+COFF Machine field at file offset `e_lfanew + 4`, only after validating
+the MZ and four-byte PE signature. This produces one positive
+`pe.coff_machine.value` observation, with a raw little-endian 16-bit hex
+code, cautiously normalized to `x86`/`x86_64` for two recognized codes.
+Other codes remain uninterpreted hex. Exact file-offset evidence and
+subject identity are extracted from the same bounded byte buffer.
+
+A completely or partially missing Machine field produces scope
+`partial`, an `indeterminate` observation with null values, no
+decisive evidence, and `COFF_MACHINE_TRUNCATED` warning. This is a real
+non-complete output case. Invalid/truncated MZ/PE signature framing still
+fails without any report. Python independently recomputes `e_lfanew`,
+Machine values, hashes and domain-specific run IDs; Rust tests cover both
+fixture architectures and the truncation boundary.
+
+This evidence says nothing about whether instructions at runtime are
+executable or compatible, what imported APIs mean, or whether an
+arbitrary hostile binary can be analyzed safely. Overall EX-01 and
+P1.5-A remain incomplete; no change to manifest v1.0.0.

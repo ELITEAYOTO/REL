@@ -134,10 +134,10 @@ The PE alpha preflight also checks declared import/export directory sizes (each 
 - `goblin` is a provisional parser adapter, not a permanent lock-in; switching requires measured reasons and an ADR.
 - No source license selected: do not assume redistribution rights for third-party code/binaries.
 
-See [changelog](CHANGELOG.md), [roadmap](ROADMAP.md) and [future-chat handoff](docs/governance/HANDOFF_NEXT_CHAT.md).
+See [changelog](CHANGELOG.md), [roadmap](ROADMAP.md), **[current-state / next-chat entry point](docs/governance/CURRENT_STATE.md)** and the [historical handoff archive](docs/governance/HANDOFF_NEXT_CHAT.md).
 
-## Next validated direction (not yet implemented)
+## Current development direction (snapshot 2026-10-19; verify GitHub)
 
-After critical P1.5 resource/path hardening on **controlled inputs**, EX-01 will explore a small independent contract for provenance/coverage/diagnostics, and EX-02 will test a **metadata-only** Rust PE manifest diff before P2 Ghidra. P3 still means function matching, not import-list comparison. No changes to `binary-manifest` v1.0.0.
+EX-01 has **limited experimental observation producers and source verification** already integrated in `main`, not a universal complete-coverage analysis engine. EX-02 is a **separate metadata-only PE manifest comparison pilot in draft [PR #62](https://github.com/ELITEAYOTO/REL/pull/62)**, not a feature shipped on `main` and not the full EX-02 acceptance gate. Later P2 Ghidra adaptation and P3 function matching are planned, not implemented. `binary-manifest v1.0.0` remains unchanged. Consult [CURRENT_STATE](docs/governance/CURRENT_STATE.md) for the latest known checkpoint and verify live PR heads/CI rather than trusting this dated summary.
 
 Read [EX-01 spec](docs/specs/OBSERVATION_ENVELOPE_DRAFT.md), [EX-02 spec](docs/specs/METADATA_DIFF_PILOT.md), and [alpha threat model](docs/security/THREAT_MODEL_ALPHA.md). The repo is public but no source license is selected yet.

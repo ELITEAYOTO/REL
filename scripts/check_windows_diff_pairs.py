@@ -170,7 +170,7 @@ def check_diff(actual: dict, expected: dict, label: str) -> None:
             assert actual[key] == truth, (label, key, actual[key], truth)
 
 
-def verify(inspector: Path, diff: Path, corpus: Path, output: Path) -> None:
+def verify(inspector: Path, diff: Path, corpus: Path, output: Path, link_mode: str) -> None:
     v1 = json.loads((ROOT / "contracts/schemas/binary-manifest.schema.json").read_text())
     experimental = json.loads(
         (ROOT / "contracts/experimental/manifest-diff.schema.json").read_text()
@@ -258,6 +258,8 @@ def verify(inspector: Path, diff: Path, corpus: Path, output: Path) -> None:
         "source_sha256": source_sha,
         "compilers": {name: provenance[name] for name in COMPILERS},
         "build_script": "scripts/build_windows_diff_pairs.cmd",
+        "link_mode": link_mode,
+        "link_flags": "/INCREMENTAL:NO /Brepro" if link_mode == "brepro" else "/INCREMENTAL:NO",
         "case_count": len(cases),
         "pair_count": len(pairs),
         "cases": cases,
@@ -281,10 +283,12 @@ if __name__ == "__main__":
     parser.add_argument("--diff", required=True, type=Path)
     parser.add_argument("--corpus", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--link-mode", choices=("standard", "brepro"), default="standard")
     args = parser.parse_args()
     verify(
         args.inspector.resolve(strict=True),
         args.diff.resolve(strict=True),
         args.corpus.resolve(strict=True),
         args.output,
+        args.link_mode,
     )

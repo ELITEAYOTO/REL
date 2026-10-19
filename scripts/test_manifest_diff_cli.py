@@ -5,6 +5,7 @@ No supplied executable is launched: only the built rel-diff tool is executed.
 """
 import argparse
 import copy
+import hashlib
 import json
 import subprocess
 import tempfile
@@ -59,7 +60,39 @@ def rejected(binary, directory, left, right):
     assert completed.stderr, "invalid input lacked diagnostics"
 
 
-def verify(binary):
+def inspect_real_fixture_pair(binary, inspector, directory, input_validator, output_validator):
+    """Compare real rel-inspect manifests from the two controlled synthetic PEs."""
+    fixtures = Path(__file__).resolve().parents[1] / "fixtures"
+    manifests = []
+    for name in ("pe32-basic.exe", "pe64-basic.exe"):
+        source = fixtures / name
+        result = subprocess.run(
+            [str(inspector), "analyze", str(source)],
+            capture_output=True,
+            check=False,
+            timeout=30,
+        )
+        assert result.returncode == 0, result.stderr.decode(errors="replace")
+        manifest_data = json.loads(result.stdout)
+        input_validator.validate(manifest_data)
+        assert manifest_data["binary_sha256"] == hashlib.sha256(source.read_bytes()).hexdigest()
+        assert not manifest_data["warnings"]
+        manifests.append(manifest_data)
+    left, right = manifests
+    same, _ = accepted(binary, directory, output_validator, left, left)
+    assert same["sections"]["status"] == "unchanged"
+    assert not same["imports"]["added"] and not same["imports"]["removed"]
+    forward, _ = accepted(binary, directory, output_validator, left, right)
+    reverse, _ = accepted(binary, directory, output_validator, right, left)
+    assert not forward["size_changed"] and forward["arch_changed"]
+    assert forward["imports"]["added"] == ["KERNEL32.dll!GetTickCount64"]
+    assert forward["imports"]["removed"] == ["KERNEL32.dll!GetTickCount"]
+    assert not forward["exports"]["added"] and not forward["exports"]["removed"]
+    assert forward["imports"]["added"] == reverse["imports"]["removed"]
+    assert forward["imports"]["removed"] == reverse["imports"]["added"]
+
+
+def verify(binary, inspector):
     root = Path(__file__).resolve().parents[1]
     contract = json.loads(
         (root / "contracts/experimental/manifest-diff.schema.json").read_text(
@@ -211,11 +244,17 @@ def verify(binary):
         assert too_large.returncode != 0 and not too_large.stdout
         assert b"16 MiB" in too_large.stderr
 
+        if inspector is not None:
+            inspect_real_fixture_pair(
+                binary, inspector, directory, input_validator, output_validator
+            )
+
     print("EX-02 independent manifest diff CLI oracle: PASS")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--binary", type=Path, required=True)
+    parser.add_argument("--inspector", type=Path)
     args = parser.parse_args()
-    verify(args.binary.resolve())
+    verify(args.binary.resolve(), args.inspector.resolve() if args.inspector else None)

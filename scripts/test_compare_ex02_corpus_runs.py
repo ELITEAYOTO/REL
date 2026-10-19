@@ -194,6 +194,36 @@ class CorpusCrossRunTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "pair count"):
             compare_reports(changed, sample(), require_identical=True)
 
+    def test_duplicate_json_keys_in_plain_and_zip_evidence(self):
+        # Repeated keys could otherwise silently override provenance in json.loads.
+        malformed = json.dumps(sample()).replace(
+            '"schema_version": ', '"schema_version": "fake", "schema_version": ', 1
+        )
+        with tempfile.TemporaryDirectory() as work:
+            plain = Path(work) / "duplicate.json"
+            plain.write_text(malformed, encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "duplicate JSON object key"):
+                load_report(plain, "brepro")
+            archived = Path(work) / "duplicate.zip"
+            with zipfile.ZipFile(archived, "w", compression=zipfile.ZIP_DEFLATED) as z:
+                z.writestr("rel-ex02-brepro-pairs.json", malformed)
+            with self.assertRaisesRegex(ValueError, "duplicate JSON object key"):
+                load_report(archived, "brepro")
+
+    def test_malformed_identity_type_is_not_accepted(self):
+        report = sample()
+        report["cases"][0]["id"] = ["msvc-v1"]
+        with self.assertRaisesRegex(ValueError, "variant IDs"):
+            compare_reports(report, sample(), require_identical=True)
+        report = sample()
+        report["pairs"][0]["left"] = ["msvc-v1"]
+        with self.assertRaisesRegex(ValueError, "pair identity"):
+            compare_reports(report, sample(), require_identical=True)
+
+    def test_standard_linker_mode_cannot_request_strict_gate_directly(self):
+        with self.assertRaisesRegex(ValueError, "requires /Brepro"):
+            compare_reports(sample("standard"), sample("standard"), require_identical=True)
+
     def test_reject_oversized_json_and_decompressed_zip_evidence(self):
         oversized = b" " * (MAX_EVIDENCE_BYTES + 1)
         with tempfile.TemporaryDirectory() as work:

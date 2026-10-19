@@ -54,6 +54,7 @@ struct Report {
     size_changed: bool,
     arch_changed: bool,
     imports: Delta,
+    import_dll_case_only: bool,
     exports: Delta,
     sections: SectionDelta,
     limitations: Vec<&'static str>,
@@ -113,6 +114,31 @@ fn delta(left: &[String], right: &[String]) -> Delta {
     }
 }
 
+// Only the DLL prefix before '!' is ASCII case-insensitive. Keep raw evidence in Delta.
+fn normalized_import(item: &str) -> String {
+    match item.split_once('!') {
+        Some((dll, symbol)) if !dll.is_empty() && !symbol.is_empty() => {
+            format!("{}!{symbol}", dll.to_ascii_lowercase())
+        }
+        _ => item.to_owned(),
+    }
+}
+
+fn dll_case_only(left: &[String], right: &[String]) -> bool {
+    let raw_left: BTreeSet<_> = left.iter().collect();
+    let raw_right: BTreeSet<_> = right.iter().collect();
+    if raw_left == raw_right {
+        return false;
+    }
+    let normalized = |items: &[String]| -> BTreeSet<String> {
+        items.iter().map(|item| normalized_import(item)).collect()
+    };
+    let lhs = normalized(left);
+    let rhs = normalized(right);
+    // Collisions mean we cannot establish a one-to-one observation mapping.
+    lhs.len() == left.len() && rhs.len() == right.len() && lhs == rhs
+}
+
 fn section_status(a: &[Section], b: &[Section]) -> SectionDelta {
     let left_names: Vec<String> = a.iter().map(|s| s.name.clone()).collect();
     let right_names: Vec<String> = b.iter().map(|s| s.name.clone()).collect();
@@ -170,13 +196,14 @@ fn compare(a: Manifest, b: Manifest) -> Report {
         right_sha256: b.binary_sha256,
         size_changed: a.size_bytes != b.size_bytes,
         arch_changed: a.arch != b.arch,
+        import_dll_case_only: dll_case_only(&a.imports, &b.imports),
         imports: delta(&a.imports, &b.imports),
         exports: delta(&a.exports, &b.exports),
         sections: section_status(&a.sections, &b.sections),
         limitations: vec![
             "Sections compared by unique exact name only; duplicate names cause abstention.",
             "Imports and exports are observed strings, not runtime capabilities.",
-            "Duplicates and import DLL casing are not normalized in this pilot.",
+            "Original import strings are retained; only a collision-safe DLL-case-only hint is emitted.",
             "Unknown extraction coverage; no negative behavioral conclusions.",
         ],
     }
@@ -223,6 +250,22 @@ mod tests {
             &valid.replace(r#""size_bytes":1"#, r#""size_bytes":-1"#)
         )
         .is_err());
+    }
+
+    #[test]
+    fn dll_case_hint_preserves_exact_import_evidence() {
+        let left = vec!["KERNEL32.DLL!ReadFile".to_owned()];
+        let right = vec!["kernel32.dll!ReadFile".to_owned()];
+        assert!(dll_case_only(&left, &right));
+        assert_eq!(delta(&left, &right).removed, left);
+        assert!(!dll_case_only(
+            &["KERNEL32.DLL!ReadFile".into(), "kernel32.dll!ReadFile".into()],
+            &["kernel32.dll!ReadFile".into()]
+        ));
+        assert!(!dll_case_only(
+            &["KERNEL32.DLL!ReadFile".into()],
+            &["kernel32.dll!readfile".into()]
+        ));
     }
 
     #[test]

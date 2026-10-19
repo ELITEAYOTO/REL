@@ -2,11 +2,11 @@
 
 ## [Unreleased] — 2026-10-18
 
-### EX-01 — Source-backed evidence verification (candidate; CI pending)
+### EX-01 — Source-backed evidence verification (PR #57 merged; scoped CI verified)
 
 - Add standalone, opt-in `scripts/verify_observation_evidence.py` to recheck the **existing three** `rel-observe` experimental domains against a separately supplied controlled source binary. Recompute file SHA-256 and size, configuration digest, deterministic run ID, raw source bytes, normalized field values, precise evidence offsets/lengths and complete/partial/unsupported/absent-in-scope semantics.
 - Strictly reject unrecognized domains/producers, omitted or extra observations/evidence, malformed or falsified proof methods, wrong fields and spurious diagnostics. New cross-platform end-to-end negative tests mutate source values, offsets, run IDs, statuses and negative claims, plus validate real producer output on controlled PE32/PE64, partial and unsupported cases.
-- **Scope limit:** verification proves correspondence with the supplied byte buffer for known predicates; neither SHA-256 nor a deterministic run ID authenticates who produced a report. This is not proof of an atomic file snapshot, arbitrary-hostile-input safety, PE semantic validity or runtime behavior. Existing JSON schema `0.1.0-experimental`, `binary-manifest v1.0.0`, Rust producers and dependencies unchanged.
+- **Scope limit:** verification proves correspondence with the supplied byte buffer for known predicates; neither SHA-256 nor a deterministic run ID authenticates who produced a report. This is not proof of an atomic file snapshot, arbitrary-hostile-input safety, PE semantic validity or runtime behavior. Existing JSON schema `0.1.0-experimental`, `binary-manifest v1.0.0`, Rust producers and dependencies unchanged. [PR #57](https://github.com/ELITEAYOTO/REL/pull/57) merged at [`6e18d37`](https://github.com/ELITEAYOTO/REL/commit/6e18d373c27571928b1d38b8815701dec0de41f6); final-head [branch CI #39186120971](https://github.com/ELITEAYOTO/REL/actions/runs/39186120971), [PR CI #39186154113](https://github.com/ELITEAYOTO/REL/actions/runs/39186154113) and [post-merge `main` CI #39186361225](https://github.com/ELITEAYOTO/REL/actions/runs/39186361225) all passed Windows/Linux, including the real producer and falsification-rejection oracle.
 
 ### EX-01 — Controlled section header record observations (PR #55 merged; CI verified)
 

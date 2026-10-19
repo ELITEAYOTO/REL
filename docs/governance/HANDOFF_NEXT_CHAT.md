@@ -200,24 +200,10 @@ Third real `rel-observe` domain `pe.section_headers` observes at most 32 declare
 
 This is **header data observation only**: no proof that section payloads/RVAs are valid, no executable behavior analysis, no safe arbitrary-hostile binary sandbox, and no decompilation. Overall EX-01 [issue #14](https://github.com/ELITEAYOTO/REL/issues/14) and P1.5-A [issue #9](https://github.com/ELITEAYOTO/REL/issues/9) remain open. Future work should prioritize evidence quality, resource containment, and broaden analysis deliberately before EX-02/P2/P3.
 
-## Candidate: source-backed EX-01 report verifier — CI pending
+## EX-01 source-backed evidence verifier — MERGED, SCOPED CI VERIFIED
 
-Branch `feat/ex01-verify-source-backed-evidence` adds a bounded,
-standalone Python verification CLI and a cross-OS, mutation-driven
-end-to-end test suite. This corrects a known distinction: the existing
-JSON schema+semantic validator checks report shape and relationships,
-but cannot prove a claim was derived from its alleged source bytes.
-The verifier recalculates exact subject SHA, run/config hashes,
-record offsets, raw/normalized predicate values and
-complete/partial/unsupported diagnostics for the three existing
-experimental domains. It rejects forged normalized fields, offsets,
-declared negative/coverage claims, missing/extra observations and
-unknown domains/producers.
+[PR #57](https://github.com/ELITEAYOTO/REL/pull/57) merged at [`6e18d37`](https://github.com/ELITEAYOTO/REL/commit/6e18d373c27571928b1d38b8815701dec0de41f6). Final-head [branch CI #39186120971](https://github.com/ELITEAYOTO/REL/actions/runs/39186120971) and [PR CI #39186154113](https://github.com/ELITEAYOTO/REL/actions/runs/39186154113) passed Windows/Linux, with test logs on both systems showing `PASS EX-01 independent evidence audit and falsification regressions`. [Post-merge `main` CI #39186361225](https://github.com/ELITEAYOTO/REL/actions/runs/39186361225) **also passed Windows/Linux**.
 
-It is not a signature or trustworthy publisher attestation; it checks
-agreement against caller-supplied controlled bytes and does not
-isolate arbitrary hostile files or prevent concurrent edits. No
-changes to the Rust producer, JSON schemas, dependency pins or
-`binary-manifest v1.0.0`. Verify final PR-head Windows/Linux
-CLI+negative CI and post-merge main CI before marking completed.
-Leave P1.5-A issue #9 and overall EX-01 issue #14 open.
+The new opt-in standalone `scripts/verify_observation_evidence.py` independently cross-checks a saved `0.1.0-experimental` report against a caller-supplied controlled source binary (≤2 MiB). For `pe.dos_magic`, `pe.coff_machine` and `pe.section_headers`, it validates schema and source length/SHA, deterministic config/run ID, all raw+normalized values, precise evidence offsets/lengths/methods, observation counts and scope/diagnostic truth claims. Deliberate falsification tests reject fake records, shifted proof offsets, wrong identities, false negative and false complete claims and incorrect truncation diagnostics. Unknown domains or producers are rejected, not guessed.
+
+**Limits:** agreement between a report and supplied bytes is NOT proof of authenticity, publisher identity, digital signature, file snapshot atomicity, supply-chain integrity, general PE correctness, sandbox safety or program behavior. A party controlling both report and file can produce matching contents. No Rust extractor, `binary-manifest v1.0.0`, experimental schema, dependency, or architecture changes. Keep overall EX-01 [#14](https://github.com/ELITEAYOTO/REL/issues/14) and P1.5-A [#9](https://github.com/ELITEAYOTO/REL/issues/9) open. Continue toward deliberate coverage/provenance and resource limits, then EX-02 under ADR-0013.

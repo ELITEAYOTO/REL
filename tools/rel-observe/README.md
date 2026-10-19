@@ -115,7 +115,7 @@ configuration string
 and domain `pe.section_headers\0`. The independent cross-platform
 oracle `scripts/test_section_headers_cli.py` recomputes all values. [PR #55](https://github.com/ELITEAYOTO/REL/pull/55) and [post-merge Windows/Linux CI #39184367267](https://github.com/ELITEAYOTO/REL/actions/runs/39184367267) passed in this narrow scope.
 
-## Independent source-backed evidence verifier (candidate; CI pending)
+## Independent source-backed evidence verifier (PR #57 merged, scoped CI verified)
 
 ```sh
 python scripts/verify_observation_evidence.py \
@@ -142,4 +142,4 @@ both report and matching file can construct consistent false provenance.
 Hashes are not signatures. Neither report nor file has a trusted
 publisher identity, filesystem snapshot, source-supply-chain guarantee,
 or arbitrary-hostile-input sandbox. The verification input is limited
-to 2 MiB and is never executed. This is not a universal PE validator.
+to 2 MiB and is never executed. This is not a universal PE validator. [PR #57](https://github.com/ELITEAYOTO/REL/pull/57) and [post-merge main CI #39186361225](https://github.com/ELITEAYOTO/REL/actions/runs/39186361225) passed Windows/Linux with deliberately falsified report tests.

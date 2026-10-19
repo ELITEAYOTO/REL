@@ -126,6 +126,8 @@ jobs:
           python scripts/check_windows_diff_pairs.py --inspector target/release/rel-inspect.exe --diff target/release/rel-diff.exe --corpus corpus-pairs --output rel-ex02-compiler-pairs.json
       - name: EX-02 byte-diagnostic unit regressions
         run: python scripts/test_windows_diff_repro.py
+      - name: EX-02 cross-run report comparison regressions
+        run: python scripts/test_compare_ex02_corpus_runs.py
       - name: Capture first EX-02 PE compiler output (Windows)
         if: runner.os == 'Windows'
         run: python scripts/check_windows_diff_repro.py --capture --corpus corpus-pairs --snapshot corpus-pairs-first
@@ -165,6 +167,12 @@ jobs:
       - name: Compare /Brepro repeated PE byte sequences (Windows)
         if: runner.os == 'Windows'
         run: python scripts/check_windows_diff_repro.py --compare --corpus corpus-pairs-repro --snapshot corpus-pairs-repro-first --output rel-ex02-brepro-repeat.json
+      - name: Verify repeated /Brepro PE oracle (Windows)
+        if: runner.os == 'Windows'
+        run: python scripts/check_windows_diff_pairs.py --inspector target/release/rel-inspect.exe --diff target/release/rel-diff.exe --corpus corpus-pairs-repro --link-mode brepro --output rel-ex02-brepro-pairs-repeat.json
+      - name: Enforce matching /Brepro corpus byte identities within job (Windows)
+        if: runner.os == 'Windows'
+        run: python scripts/compare_ex02_corpus_runs.py --first rel-ex02-brepro-pairs.json --second rel-ex02-brepro-pairs-repeat.json --mode brepro --require-identical
       - name: Upload /Brepro controlled experiment
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
@@ -172,6 +180,7 @@ jobs:
           name: rel-ex02-brepro-experiment-windows
           path: |
             rel-ex02-brepro-pairs.json
+            rel-ex02-brepro-pairs-repeat.json
             rel-ex02-brepro-repeat.json
           if-no-files-found: error
       - name: Upload EX-02 compiler-built A/B pair evidence

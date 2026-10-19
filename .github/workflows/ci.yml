@@ -46,10 +46,10 @@ jobs:
         run: python -m pip install 'jsonschema>=4,<5'
       - name: EX-02 independent manifest diff oracle (Windows)
         if: runner.os == 'Windows'
-        run: python scripts/test_manifest_diff_cli.py --binary target/release/rel-diff.exe
+        run: python scripts/test_manifest_diff_cli.py --binary target/release/rel-diff.exe --inspector target/release/rel-inspect.exe
       - name: EX-02 independent manifest diff oracle (Linux)
         if: runner.os == 'Linux'
-        run: python scripts/test_manifest_diff_cli.py --binary target/release/rel-diff
+        run: python scripts/test_manifest_diff_cli.py --binary target/release/rel-diff --inspector target/release/rel-inspect
       - name: EX-01 experimental envelope contract regressions
         run: python scripts/test_observation_envelope.py
       - name: EX-01 real producer smoke (Windows)

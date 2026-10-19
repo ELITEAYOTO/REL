@@ -226,6 +226,41 @@ mod tests {
     }
 
     #[test]
+    fn section_order_does_not_change_delta() {
+        let section = |name: &str, size| Section {
+            name: name.into(),
+            offset: 0,
+            size,
+            virtual_address: Some(4096),
+        };
+        let a = vec![section(".text", 10), section(".data", 20)];
+        let b = vec![section(".data", 20), section(".text", 10)];
+        let result = section_status(&a, &b);
+        assert_eq!(result.status, "unchanged");
+        assert!(result.added.is_empty());
+        assert!(result.removed.is_empty());
+        assert!(result.changed.is_empty());
+    }
+
+    #[test]
+    fn ambiguous_sections_do_not_emit_misleading_partial_deltas() {
+        let section = |name: &str| Section {
+            name: name.into(),
+            offset: 0,
+            size: 10,
+            virtual_address: None,
+        };
+        let result = section_status(
+            &[section(".text"), section(".text")],
+            &[section(".new")],
+        );
+        assert_eq!(result.status, "ambiguous");
+        assert!(result.added.is_empty());
+        assert!(result.removed.is_empty());
+        assert!(result.changed.is_empty());
+    }
+
+    #[test]
     fn repeated_sections_are_not_silently_matched() {
         let section = |name: &str| Section {
             name: name.into(),

@@ -199,3 +199,25 @@ Shared provenance and controlled file reader preserve the old `dos-magic` output
 Third real `rel-observe` domain `pe.section_headers` observes at most 32 declared 40-byte COFF section headers after the optional header. It reports SHA-bound file-offset evidence, original 40-byte hex per record and bounded normalized name bytes (hex), RVA/virtual size, raw file pointer/size and flags. Incomplete COFF, optional header, or any declared section record yields `partial/indeterminate`, no decisive record proof and warning. Count >32 yields `unsupported`; zero declared sections yields `absent_in_scope` backed by two count bytes only if header span is present. No new dependencies or `binary-manifest v1.0.0` changes; DOS/COFF prior CLI regressions remained green.
 
 This is **header data observation only**: no proof that section payloads/RVAs are valid, no executable behavior analysis, no safe arbitrary-hostile binary sandbox, and no decompilation. Overall EX-01 [issue #14](https://github.com/ELITEAYOTO/REL/issues/14) and P1.5-A [issue #9](https://github.com/ELITEAYOTO/REL/issues/9) remain open. Future work should prioritize evidence quality, resource containment, and broaden analysis deliberately before EX-02/P2/P3.
+
+## Candidate: source-backed EX-01 report verifier — CI pending
+
+Branch `feat/ex01-verify-source-backed-evidence` adds a bounded,
+standalone Python verification CLI and a cross-OS, mutation-driven
+end-to-end test suite. This corrects a known distinction: the existing
+JSON schema+semantic validator checks report shape and relationships,
+but cannot prove a claim was derived from its alleged source bytes.
+The verifier recalculates exact subject SHA, run/config hashes,
+record offsets, raw/normalized predicate values and
+complete/partial/unsupported diagnostics for the three existing
+experimental domains. It rejects forged normalized fields, offsets,
+declared negative/coverage claims, missing/extra observations and
+unknown domains/producers.
+
+It is not a signature or trustworthy publisher attestation; it checks
+agreement against caller-supplied controlled bytes and does not
+isolate arbitrary hostile files or prevent concurrent edits. No
+changes to the Rust producer, JSON schemas, dependency pins or
+`binary-manifest v1.0.0`. Verify final PR-head Windows/Linux
+CLI+negative CI and post-merge main CI before marking completed.
+Leave P1.5-A issue #9 and overall EX-01 issue #14 open.

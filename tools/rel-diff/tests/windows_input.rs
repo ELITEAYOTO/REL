@@ -33,7 +33,10 @@ fn windows_cli_rejects_leaf_symlinks_without_stdout() {
                 .output()
                 .expect("run rel-diff");
             assert!(!result.status.success(), "symlink was followed");
-            assert!(result.stdout.is_empty(), "symlink rejection published a report");
+            assert!(
+                result.stdout.is_empty(),
+                "symlink rejection published a report"
+            );
             assert!(!result.stderr.is_empty(), "missing rejection diagnostic");
             fs::remove_file(&link).expect("remove symlink");
         }
@@ -62,7 +65,10 @@ fn windows_cli_rejects_conflicting_writer_and_accepts_after_close() {
         .output()
         .expect("run rel-diff with competing writer");
     assert!(!blocked.status.success(), "conflicting writer was accepted");
-    assert!(blocked.stdout.is_empty(), "write-sharing failure emitted JSON");
+    assert!(
+        blocked.stdout.is_empty(),
+        "write-sharing failure emitted JSON"
+    );
     drop(writer);
 
     let accepted = Command::new(env!("CARGO_BIN_EXE_rel-diff"))

@@ -64,6 +64,11 @@ def main() -> None:
     mutate("present without raw value", lambda x: x["observations"][0].update(raw_value=None))
     for name, item in cases:
         rejects(item, name)
+    unproven_absent = copy.deepcopy(samples["absent_in_scope"])
+    unproven_absent["observations"][0]["evidence_ids"] = []
+    unproven_absent["evidence"] = []
+    rejects(unproven_absent, "complete scoped absence without proof references")
+
     partial_absent = copy.deepcopy(samples["absent_in_scope"])
     partial_absent["scope"]["status"] = "partial"
     rejects(partial_absent, "absence with partial coverage")

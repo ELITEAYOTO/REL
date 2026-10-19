@@ -18,7 +18,7 @@ from pathlib import Path
 COMPILERS = ("msvc", "clang")
 VERSIONS = (1, 2, 3, 4)
 CASE_NAMES = tuple(f"{compiler}-v{version}.exe" for compiler in COMPILERS for version in VERSIONS)
-METADATA_FILES = ("msvc-version.txt", "clang-cl-version.txt")
+METADATA_FILES = ("msvc-version.txt", "clang-cl-version.txt", "linker-version.txt")
 
 
 def sha(data: bytes) -> str:

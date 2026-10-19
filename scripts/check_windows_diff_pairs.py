@@ -180,6 +180,34 @@ def verify(inspector: Path, diff: Path, corpus: Path, output: Path, link_mode: s
     valid_manifest = Draft202012Validator(v1)
     valid_diff = Draft202012Validator(experimental)
     source_sha = hashlib.sha256(SOURCE.read_bytes()).hexdigest()
+    build_script_sha = hashlib.sha256(
+        (ROOT / "scripts/build_windows_diff_pairs.cmd").read_bytes()
+    ).hexdigest()
+    linker_path = corpus / "linker-version.txt"
+    assert linker_path.is_file(), "missing independent linker tool banner"
+    linker_lines = [
+        line.strip()
+        for line in linker_path.read_text(encoding="utf-8", errors="replace").splitlines()
+        if line.strip()
+    ]
+    assert linker_lines, "empty linker version record"
+    linker_banner = linker_lines[0][:240]
+
+    def safe_version(name: str) -> str | None:
+        value = os.environ.get(name, "").strip().strip("\\\\/")
+        if not value:
+            return None
+        assert len(value) <= 80 and all(
+            char.isalnum() or char in "._-" for char in value
+        ), f"{name}: unexpected version format"
+        return value
+
+    environment = {
+        "windows_sdk_version": safe_version("WindowsSDKVersion"),
+        "vc_tools_version": safe_version("VCToolsVersion"),
+        "image_os": safe_version("ImageOS"),
+        "image_version": safe_version("ImageVersion"),
+    }
     provenance = {}
     cases = []
     pairs = []
@@ -257,7 +285,10 @@ def verify(inspector: Path, diff: Path, corpus: Path, output: Path, link_mode: s
         "source": "fixtures/probes/diff_version_probe.c",
         "source_sha256": source_sha,
         "compilers": {name: provenance[name] for name in COMPILERS},
+        "linker_banner": linker_banner,
+        "build_environment": environment,
         "build_script": "scripts/build_windows_diff_pairs.cmd",
+        "build_script_sha256": build_script_sha,
         "link_mode": link_mode,
         "link_flags": "/INCREMENTAL:NO /Brepro" if link_mode == "brepro" else "/INCREMENTAL:NO",
         "case_count": len(cases),

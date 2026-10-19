@@ -191,3 +191,21 @@ New standalone Rust `tools/rel-observe` CLI (Cargo workspace+lock) emits `0.1.0-
 `rel-observe coff-machine` observes **only** the two-byte little-endian COFF Machine field at file offset `e_lfanew + 4` on owned controlled PE32/PE32+ inputs. It reports actual byte-offset evidence, subject SHA, deterministic domain/config-specific run ID, and cautiously normalizes `0x014c` / `0x8664` to x86 / x86_64. Unknown values remain raw hex. If zero/one bytes remain after a valid four-byte PE signature, it emits scope `partial` with `indeterminate`, null values, no decisive evidence, and `COFF_MACHINE_TRUNCATED` warning. Invalid DOS/PE framing is rejected without JSON rather than misrepresented as a complete observation.
 
 Shared provenance and controlled file reader preserve the old `dos-magic` output and run ID (legacy oracle passes). No dependencies, `rel-inspect` or `binary-manifest v1.0.0` changes. **Do not overclaim:** the observed field is not entire PE validity, runtime architecture compatibility, decompilation, safety against hostile input or any gameplay capability. P1.5-A [#9](https://github.com/ELITEAYOTO/REL/issues/9) and overall EX-01 [#14](https://github.com/ELITEAYOTO/REL/issues/14) remain open. EX-02, Ghidra integration and function matching follow the existing roadmap.
+
+## Candidate: EX-01 declared section header domain — PR/CI pending
+
+Branch `feat/ex01-section-header-evidence` introduces a third real
+`rel-observe` domain `pe.section_headers`, based on COFF
+`NumberOfSections` + `SizeOfOptionalHeader`, at most 32 complete
+40-byte records, exact SHA-bound file-offset evidence, raw 40-byte
+hex values and deliberately limited normalized fields. Truncated
+COFF/optional/section record bytes yield `partial/indeterminate` with
+no fabricated data; count >32 yields `unsupported` with diagnostics.
+Zero count yields `absent_in_scope` with count-byte evidence when the
+declared optional header fits. New Rust regressions and Python oracle
+independently verify PE32/PE64, source SHA, offsets, deterministic
+domain-specific run ID, truncation, count limit and empty declaration.
+Do not mark validated before final-head Windows/Linux PR CI and
+post-merge main CI; retain existing DOS/COFF golden gates. No
+full PE validation, section payload inspection, sandbox, game-specific
+logic or contract v1.0.0 change. Issues #9 and #14 remain open.

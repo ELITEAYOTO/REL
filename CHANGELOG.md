@@ -2,6 +2,12 @@
 
 ## [Unreleased] — 2026-10-18
 
+### EX-01 — Controlled section header record observations (candidate; CI pending)
+
+- Add `rel-observe section-headers` as a third bounded observation domain `pe.section_headers`. Read the COFF section count and optional-header byte size, then report up to 32 complete, declared 40-byte headers with full raw record hex, cautious normalized fields, per-record SHA-bound file-offset evidence and deterministic domain/config-specific run ID.
+- Partial COFF/optional/section-header bytes produce `partial` and `indeterminate` with no fabricated proof; declared counts >32 yield `unsupported`. A zero count is reported `absent_in_scope` with two-byte count evidence only when the declared optional header fits. Rust and independent Python oracles cover both reference formats, exact offsets, truncation, caps, empty declarations and run-ID repeatability on Windows/Linux.
+- This validates only the **declared header bytes**. No claim of section payload correctness, RVA mapping validity, full PE parsing, hostile-input isolation or game/runtime capability. Existing DOS/COFF commands and `binary-manifest v1.0.0` remain unchanged.
+
 ### EX-01 — COFF Machine observation with explicit partial coverage (PR #53 merged, CI verified)
 
 - New experimental `rel-observe coff-machine` CLI subcommand observes the actual two-byte little-endian COFF Machine field at `e_lfanew + 4`, with exact byte-offset evidence from the hashed subject buffer. Only `0x014c` (x86) and `0x8664` (x86_64) receive human-readable mappings; other values remain literal hex.

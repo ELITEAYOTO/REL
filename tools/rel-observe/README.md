@@ -84,3 +84,33 @@ compatibility, or executable behavior. The reader remains controlled
 input only, not snapshot-safe or an arbitrary hostile-binary sandbox.
 Validate through `python scripts/test_coff_machine_cli.py --binary
 target/release/rel-observe` (or `.exe` on Windows). [PR #53](https://github.com/ELITEAYOTO/REL/pull/53) and [main CI #39182313199](https://github.com/ELITEAYOTO/REL/actions/runs/39182313199) passed on Windows/Linux.
+
+## Experimental section-header observation (candidate; CI pending)
+
+```sh
+cargo run --locked -p rel-observe -- section-headers fixtures/pe32-basic.exe
+```
+
+The independent `pe.section_headers` domain locates the 20-byte COFF
+header after the minimal MZ / PE signatures. It reads `NumberOfSections`
+at `e_lfanew + 6` and `SizeOfOptionalHeader` at `e_lfanew + 20`.
+The declared section header table begins at
+`e_lfanew + 24 + SizeOfOptionalHeader`, with 40 bytes per record.
+Only up to 32 records are supported. Every observation contains the
+original 40 bytes as hex and a conservative normalized representation
+of name **bytes** (hex), virtual size/RVA, file raw-size/pointer and flags;
+each record has exact file-offset evidence bound to the input SHA-256.
+
+Incomplete COFF/header table data produce `partial`, `indeterminate`,
+no decisive evidence and warning diagnostics. More than 32 declared
+sections produce `unsupported` without guessing the first 32.
+A zero-count declaration with a complete optional-header span yields
+`absent_in_scope` anchored to the two COFF count bytes. The domain
+does not validate whether raw pointers, RVA ranges, relocations, or
+execution permissions actually resolve, and is **not** a PE sandbox.
+
+Run ID uses the documented preimage from the DOS command with
+configuration string
+`rel-observe:section-headers:v1;limit=2097152;max=32;record=40`
+and domain `pe.section_headers\0`. The independent cross-platform
+oracle `scripts/test_section_headers_cli.py` recomputes all values.

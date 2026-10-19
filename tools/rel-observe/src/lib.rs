@@ -1,7 +1,9 @@
 //! Narrow EX-01 controlled-input producer. This is not a PE parser or sandbox.
 //! The subject and evidence come from the same bounded byte buffer.
 mod coff;
+mod sections;
 pub use coff::{observe_coff_machine_bytes, observe_coff_machine_file};
+pub use sections::{observe_section_headers_bytes, observe_section_headers_file};
 
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};

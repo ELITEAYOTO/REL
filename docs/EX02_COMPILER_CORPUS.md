@@ -63,6 +63,25 @@ Ces preuves s'appliquent à **ce commit de la PR et ce job Windows**, non aux fu
 
 Comparaison des artefacts Windows [#39209103249](https://github.com/ELITEAYOTO/REL/actions/runs/39209103249) et [#39209894303](https://github.com/ELITEAYOTO/REL/actions/runs/39209894303) : les **huit builds ont changé de SHA-256**, alors que les tailles enregistrées de chacun sont restées identiques, les sources C avaient le même SHA et les versions de compilateur affichées sont identiques (MSVC 19.51.36260 et Clang-cl 20.1.8). Le corpus n'est donc **pas bit-à-bit reproductible entre ces deux jobs** dans sa configuration actuelle. Ce constat ne localise **pas** la cause (horodatage, linker, SDK, environnement, etc.). Chaque oracle de CI reste valide pour les octets de **son propre job**, sans attribuer à un changement de comportement une variation de hash. Diagnostic à mener dans [l'issue #69](https://github.com/ELITEAYOTO/REL/issues/69) avant de figer des hashes inter-jobs.
 
+### Diagnostic des deux horodatages et expérimentation `/Brepro` (19 octobre 2026)
+
+Les résultats de deux recompilations du **même** corpus, dans un seul job Windows [#39211513812](https://github.com/ELITEAYOTO/REL/actions/runs/39211513812), ont été extraits de l'artefact `rel-ex02-repeat-build-windows` :
+
+| Mode de compilation | PE identiques entre deux compilations | Nature des octets différents |
+| --- | ---: | --- |
+| Normal : `/INCREMENTAL:NO` | **0 / 8** | **Exactement deux octets par fichier** : un octet du champ COFF `TimeDateStamp`, un octet du champ `IMAGE_DEBUG_DIRECTORY.TimeDateStamp` |
+| Expérimental : `/INCREMENTAL:NO /Brepro` | **8 / 8** | Aucun octet différent entre les deux compilations |
+
+Les catégories de changements proviennent des **offsets exacts** des structures PE lus par `pefile`, et non simplement d'une supposition sur la section `.rdata`. Les deux horodatages étaient modifiés pour chaque variante normale ; le reste des octets était identique dans cette expérience. Cela localise la source *immédiate* des SHA divergents dans **ce corpus**. Cela ne prouve rien pour tous les fichiers PE ni pour tout code exécutable.
+
+Pour isoler l'effet du paramètre de lien, le constructeur `scripts/build_windows_diff_pairs.cmd` dispose désormais d'un mode optionnel `repro` qui crée **un répertoire distinct** `corpus-pairs-repro` sans modifier les sorties du mode normal. Les deux outils MSVC et Clang-cl compilent les quatre mêmes variantes, et l'éditeur de liens reçoit `/Brepro`. Les PE produits restent des **données statiques**, jamais exécutées. Le résultat de [#39211753591](https://github.com/ELITEAYOTO/REL/actions/runs/39211753591), artefact `rel-ex02-brepro-experiment-windows`, donne **8/8 SHA identiques** entre deux builds de ce mode. L'oracle indépendant conserve aussi 8 cas / 16 paires A/B valides.
+
+**Contrôle entre deux jobs CI distincts :** les artefacts `rel-ex02-brepro-experiment-windows` de [#39211753591](https://github.com/ELITEAYOTO/REL/actions/runs/39211753591) et [#39211759051](https://github.com/ELITEAYOTO/REL/actions/runs/39211759051) ont été téléchargés et comparés. **Les huit SHA-256 bruts coïncident entre les deux jobs**, avec la même empreinte de source C `5fa642567cd392572364cecd542d3b3cfa57623c430902e5499190d3621515cf` et les mêmes bannières MSVC `19.51.36260` / Clang-cl `20.1.8`. Cette observation **n'est pas** une garantie éternelle de builds reproductibles sur de futurs compilateurs, SDK ou runners.
+
+Références externes : [LLVM, *Deterministic builds with clang and lld*](https://blog.llvm.org/2019/11/deterministic-builds-with-clang-and-lld.html) explique l'usage de `/Brepro` sur Windows ; [Microsoft, PE Format](https://learn.microsoft.com/en-us/windows/win32/debug/pe-format) décrit les entrées `IMAGE_DEBUG_TYPE_REPRO` et précise que certains champs d'horodatage peuvent contenir des éléments dérivés de hashes plutôt qu'une date réelle.
+
+**Garde-fou CI ajouté :** `scripts/compare_ex02_corpus_runs.py` accepte deux rapports JSON (ou deux ZIP d'artefacts téléchargés) et vérifie le même schéma, la source, les bannières des compilateurs, les flags de lien et les huit identités PE. Son mode `--require-identical` s'applique **uniquement au mode `brepro`**, pour éviter d'imposer au mode normal une promesse qu'il ne remplit pas. La CI teste la commande sur deux compilations `/Brepro` dans un seul job, sans hardcoder de SHA de PE entre futures versions d'outils. Les validations du dernier commit doivent toujours être consultées avant d'affirmer que ce nouveau garde-fou est vert.
+
 ## Limites et prochaines étapes
 
 - Deux compilateurs sur le même environnement Windows et une **seule source C** paramétrée n'établissent pas la diversité réelle des programmes commerciaux/open source, des options de compilation, ni des différents changements entre releases.

@@ -2,6 +2,12 @@
 
 ## [Unreleased] — 2026-10-18
 
+### EX-01 — Source-backed evidence verification (candidate; CI pending)
+
+- Add standalone, opt-in `scripts/verify_observation_evidence.py` to recheck the **existing three** `rel-observe` experimental domains against a separately supplied controlled source binary. Recompute file SHA-256 and size, configuration digest, deterministic run ID, raw source bytes, normalized field values, precise evidence offsets/lengths and complete/partial/unsupported/absent-in-scope semantics.
+- Strictly reject unrecognized domains/producers, omitted or extra observations/evidence, malformed or falsified proof methods, wrong fields and spurious diagnostics. New cross-platform end-to-end negative tests mutate source values, offsets, run IDs, statuses and negative claims, plus validate real producer output on controlled PE32/PE64, partial and unsupported cases.
+- **Scope limit:** verification proves correspondence with the supplied byte buffer for known predicates; neither SHA-256 nor a deterministic run ID authenticates who produced a report. This is not proof of an atomic file snapshot, arbitrary-hostile-input safety, PE semantic validity or runtime behavior. Existing JSON schema `0.1.0-experimental`, `binary-manifest v1.0.0`, Rust producers and dependencies unchanged.
+
 ### EX-01 — Controlled section header record observations (PR #55 merged; CI verified)
 
 - Add `rel-observe section-headers` as a third bounded observation domain `pe.section_headers`. Read the COFF section count and optional-header byte size, then report up to 32 complete, declared 40-byte headers with full raw record hex, cautious normalized fields, per-record SHA-bound file-offset evidence and deterministic domain/config-specific run ID.

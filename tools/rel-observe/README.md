@@ -114,3 +114,32 @@ configuration string
 `rel-observe:section-headers:v1;limit=2097152;max=32;record=40`
 and domain `pe.section_headers\0`. The independent cross-platform
 oracle `scripts/test_section_headers_cli.py` recomputes all values. [PR #55](https://github.com/ELITEAYOTO/REL/pull/55) and [post-merge Windows/Linux CI #39184367267](https://github.com/ELITEAYOTO/REL/actions/runs/39184367267) passed in this narrow scope.
+
+## Independent source-backed evidence verifier (candidate; CI pending)
+
+```sh
+python scripts/verify_observation_evidence.py \
+  --input fixtures/pe32-basic.exe --report saved-ex01-report.json
+```
+
+This **separate Python checker** accepts an existing `0.1.0-experimental`
+report and the exact controlled PE file that is claimed to be its
+subject. It first validates the JSON contract, then independently
+recomputes the SHA-256 and byte length, expected tool configuration
+and run ID, exact source offsets/lengths and all claimed observation
+values for the three known domains (`pe.dos_magic`, `pe.coff_machine`,
+`pe.section_headers`). It rechecks abstention and diagnostics for
+partial COFF/section headers and excessive declared section counts.
+
+The checker fails closed on an unknown domain or producer, extra/missing
+observations or evidence, a changed normalized value, shifted offset,
+incorrect absence claim or inconsistent run ID. It does not make
+unsupported claims about section payloads or executable behavior.
+
+**Trust boundary:** the verifier only establishes report/byte agreement
+on a caller-supplied controlled file. A malicious party able to supply
+both report and matching file can construct consistent false provenance.
+Hashes are not signatures. Neither report nor file has a trusted
+publisher identity, filesystem snapshot, source-supply-chain guarantee,
+or arbitrary-hostile-input sandbox. The verification input is limited
+to 2 MiB and is never executed. This is not a universal PE validator.

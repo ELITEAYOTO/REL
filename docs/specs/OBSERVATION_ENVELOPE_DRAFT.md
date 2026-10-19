@@ -123,3 +123,20 @@ not absence of executable data or runtime behavior. Do not treat
 RVA/raw-pointer field values as proof that mapped ranges are valid.
 This remains a controlled-input alpha domain, not general hostile
 binary parsing or decompilation. The v1.0.0 manifest is unchanged.
+
+## Candidate: independent source-byte re-verification (CI pending)
+
+The optional `scripts/verify_observation_evidence.py` re-reads an
+explicitly supplied controlled source PE (≤2 MiB), validates the
+experimental envelope shape and recalculates the actual source SHA,
+byte length, configuration hash, deterministic domain/run ID, and
+field-level observations/evidence including partial/unsupported cases.
+For the three known domains, it rejects inconsistencies even when a
+report remains JSON-schema-valid and all its evidence offsets fit.
+
+This is deliberately a **correspondence checker**, not a digital
+signature or independent trust chain: a modified report AND modified
+source can still correspond. It is not a coherent snapshot guarantee,
+full PE validity check, behavior proof or hostile-input sandbox.
+New fields and domains must be explicitly supported before the
+checker will accept them. Binary-manifest v1.0.0 is unchanged.

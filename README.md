@@ -21,7 +21,13 @@ These hand-authored examples demonstrate contract semantics on an owned syntheti
 cargo run --locked -p rel-observe -- dos-magic fixtures/pe32-basic.exe
 ```
 
-It computes actual file SHA-256 and two-byte evidence and uses an explicitly documented deterministic run ID; see [producer details](tools/rel-observe/README.md). An additional experimental `coff-machine` command can read the two-byte COFF Machine field using the actual `e_lfanew` offset and return `partial`/`indeterminate` for a truncated field, rather than invent an architecture. A separate `section-headers` command now reads up to 32 **declared 40-byte section-header records** from controlled inputs and records exact file-offset proofs; incomplete records abstain rather than forming a partial table of invented conclusions. The original `rel-inspect` still emits only `binary-manifest v1.0.0`. **EX-01 remains experimental and incomplete**, and no absence of runtime/game/network capabilities can be inferred from a two-byte signature. See [scope](docs/specs/OBSERVATION_ENVELOPE_DRAFT.md).
+It computes actual file SHA-256 and two-byte evidence and uses an explicitly documented deterministic run ID; see [producer details](tools/rel-observe/README.md). An additional experimental `coff-machine` command can read the two-byte COFF Machine field using the actual `e_lfanew` offset and return `partial`/`indeterminate` for a truncated field, rather than invent an architecture. A separate `section-headers` command now reads up to 32 **declared 40-byte section-header records** from controlled inputs and records exact file-offset proofs; incomplete records abstain rather than forming a partial table of invented conclusions. A new **source-backed verifier** can check a saved experimental report independently against the controlled source file:
+
+```sh
+python scripts/verify_observation_evidence.py --input fixtures/pe32-basic.exe --report path/to/observation.json
+```
+
+It recalculates subject SHA-256, producer/config/run-ID consistency, byte offsets, raw/normalized values and scope/diagnostics for the three supported domains, rejecting report tampering. This verifies agreement with supplied bytes, **not report authenticity**, trusted provenance, atomic file acquisition, or executable behavior. See [verifier scope](tools/rel-observe/README.md). The original `rel-inspect` still emits only `binary-manifest v1.0.0`. **EX-01 remains experimental and incomplete**, and no absence of runtime/game/network capabilities can be inferred from a two-byte signature. See [scope](docs/specs/OBSERVATION_ENVELOPE_DRAFT.md).
 
 ## Existing modules
 

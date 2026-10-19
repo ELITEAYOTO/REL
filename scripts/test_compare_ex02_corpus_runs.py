@@ -25,7 +25,12 @@ def sample(mode="brepro"):
         "source_sha256": "f" * 64,
         "compilers": {"msvc": "MSVC test", "clang": "clang test"},
         "linker_banner": "LINK 14.51 test",
-        "build_environment": {"windows_sdk_version": "10.0.1", "vc_tools_version": "14.51"},
+        "build_environment": {
+            "windows_sdk_version": "10.0.1",
+            "vc_tools_version": "14.51",
+            "image_os": "win25-vs2026",
+            "image_version": "20261007.264.1",
+        },
         "build_script": "scripts/build_windows_diff_pairs.cmd",
         "build_script_sha256": "a" * 64,
         "link_mode": mode,
@@ -66,6 +71,38 @@ class CorpusCrossRunTests(unittest.TestCase):
         second["build_script_sha256"] = "b" * 64
         with self.assertRaisesRegex(ValueError, "provenance"):
             compare_reports(baseline, second, require_identical=True)
+
+    def test_missing_provenance_is_rejected_even_when_both_sides_omit_it(self):
+        for key in (
+            "source_sha256",
+            "build_script_sha256",
+            "linker_banner",
+            "build_environment",
+            "compilers",
+        ):
+            a = sample()
+            b = sample()
+            del a[key]
+            del b[key]
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, "provenance"):
+                compare_reports(a, b, require_identical=True)
+
+    def test_missing_sdk_image_or_compiler_version_is_rejected(self):
+        for key in ("windows_sdk_version", "vc_tools_version", "image_os", "image_version"):
+            a = sample()
+            a["build_environment"][key] = None
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, "provenance"):
+                compare_reports(a, sample(), require_identical=True)
+        a = sample()
+        a["compilers"]["clang"] = ""
+        with self.assertRaisesRegex(ValueError, "compiler version"):
+            compare_reports(a, sample(), require_identical=True)
+
+    def test_invalid_linker_flags_rejected(self):
+        a = sample()
+        a["link_flags"] = "/INCREMENTAL:NO"
+        with self.assertRaisesRegex(ValueError, "flags disagree"):
+            compare_reports(a, sample(), require_identical=True)
 
     def test_reject_missing_and_duplicate_case_ids(self):
         with tempfile.TemporaryDirectory() as work:

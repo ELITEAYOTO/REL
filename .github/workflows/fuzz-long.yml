@@ -2,6 +2,10 @@ name: REL PE Fuzz Extended (manual)
 
 on:
   workflow_dispatch:
+  # Temporary verification trigger. Close this PR without merging.
+  pull_request:
+    paths:
+      - '.github/workflows/fuzz-long.yml'
 
 permissions:
   contents: read

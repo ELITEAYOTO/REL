@@ -124,7 +124,9 @@ RVA/raw-pointer field values as proof that mapped ranges are valid.
 This remains a controlled-input alpha domain, not general hostile
 binary parsing or decompilation. The v1.0.0 manifest is unchanged.
 
-## Candidate: independent source-byte re-verification (CI pending)
+## Independent source-byte re-verification (PR #57 merged; scoped CI verified)
+
+[PR #57](https://github.com/ELITEAYOTO/REL/pull/57) merged at `6e18d37` and [post-merge main CI #39186361225](https://github.com/ELITEAYOTO/REL/actions/runs/39186361225) passed Windows/Linux. This gate checks byte correspondence only.
 
 The optional `scripts/verify_observation_evidence.py` re-reads an
 explicitly supplied controlled source PE (≤2 MiB), validates the

@@ -1,6 +1,6 @@
 # EX-02 — Prototype de diff des manifestes PE (brouillon de spécification)
 
-**Statut : PROTOTYPE APPROUVÉ À DÉVELOPPER, NON IMPLÉMENTÉ.**  
+**Statut : pilote partiel implémenté sur la PR #62 en brouillon ; non fusionné, gate EX-02 NON VALIDÉE.**  
 Décision et gates : [ADR-0013](../adr/ADR-0013-vision-evidence-evolution.md), [STRATEGY_AND_GATES](../governance/STRATEGY_AND_GATES.md).
 
 ## Contrat
@@ -29,3 +29,11 @@ Diff sur format, architecture, taille, sections, imports directs *tels qu'observ
 7. Valider Windows/Linux CI ; tester sur 10–20 paires de builds autorisés lorsque possibles ; enregistrer l'oracle de chaque changement.
 
 Une nouvelle crate+CLI Rust n'est créée qu'au moment de la PR d'implémentation, indépendante du parseur et de Ghidra. La sortie ne modifie **jamais** le schéma manifeste v1.
+
+## Avancement du pilote isolé (PR #62, non fusionnée)
+
+Le prototype Rust `rel-diff` compare les champs `size_bytes`, `arch`, les chaînes exactes des imports/exports, ainsi que les sections appariées uniquement par nom exact unique. Les noms de sections dupliqués provoquent une abstention `ambiguous`, sans delta partiel. Un booléen expérimental signale le cas global où seule la casse ASCII du préfixe DLL change, sans supprimer les chaînes d'origine. La sortie est contractée séparément par `contracts/experimental/manifest-diff.schema.json` en `0.1.0-experimental`; elle ne transforme pas le manifeste public v1.
+
+La PR comporte des tests Rust et un oracle indépendant du binaire release validant les sorties par JSON Schema sur Windows/Linux, dont l'issue doit être vérifiée sur le **dernier** commit avant promotion. Les fixtures de cet oracle sont synthétiques et utilisent des empreintes de forme valide, sans attestation d'octets PE réels. Ce n'est pas une validation complète des paires compilées autorisées, de l'exactitude d'extraction, du temps/RSS, de l'atomicité des lectures ou de la sécurité d'entrées hostiles.
+
+**Critères toujours ouverts :** corpus représentatif de 10–20 paires autorisées avec oracles de vérité terrain, benchmarks répétés temps/RSS, décisions sur couverture incomplète et ordinals non représentés, revue des collisions et adéquation complète au schéma public. Ne pas cocher le jalon EX-02 sur `main` pour cette PR seule.

@@ -130,7 +130,7 @@ pub fn observe_bytes(bytes: &[u8]) -> Result<Value, String> {
             "method": "exact-two-byte-comparison",
             "extractor_version": VERSION
         }]),
-        json!([])
+        json!([]),
     ))
 }
 

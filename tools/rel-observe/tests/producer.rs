@@ -55,10 +55,16 @@ fn coff_machine_is_bounded_and_reproducible_on_both_reference_formats() {
         assert_eq!(report["scope"]["status"], "complete");
         assert_eq!(report["observations"][0]["status"], "present");
         assert_eq!(report["observations"][0]["normalized_value"], expected);
-        assert_eq!(report["evidence"][0]["location"]["start"], coff_offset(source));
+        assert_eq!(
+            report["evidence"][0]["location"]["start"],
+            coff_offset(source)
+        );
         assert_eq!(report["evidence"][0]["location"]["length"], 2);
         assert_eq!(report["diagnostics"].as_array().unwrap().len(), 0);
-        assert_eq!(report, rel_observe::observe_coff_machine_bytes(source).unwrap());
+        assert_eq!(
+            report,
+            rel_observe::observe_coff_machine_bytes(source).unwrap()
+        );
         assert_ne!(
             report["producer"]["run_id"],
             rel_observe::observe_bytes(source).unwrap()["producer"]["run_id"]

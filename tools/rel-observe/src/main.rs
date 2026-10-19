@@ -9,9 +9,7 @@ fn run() -> Result<(), String> {
     let mut args = env::args().skip(1);
     let operation = args.next();
     if !matches!(operation.as_deref(), Some("dos-magic" | "coff-machine")) {
-        return Err(
-            "usage: rel-observe <dos-magic|coff-machine> <controlled-file.exe>".to_owned(),
-        );
+        return Err("usage: rel-observe <dos-magic|coff-machine> <controlled-file.exe>".to_owned());
     }
     let input = args.next().ok_or("missing input path")?;
     if args.next().is_some() {

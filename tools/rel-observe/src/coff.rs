@@ -5,8 +5,7 @@ use serde_json::{json, Value};
 use std::path::Path;
 
 const DOMAIN: &str = "pe.coff_machine";
-const CONFIG: &str =
-    "rel-observe:coff-machine:v1;limit=2097152;require-mz-and-pe-signatures";
+const CONFIG: &str = "rel-observe:coff-machine:v1;limit=2097152;require-mz-and-pe-signatures";
 
 pub fn observe_coff_machine_bytes(bytes: &[u8]) -> Result<Value, String> {
     let nt_offset = pe_nt_offset(bytes)?;

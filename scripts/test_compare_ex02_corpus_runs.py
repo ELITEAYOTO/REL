@@ -312,6 +312,12 @@ class CorpusCrossRunTests(unittest.TestCase):
                 if (item["left"], item["right"]) == ("msvc-v1", "msvc-v2")
             )
             pair[field] = "changed" if field == "section_status" else ["KERNEL32.dll!X"]
+            # Keep the observed cardinalities balanced so this regression
+            # specifically reaches the identical-SHA contradiction check.
+            if field.endswith("_added"):
+                pair[field.replace("_added", "_removed")] = ["KERNEL32.dll!Y"]
+            elif field.endswith("_removed"):
+                pair[field.replace("_removed", "_added")] = ["KERNEL32.dll!Y"]
             with self.subTest(field=field), self.assertRaisesRegex(
                 ValueError, "contradictory delta for identical raw PE"
             ):

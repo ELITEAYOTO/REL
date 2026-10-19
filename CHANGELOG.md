@@ -2,10 +2,10 @@
 
 ## [Unreleased] — 2026-10-18
 
-### EX-01 — Same-descriptor second-pass input consistency (candidate; CI pending)
+### EX-01 — Same-descriptor second-pass input consistency (PR #59 merged; scoped CI verified)
 
 - Harden `rel-observe`'s shared controlled-file reader for all three domains: re-read and compare the bytes through the **same opened file handle**, with one fixed 64 KiB scratch buffer. Reject observed same-size mutations, early EOF, trailing bytes, and pre/post size or modification-time inconsistencies *before* passing any bytes to observation producers. Rust deterministic regression tests cover unchanged multi-chunk input, first/middle/last byte mutation, shortening and growth; existing cross-platform CLI oracles retain report-format regression coverage.
-- Only controlled files ≤2 MiB remain in scope. A successful read now entails roughly 2× input reads, not an atomic filesystem snapshot, descriptor-confined ancestor lookup or hostile-file sandbox. No new dependencies and no change to the experimental JSON envelope, deterministic ID or `binary-manifest v1.0.0`.
+- Only controlled files ≤2 MiB remain in scope. A successful read now entails roughly 2× input reads, not an atomic filesystem snapshot, descriptor-confined ancestor lookup or hostile-file sandbox. No new dependencies and no change to the experimental JSON envelope, deterministic ID or `binary-manifest v1.0.0`. [PR #59](https://github.com/ELITEAYOTO/REL/pull/59) merged as [`d435b15`](https://github.com/ELITEAYOTO/REL/commit/d435b15e3c8dd43b8b846ce376f4468f18555afa); final-head [branch CI #39188698531](https://github.com/ELITEAYOTO/REL/actions/runs/39188698531), [PR CI #39188703138](https://github.com/ELITEAYOTO/REL/actions/runs/39188703138), and [post-merge `main` CI #39188909312](https://github.com/ELITEAYOTO/REL/actions/runs/39188909312) all succeeded Windows/Linux.
 
 ### EX-01 — Source-backed evidence verification (PR #57 merged; scoped CI verified)
 

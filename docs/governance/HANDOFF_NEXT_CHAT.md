@@ -208,22 +208,10 @@ The new opt-in standalone `scripts/verify_observation_evidence.py` independently
 
 **Limits:** agreement between a report and supplied bytes is NOT proof of authenticity, publisher identity, digital signature, file snapshot atomicity, supply-chain integrity, general PE correctness, sandbox safety or program behavior. A party controlling both report and file can produce matching contents. No Rust extractor, `binary-manifest v1.0.0`, experimental schema, dependency, or architecture changes. Keep overall EX-01 [#14](https://github.com/ELITEAYOTO/REL/issues/14) and P1.5-A [#9](https://github.com/ELITEAYOTO/REL/issues/9) open. Continue toward deliberate coverage/provenance and resource limits, then EX-02 under ADR-0013.
 
-## Candidate: EX-01 same-descriptor second-pass consistency — CI pending
+## EX-01 same-descriptor second-pass consistency — MERGED, SCOPED CI VERIFIED
 
-Branch `fix/ex01-same-descriptor-second-pass` strengthens the shared
-`rel-observe` file reader without altering report schemas: after the
-initial bounded ≤2 MiB read, it seeks to offset zero and compares every
-byte on the same file descriptor using a 64 KiB fixed scratch buffer,
-checks for trailing bytes and compares file metadata. Unit tests
-deterministically simulate same-size changed bytes across chunk
-boundaries, early EOF and appended bytes; existing CLI and Python
-oracles verify output regression across all three EX-01 domains.
+[PR #59](https://github.com/ELITEAYOTO/REL/pull/59) merged as [`d435b15`](https://github.com/ELITEAYOTO/REL/commit/d435b15e3c8dd43b8b846ce376f4468f18555afa). Final-head [branch CI #39188698531](https://github.com/ELITEAYOTO/REL/actions/runs/39188698531), [PR CI #39188703138](https://github.com/ELITEAYOTO/REL/actions/runs/39188703138) and [post-merge `main` CI #39188909312](https://github.com/ELITEAYOTO/REL/actions/runs/39188909312) **passed on Windows/Linux**. Initial branch head failed only `rustfmt`; corrected final code head `f3300ca` passed tests, lint and all existing CLI oracles. The Rust test helpers confirm that a 64-KiB scratch-buffer second pass rejects observed changed first/chunk-boundary/final bytes, early EOF and appended bytes.
 
-This detects *observed* mutations, **not** atomicity or guaranteed
-protection against concurrent writers, path-ancestor swaps or hostile
-filesystems. Successful input IO roughly doubles; bounded allocation
-is the original input plus the fixed scratch and report.
-No dependency, `binary-manifest v1.0.0`, experimental schema, producer
-configuration or run-ID changes. Confirm final-head Windows/Linux CI
-and post-merge main before claiming verification. Keep P1.5-A/#9
-and EX-01/#14 open.
+`rel-observe` now re-reads the ≤2 MiB controlled binary from the **same already-open file descriptor** after seeking back to offset 0. It compares bytes to the first pass, rejects trailing bytes, and checks initial/final file size and modification timestamp when available. This preserves existing report JSON, run IDs, configs, input budgets and existing DOS/COFF/sections/verifier tests. The second pass increases successful input IO to roughly twice the original; it is not a second in-memory full-file copy.
+
+**Critically not an atomic snapshot**; concurrent writers can interleave or revert changes. No descriptor-confined ancestor path traversal, guaranteed leaf symlink race protection, arbitrary-hostile-input isolation, hard RSS/CPU limits or completed P1.5-A. Keep [P1.5-A #9](https://github.com/ELITEAYOTO/REL/issues/9) and [EX-01 #14](https://github.com/ELITEAYOTO/REL/issues/14) OPEN; after this, prioritize realistic resource isolation and path consistency (not speculative security guarantees), then planned EX-02/P2/P3.

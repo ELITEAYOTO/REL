@@ -51,6 +51,9 @@ observed same-size content changes, truncation, extension, and length/timestamp
 inconsistencies before emitting a JSON report. The total read work roughly
 doubles on successful inputs; memory remains bounded by the original ≤2 MiB
 input buffer, the 64 KiB scratch buffer and report allocations.
+[PR #59](https://github.com/ELITEAYOTO/REL/pull/59) and [post-merge Windows/Linux CI #39188909312](https://github.com/ELITEAYOTO/REL/actions/runs/39188909312)
+passed in this controlled-input scope; deterministic regression tests
+simulate same-sized mutations, early EOF and appended bytes.
 
 This is **not an atomic snapshot**: a concurrent writer can alter bytes
 between, during or after these passes and evade detection. Path ancestors

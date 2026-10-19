@@ -1,0 +1,32 @@
+name: REL Fuzz Lockfile Bootstrap (temporary)
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/fuzz-lock-bootstrap.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Install dated nightly and generate fuzz lockfile
+        run: |
+          rustup toolchain install nightly-2026-10-19 --profile minimal
+          rustc +nightly-2026-10-19 --version --verbose
+          cargo +nightly-2026-10-19 generate-lockfile --manifest-path fuzz/Cargo.toml
+          cargo +nightly-2026-10-19 metadata --manifest-path fuzz/Cargo.toml --locked --format-version 1 --no-deps >/dev/null
+          printf '%s\n' '===REL_FUZZ_LOCK_BEGIN==='
+          base64 -w0 fuzz/Cargo.lock
+          printf '\n%s\n' '===REL_FUZZ_LOCK_END==='
+      - name: Publish build-time evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: rel-fuzz-lock-bootstrap
+          path: fuzz/Cargo.lock
+          if-no-files-found: error

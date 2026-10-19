@@ -49,7 +49,16 @@ def load_report(path: Path, mode: str) -> dict:
 
 
 def compare_reports(first: dict, second: dict, *, require_identical: bool) -> dict:
-    keys = ("source_sha256", "compilers", "build_script", "link_mode", "link_flags")
+    keys = (
+        "source_sha256",
+        "compilers",
+        "linker_banner",
+        "build_environment",
+        "build_script",
+        "build_script_sha256",
+        "link_mode",
+        "link_flags",
+    )
     for key in keys:
         if first.get(key) != second.get(key):
             raise ValueError(f"cannot compare different build provenance: {key}")

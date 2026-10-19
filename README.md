@@ -21,7 +21,7 @@ These hand-authored examples demonstrate contract semantics on an owned syntheti
 cargo run --locked -p rel-observe -- dos-magic fixtures/pe32-basic.exe
 ```
 
-It computes actual file SHA-256 and two-byte evidence and uses an explicitly documented deterministic run ID; see [producer details](tools/rel-observe/README.md). The original `rel-inspect` still emits only `binary-manifest v1.0.0`. **EX-01 remains experimental and incomplete**, and no absence of runtime/game/network capabilities can be inferred from a two-byte signature. See [scope](docs/specs/OBSERVATION_ENVELOPE_DRAFT.md).
+It computes actual file SHA-256 and two-byte evidence and uses an explicitly documented deterministic run ID; see [producer details](tools/rel-observe/README.md). An additional experimental `coff-machine` command can read the two-byte COFF Machine field using the actual `e_lfanew` offset and return `partial`/`indeterminate` for a truncated field, rather than invent an architecture. The original `rel-inspect` still emits only `binary-manifest v1.0.0`. **EX-01 remains experimental and incomplete**, and no absence of runtime/game/network capabilities can be inferred from a two-byte signature. See [scope](docs/specs/OBSERVATION_ENVELOPE_DRAFT.md).
 
 ## Existing modules
 

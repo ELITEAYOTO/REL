@@ -14,7 +14,7 @@
 - Keep Rust for native parsing/diff/core. Python adapters around established external tools. Java, C++, C# or TypeScript enter only for a justified module.
 - Keep Ghidra/BinDiff/BSim as external reference engines; do not rewrite them speculatively.
 - The **full reverse-engineering mission** is adopted; Evidence & Evolution is a cross-cutting provenance/change workflow, NOT a reduction to import scanning, compliance or AI narration.
-- **Formal sequence ADR-0013:** critical P1.5-A -> EX-01 experimental observations/coverage -> EX-02 metadata-only manifest diff -> P2 Ghidra -> P3 function matching. EX-01/02 are NOT shipped. P1.5-B hardening continues.
+- **Formal sequence ADR-0013:** critical P1.5-A -> EX-01 experimental observations/coverage -> EX-02 metadata-only manifest diff -> P2 Ghidra -> P3 function matching. At the 2026-10-19 snapshot, **limited EX-01 producers exist on `main`**, while EX-02 remains only on draft PR #62; **neither is the entire envisioned capability/gate**. Verify current GitHub status before repeating this. P1.5-B hardening continues.
 - Preserve `binary-manifest` v1.0.0; no breaking contract change or empty speculative crates. Negative findings require precise scope and verified coverage; `imports: []` is not proof of behavioral impossibility.
 - Controlled-input alpha is not an arbitrary hostile-binary sandbox. `catch_unwind` does not contain aborts/OOM.
 - P1 is **static-only**. Imported executables must not be launched, loaded or instrumented.

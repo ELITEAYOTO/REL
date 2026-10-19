@@ -1,6 +1,6 @@
 # EX-01 — Enveloppe d'observations (brouillon)
 
-**Statut : DESIGN EXPÉRIMENTAL, aucun code livré ; `binary-manifest` v1.0.0 inchangé.**  
+**Statut : PILOTE PARTIEL — contrat + premier producteur statique `pe.dos_magic` vérifiés ; EX-01 global non terminé, `binary-manifest` v1.0.0 inchangé.**  
 Décision : [ADR-0013](../adr/ADR-0013-vision-evidence-evolution.md).
 
 ## But
@@ -60,7 +60,9 @@ test evaluator/producer correspondence, evaluate mixed/overlapping
 domains and ordinal/delay-import information without reconstructing
 facts lost by v1. Preserve critical P1.5-A work and issue #9.
 
-## First true controlled producer — candidate, final CI pending
+## First true controlled producer — PR #51 merged, scoped Windows/Linux CI verified
+
+[PR #51](https://github.com/ELITEAYOTO/REL/pull/51) merged as `10f38c8`; [final Windows/Linux post-merge CI #39179499279](https://github.com/ELITEAYOTO/REL/actions/runs/39179499279) passed, including actual producer smoke tests. This is evidence of the tested scope, not broad reverse-engineering maturity.
 
 `tools/rel-observe` implements the deliberately narrow domain
 `pe.dos_magic`: it reads up to 2 MiB from an ordinary controlled file,

@@ -7,18 +7,41 @@ import unittest
 import zipfile
 from pathlib import Path
 
-from compare_ex02_corpus_runs import MAX_EVIDENCE_BYTES, compare_reports, load_report
+from compare_ex02_corpus_runs import (
+    EXPECTED_PAIRS,
+    MAX_EVIDENCE_BYTES,
+    compare_reports,
+    load_report,
+)
 
 
 def sample(mode="brepro"):
     cases = [
         {
             "id": f"{compiler}-v{variant}",
+            "compiler": compiler,
+            "variant": variant,
+            "source_sha256": "f" * 64,
             "sha256": f"{variant + (10 if compiler == 'clang' else 0):064x}",
             "size_bytes": 1024,
+            "import_count": variant,
+            "export_count": variant,
         }
         for compiler in ("msvc", "clang")
         for variant in range(1, 5)
+    ]
+    pairs = [
+        {
+            "left": left,
+            "right": right,
+            "oracle": "pefile-independent-PE-structures",
+            "import_added": [],
+            "import_removed": [],
+            "export_added": [],
+            "export_removed": [],
+            "section_status": "unchanged",
+        }
+        for left, right in sorted(EXPECTED_PAIRS)
     ]
     return {
         "schema_version": "rel-ex02-compiler-pair-evidence-v1",
@@ -36,7 +59,10 @@ def sample(mode="brepro"):
         "link_mode": mode,
         "link_flags": "/INCREMENTAL:NO /Brepro" if mode == "brepro" else "/INCREMENTAL:NO",
         "github_sha": "a" * 40,
+        "case_count": len(cases),
+        "pair_count": len(pairs),
         "cases": cases,
+        "pairs": pairs,
     }
 
 
@@ -125,6 +151,48 @@ class CorpusCrossRunTests(unittest.TestCase):
             file.write_text(json.dumps(report), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "malformed"):
                 load_report(file, "brepro")
+
+    def test_reject_inconsistent_case_identity_and_source(self):
+        for key, value in (
+            ("compiler", "clang"),
+            ("variant", 2),
+            ("source_sha256", "0" * 64),
+            ("import_count", -1),
+            ("size_bytes", True),
+        ):
+            damaged = sample()
+            damaged["cases"][0][key] = value
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                compare_reports(damaged, sample(), require_identical=True)
+
+    def test_reject_missing_duplicate_and_corrupt_pair_observations(self):
+        changed = sample()
+        changed["pairs"] = changed["pairs"][:-1]
+        with self.assertRaisesRegex(ValueError, "pair observations"):
+            compare_reports(changed, sample(), require_identical=True)
+        changed = sample()
+        changed["pairs"][0] = copy.deepcopy(changed["pairs"][1])
+        with self.assertRaisesRegex(ValueError, "A/B pair"):
+            compare_reports(changed, sample(), require_identical=True)
+        changed = sample()
+        changed["pairs"][0]["import_added"] = ["Z!B", "A!A"]
+        with self.assertRaisesRegex(ValueError, "noncanonical"):
+            compare_reports(changed, sample(), require_identical=True)
+        changed = sample()
+        changed["pairs"][0]["import_added"] = ["X!Y"]
+        changed["pairs"][0]["import_removed"] = ["X!Y"]
+        with self.assertRaisesRegex(ValueError, "both added"):
+            compare_reports(changed, sample(), require_identical=True)
+
+    def test_reject_disagreeing_counts(self):
+        changed = sample()
+        changed["case_count"] = 7
+        with self.assertRaisesRegex(ValueError, "case count"):
+            compare_reports(changed, sample(), require_identical=True)
+        changed = sample()
+        changed["pair_count"] = 15
+        with self.assertRaisesRegex(ValueError, "pair count"):
+            compare_reports(changed, sample(), require_identical=True)
 
     def test_reject_oversized_json_and_decompressed_zip_evidence(self):
         oversized = b" " * (MAX_EVIDENCE_BYTES + 1)

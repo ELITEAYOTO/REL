@@ -1,11 +1,11 @@
-# EX-02 — Prototype de diff des manifestes PE (brouillon de spécification)
+# EX-02 — Pilote expérimental de diff des manifestes PE
 
-**Statut : pilote partiel implémenté sur la PR #62 en brouillon ; non fusionné, gate EX-02 NON VALIDÉE.**  
+**Statut : pilote partiel intégré dans `main` via [PR #62](https://github.com/ELITEAYOTO/REL/pull/62), [CI post-fusion #39305827604](https://github.com/ELITEAYOTO/REL/actions/runs/39305827604) validée ; la gate EX-02 complète reste NON VALIDÉE.**  
 Décision et gates : [ADR-0013](../adr/ADR-0013-vision-evidence-evolution.md), [STRATEGY_AND_GATES](../governance/STRATEGY_AND_GATES.md).
 
 ## Contrat
 
-Entrées : exactement deux manifestes JSON PE `binary-manifest` v1.0.0 validés strictement, plus leur enveloppe de couverture expérimentale si disponible. Sortie : JSON diff versionné séparément et texte optionnel. **Aucun** Ghidra, CFG, fonction identifiée, émulation, verdict de sécurité ou conclusion de changement de comportement.
+Entrées effectivement implémentées : exactement deux manifestes JSON PE `binary-manifest` v1.0.0 contrôlés et acceptés par le consommateur Rust. Sortie implémentée : uniquement un rapport JSON de diff `0.1.0-experimental` versionné séparément. Les enveloppes de couverture supplémentaires et une éventuelle sortie texte restent des extensions envisagées, non fournies par le CLI actuel. **Aucun** Ghidra, CFG, fonction identifiée, émulation, verdict de sécurité ou conclusion de changement de comportement.
 
 Diff sur format, architecture, taille, sections, imports directs *tels qu'observés*, exports nommés. Statuts `added, removed, changed, unchanged, ambiguous, incomparable` décrivent le rapport entre observations, pas entre capacités exécutées.
 
@@ -30,7 +30,7 @@ Diff sur format, architecture, taille, sections, imports directs *tels qu'observ
 
 Une nouvelle crate+CLI Rust n'est créée qu'au moment de la PR d'implémentation, indépendante du parseur et de Ghidra. La sortie ne modifie **jamais** le schéma manifeste v1.
 
-## Avancement du pilote isolé (PR #62, non fusionnée)
+## Périmètre du pilote expérimental intégré (historique PR #62)
 
 Le prototype Rust `rel-diff` compare les champs `size_bytes`, `arch`, les chaînes exactes des imports/exports, ainsi que les sections appariées uniquement par nom exact unique. Les noms de sections dupliqués provoquent une abstention `ambiguous`, sans delta partiel. Un booléen expérimental signale le cas global où seule la casse ASCII du préfixe DLL change, sans supprimer les chaînes d'origine. La sortie est contractée séparément par `contracts/experimental/manifest-diff.schema.json` en `0.1.0-experimental`; elle ne transforme pas le manifeste public v1.
 

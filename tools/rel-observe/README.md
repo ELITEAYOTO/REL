@@ -71,8 +71,9 @@ Input binaries are never executed.
 
 Run `python scripts/test_observe_cli.py --binary target/release/rel-observe`
 (on Windows use `rel-observe.exe`) to verify actual output against the
-independent Python contract validator and fixture bytes. Overall EX-01 is
-still incomplete; only the `pe.dos_magic` domain has a real producer.
+independent Python contract validator and fixture bytes. Overall EX-01 is still incomplete; the real narrow producers cover only
+`pe.dos_magic`, `pe.coff_machine` and `pe.section_headers`. Other coverage
+and semantic domains remain unimplemented.
 
 
 ## Experimental COFF Machine observation (PR #53 merged; scoped CI verified)

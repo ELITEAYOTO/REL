@@ -77,7 +77,7 @@ Every item requires test evidence before the checkbox is marked complete. ADRs g
 
 ## EX-02 — Metadata-only PE manifest diff pilot — BEFORE P2 (ADR-0013)
 
-**État de développement :** [PR #62](https://github.com/ELITEAYOTO/REL/pull/62) contient un pilote Rust expérimental en brouillon avec contrat de sortie séparé et oracle de CLI Windows/Linux. Les cases restent ouvertes jusqu'à validation des critères de gate, benchmarks et intégration vérifiée sur `main`.
+**État de développement :** le pilote Rust expérimental de la [PR #62](https://github.com/ELITEAYOTO/REL/pull/62) est intégré sur `main` au commit [0e990e8](https://github.com/ELITEAYOTO/REL/commit/0e990e8f208aafe80a3252a7eb355a46c8efc96e), avec [CI Windows/Linux post-fusion #39305827604](https://github.com/ELITEAYOTO/REL/actions/runs/39305827604) réussie. La comparaison reste limitée aux métadonnées observées et le **jalon EX-02 complet demeure ouvert** : corpus indépendant, couverture et benchmarks représentatifs non validés.
 
 - [ ] Independent Rust CLI/library comparing two strictly validated v1 manifest JSON files, separate diff output schema ([issue #15](https://github.com/ELITEAYOTO/REL/issues/15)).
 - [ ] Golden A/B, inversion symmetry, deterministic ordering, ambiguous sections/imports, extraction failures and incompatible schema.

@@ -1,4 +1,5 @@
 //! Experimental EX-02: limited, deterministic differences between PE v1 manifests.
+mod output;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 use std::env;
@@ -245,8 +246,9 @@ fn run() -> Result<(), String> {
         return Err("usage: rel-diff LEFT.json RIGHT.json".to_owned());
     }
     let report = compare(load(&args[1])?, load(&args[2])?);
-    let output = serde_json::to_string_pretty(&report).map_err(|e| e.to_string())?;
-    println!("{output}");
+    let bytes = output::serialize_report(&report)?;
+    use std::io::Write;
+    std::io::stdout().write_all(&bytes).map_err(|e| e.to_string())?;
     Ok(())
 }
 

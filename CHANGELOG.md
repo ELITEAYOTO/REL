@@ -2,6 +2,15 @@
 
 ## [Unreleased] — 2026-10-18
 
+### EX-02 — Experimental PE manifest metadata diff pilot (PR #62; gate still open)
+
+- Introduce standalone Rust `rel-diff` CLI comparing two controlled PE `binary-manifest v1.0.0` JSON inputs. Record source SHA-256 identities, size/architecture flags, deterministic raw import/export differences and section metadata changes by **unique exact section name**; duplicate names abstain as `ambiguous`, without partial section deltas.
+- Add a cautious whole-import-set ASCII DLL-casing hint, preserving original observations and declining on normalization collisions. Reject malformed JSON, incompatible format/schema, wrong SHA shape, extraction warnings, duplicate import/export observations, excessive/non-regular inputs and missing nullable mandatory `arch`/`virtual_address` keys.
+- Version the **separate** experimental output contract as `contracts/experimental/manifest-diff.schema.json` (`0.1.0-experimental`) with unknown-field rejection, unique delta arrays and consistent section status; public `binary-manifest v1.0.0` remains unchanged.
+- Add Rust CLI/unit regressions and a separate Python oracle, `scripts/test_manifest_diff_cli.py`, which invokes compiled release binaries and validates real outputs against JSON Schema on Windows/Linux. Cover A/A, A/B and B/A, inversion, order invariance, repeatability, collisions, malformed/oversize inputs and a controlled end-to-end `rel-inspect` → `rel-diff` pipeline using the two tracked synthetic PE fixtures.
+- **Limitations:** controlled-input alpha, not an arbitrary-hostile-file sandbox or atomic snapshot. No function matching or behavioral findings; no representative 10–20 authorized build pairs, measured general CPU/RSS baseline, exhaustive JSON Schema equivalence or full EX-02 acceptance. The milestone remains open pending independent validation and review.
+
+
 ### EX-01 — Same-descriptor second-pass input consistency (PR #59 merged; scoped CI verified)
 
 - Harden `rel-observe`'s shared controlled-file reader for all three domains: re-read and compare the bytes through the **same opened file handle**, with one fixed 64 KiB scratch buffer. Reject observed same-size mutations, early EOF, trailing bytes, and pre/post size or modification-time inconsistencies *before* passing any bytes to observation producers. Rust deterministic regression tests cover unchanged multi-chunk input, first/middle/last byte mutation, shortening and growth; existing cross-platform CLI oracles retain report-format regression coverage.

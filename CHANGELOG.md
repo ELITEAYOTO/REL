@@ -5,7 +5,7 @@
 ### P1.5 — Reproducible fuzz tooling (issue #12, scoped)
 
 - Generate a separate fuzz workspace lockfile with Cargo, pin libfuzzer-sys 0.4.13 and nightly-2026-10-19 without changing the stable workspace or parser. Verify locked Cargo metadata and detect lockfile drift in CI.
-- Provide a manual, bounded 300-second campaign alongside the existing 30-second smoke; retain execution metadata and failure artifacts. This does **not** close the full fuzzing/hostile-input gate.
+- Provide a manual, bounded 300-second campaign alongside the existing 30-second smoke; retain execution metadata and failure artifacts. [Verification run #39318875380](https://github.com/ELITEAYOTO/REL/actions/runs/39318875380) completed on a `main`-equivalent source tree via a **closed, unmerged trigger-only PR #84**: 2,562,113 executions / 301 seconds, peak RSS 548 MiB, no crash. This is not a manual `workflow_dispatch` run or a general hostile-input safety guarantee.
 
 
 ### EX-02 — Experimental PE manifest metadata diff pilot (PR #62; gate still open)

@@ -1,0 +1,12 @@
+# CI JSON Schema validator stack for Python 3.12 on Linux and Windows.
+# Captured from actual successful CI pip installations, 2026-10-19:
+# Linux: https://github.com/ELITEAYOTO/REL/actions/runs/39219233232
+# Windows: https://github.com/ELITEAYOTO/REL/actions/runs/39219233232
+# All six distributions were the same versions on both hosts.
+# Exact versions; this is NOT a cross-OS wheel hash lock or hermetic pip environment.
+jsonschema==4.26.0
+attrs==26.1.0
+jsonschema-specifications==2025.9.1
+referencing==0.37.0
+rpds-py==2026.9.1
+typing-extensions==4.16.0

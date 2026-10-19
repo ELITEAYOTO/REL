@@ -7,7 +7,7 @@ import unittest
 import zipfile
 from pathlib import Path
 
-from compare_ex02_corpus_runs import compare_reports, load_report
+from compare_ex02_corpus_runs import MAX_EVIDENCE_BYTES, compare_reports, load_report
 
 
 def sample(mode="brepro"):
@@ -125,6 +125,19 @@ class CorpusCrossRunTests(unittest.TestCase):
             file.write_text(json.dumps(report), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "malformed"):
                 load_report(file, "brepro")
+
+    def test_reject_oversized_json_and_decompressed_zip_evidence(self):
+        oversized = b" " * (MAX_EVIDENCE_BYTES + 1)
+        with tempfile.TemporaryDirectory() as work:
+            plain = Path(work) / "oversized.json"
+            plain.write_bytes(oversized)
+            with self.assertRaisesRegex(ValueError, "2 MiB"):
+                load_report(plain, "brepro")
+            archive = Path(work) / "oversized.zip"
+            with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as z:
+                z.writestr("rel-ex02-brepro-pairs.json", oversized)
+            with self.assertRaisesRegex(ValueError, "2 MiB"):
+                load_report(archive, "brepro")
 
     def test_artifact_zip_input_and_mode_boundary(self):
         with tempfile.TemporaryDirectory() as work:

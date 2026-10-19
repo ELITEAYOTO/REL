@@ -15,7 +15,9 @@ impl Write for BoundedWriter {
         if chunk.len() > self.limit.saturating_sub(self.bytes.len()) {
             return Err(io::Error::other("diff JSON exceeds 16 MiB output limit"));
         }
-        self.bytes.try_reserve(chunk.len()).map_err(io::Error::other)?;
+        self.bytes
+            .try_reserve(chunk.len())
+            .map_err(io::Error::other)?;
         self.bytes.extend_from_slice(chunk);
         Ok(chunk.len())
     }

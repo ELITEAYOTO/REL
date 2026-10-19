@@ -1,6 +1,6 @@
 # F001 — Malformed PE TLS panic in goblin 0.9.3
 
-**Status:** Historical failure verified; the saved reproducer is handled by REL with pinned goblin 0.10.7 in tested configurations. Upstream/root-cause tracking continues under [issue #11](https://github.com/ELITEAYOTO/REL/issues/11).
+**Status (2026-10-19):** Historical failure, upstream unchecked TLS slice, and a standalone old-version reproduction are now evidenced; the saved original and reduced witness are rejected by REL with pinned Goblin 0.10.7 in tested CI configurations. The narrowly scoped [issue #11](https://github.com/ELITEAYOTO/REL/issues/11) can be resolved only after the reduced-witness regression is merged and revalidated on `main`; broader corpus/hostile-input hardening remains open under issues #8 and #9.
 
 ## Original reproduction (source of truth)
 
@@ -51,11 +51,11 @@ variant to be rejected, and they do not replace the 30-second libFuzzer
 smoke or the separately recorded 300-second campaign. Fixture bytes,
 public schemas and production parser remain unchanged.
 
-**Still open for issue #11:** independently execute/minimize the original
-failure under the old 0.9.3 parser with an appropriately isolated
-process, if worth the complexity, and complete a focused upstream
-regression provenance review. Do not introduce the vulnerable old crate
-into REL's production dependency graph or infer broad security guarantees.
+**Historical checkpoint before the isolated replay:** old-parser execution
+and input reduction had not yet been performed when this source-level review
+was written. The bounded isolated replay and its actual results are recorded
+below. Do not introduce the vulnerable old crate into REL's production
+dependency graph or infer broad security guarantees.
 
 ## Independent old-version replay and bounded minimization (2026-10-19)
 
@@ -110,4 +110,4 @@ input parsing is panic-free, nor provide hard process isolation.
 - Effectiveness of `catch_unwind` against aborting panic strategies, memory unsafety, OOM, or subprocess failures.
 - Correctness of PE semantics on arbitrary binaries. The original seed is deliberately malformed.
 
-Follow-up: minimize F001 if useful, pin the fuzz-specific toolchain and lock, extend coverage-guided runs, and add separate process-level isolation for truly hostile binaries.
+Follow-up: consider further minimization **only if justified**, beyond the documented 1500-attempt budget. The separate fuzz nightly and lock are already pinned; extend diverse licensed PE fuzz campaigns and investigate genuine process-level isolation for truly hostile inputs under #8/#9. Do not interpret F001 regression success as arbitrary-input security.

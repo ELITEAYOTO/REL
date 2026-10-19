@@ -238,6 +238,14 @@ def verify(binary, inspector):
         integral_float["size_bytes"] = 1.0
         input_validator.validate(integral_float)
         rejected(binary, directory, a, integral_float)
+        beyond_offset = copy.deepcopy(a)
+        beyond_offset["sections"][0]["offset"] = 1 << 64
+        input_validator.validate(beyond_offset)
+        rejected(binary, directory, a, beyond_offset)
+        integral_rva = copy.deepcopy(a)
+        integral_rva["sections"][0]["virtual_address"] = 1.0
+        input_validator.validate(integral_rva)
+        rejected(binary, directory, a, integral_rva)
 
         # Both manifest inputs fit under 16 MiB, but their independent
         # additions/removals would exceed the 16 MiB serialized report cap.

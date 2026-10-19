@@ -50,6 +50,18 @@ jobs:
       - name: EX-02 independent manifest diff oracle (Linux)
         if: runner.os == 'Linux'
         run: python scripts/test_manifest_diff_cli.py --binary target/release/rel-diff --inspector target/release/rel-inspect
+      - name: EX-02 controlled metadata diff resource profile (Windows)
+        if: runner.os == 'Windows'
+        run: python scripts/profile_manifest_diff.py --binary target/release/rel-diff.exe --samples 3 --warmup 1 --output rel-diff-profile.json
+      - name: EX-02 controlled metadata diff resource profile (Linux)
+        if: runner.os == 'Linux'
+        run: python scripts/profile_manifest_diff.py --binary target/release/rel-diff --samples 3 --warmup 1 --output rel-diff-profile.json
+      - name: Upload EX-02 experimental resource observations
+        uses: actions/upload-artifact@v4
+        with:
+          name: rel-diff-resource-profile-${{ matrix.os }}
+          path: rel-diff-profile.json
+          if-no-files-found: error
       - name: EX-01 experimental envelope contract regressions
         run: python scripts/test_observation_envelope.py
       - name: EX-01 real producer smoke (Windows)

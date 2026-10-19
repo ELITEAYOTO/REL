@@ -27,7 +27,7 @@ VERSIONS = (1, 2, 3, 4)
 EXPECTED_API = {
     1: ("GetTickCount", {"rel_diff_transform"}),
     2: ("GetTickCount64", {"rel_diff_transform", "rel_diff_new_api"}),
-    3: ("GetCurrentProcessId", {"rel_diff_transform", "rel_diff_other_api"}),
+    3: ("GetComputerNameW", {"rel_diff_transform", "rel_diff_other_api"}),
     4: (
         "GetTickCount64",
         {"rel_diff_transform", "rel_diff_new_api", "rel_diff_other_api"},
@@ -68,6 +68,11 @@ def read_pe(path: Path, version: int) -> dict:
         assert any(x.endswith(f"!{required_api}") for x in imports), (
             path, required_api, imports
         )
+        tracked_apis = {"GetTickCount", "GetTickCount64", "GetComputerNameW"}
+        for unexpected in tracked_apis - {required_api}:
+            assert not any(x.endswith(f"!{unexpected}") for x in imports), (
+                path, "unexpected tracked API", unexpected, imports
+            )
         assert exports == expected_exports, (path, exports, expected_exports)
         assert sections, f"{path}: no PE sections"
         return {

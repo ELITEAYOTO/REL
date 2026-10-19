@@ -123,6 +123,7 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           python -m pip install pefile==2024.8.26
+          python scripts/test_windows_diff_pairs_helpers.py
           python scripts/check_windows_diff_pairs.py --inspector target/release/rel-inspect.exe --diff target/release/rel-diff.exe --corpus corpus-pairs --output rel-ex02-compiler-pairs.json
       - name: EX-02 byte-diagnostic unit regressions
         run: python scripts/test_windows_diff_repro.py

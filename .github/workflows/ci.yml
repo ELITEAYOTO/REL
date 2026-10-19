@@ -148,6 +148,32 @@ jobs:
             rel-ex02-repeat-build.json
             rel-ex02-compiler-pairs-repeat.json
           if-no-files-found: error
+      - name: Build experimental /Brepro PE variants (Windows; never execute)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: call scripts\build_windows_diff_pairs.cmd repro
+      - name: Independent /Brepro compiler-built PE pair oracle (Windows)
+        if: runner.os == 'Windows'
+        run: python scripts/check_windows_diff_pairs.py --inspector target/release/rel-inspect.exe --diff target/release/rel-diff.exe --corpus corpus-pairs-repro --link-mode brepro --output rel-ex02-brepro-pairs.json
+      - name: Capture first /Brepro PE byte sequence (Windows)
+        if: runner.os == 'Windows'
+        run: python scripts/check_windows_diff_repro.py --capture --corpus corpus-pairs-repro --snapshot corpus-pairs-repro-first
+      - name: Repeat /Brepro builds with identical source and flags (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: call scripts\build_windows_diff_pairs.cmd repro
+      - name: Compare /Brepro repeated PE byte sequences (Windows)
+        if: runner.os == 'Windows'
+        run: python scripts/check_windows_diff_repro.py --compare --corpus corpus-pairs-repro --snapshot corpus-pairs-repro-first --output rel-ex02-brepro-repeat.json
+      - name: Upload /Brepro controlled experiment
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rel-ex02-brepro-experiment-windows
+          path: |
+            rel-ex02-brepro-pairs.json
+            rel-ex02-brepro-repeat.json
+          if-no-files-found: error
       - name: Upload EX-02 compiler-built A/B pair evidence
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4

@@ -173,10 +173,10 @@ def load_report(path: Path, mode: str) -> dict:
 
 
 def compare_reports(first: dict, second: dict, *, require_identical: bool) -> dict:
-    if require_identical and first.get("link_mode") != "brepro":
-        raise ValueError("strict raw reproducibility requires /Brepro mode")
     check_provenance(first, first.get("link_mode"))
     check_provenance(second, second.get("link_mode"))
+    if require_identical and first["link_mode"] != "brepro":
+        raise ValueError("strict raw reproducibility requires /Brepro mode")
     check_report_structure(first)
     check_report_structure(second)
     keys = (

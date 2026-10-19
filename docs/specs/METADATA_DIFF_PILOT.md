@@ -5,7 +5,7 @@ Décision et gates : [ADR-0013](../adr/ADR-0013-vision-evidence-evolution.md), [
 
 ## Contrat
 
-Entrées : exactement deux manifestes JSON PE `binary-manifest` v1.0.0 validés strictement, plus leur enveloppe de couverture expérimentale si disponible. Sortie : JSON diff versionné séparément et texte optionnel. **Aucun** Ghidra, CFG, fonction identifiée, émulation, verdict de sécurité ou conclusion de changement de comportement.
+Entrées effectivement implémentées : exactement deux manifestes JSON PE `binary-manifest` v1.0.0 contrôlés et acceptés par le consommateur Rust. Sortie implémentée : uniquement un rapport JSON de diff `0.1.0-experimental` versionné séparément. Les enveloppes de couverture supplémentaires et une éventuelle sortie texte restent des extensions envisagées, non fournies par le CLI actuel. **Aucun** Ghidra, CFG, fonction identifiée, émulation, verdict de sécurité ou conclusion de changement de comportement.
 
 Diff sur format, architecture, taille, sections, imports directs *tels qu'observés*, exports nommés. Statuts `added, removed, changed, unchanged, ambiguous, incomparable` décrivent le rapport entre observations, pas entre capacités exécutées.
 

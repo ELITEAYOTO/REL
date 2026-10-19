@@ -28,7 +28,7 @@ The Windows independent `check_windows_diff_pairs.py` previously lowercased Unic
 
 **Latest validated CI for that branch at this snapshot:** [#39218333220](https://github.com/ELITEAYOTO/REL/actions/runs/39218333220), [#39218338335](https://github.com/ELITEAYOTO/REL/actions/runs/39218338335), both green Windows/Linux for `124b89e`. There were earlier **failed intermediate commits** during the work; do not cite them as final results or erase this history. PR #62 remains draft, unreviewed independently, and **full EX-02 gate #15 remains OPEN**.
 
-**Immediate next technical action:** review the *full net diff* and acceptance contract of #62 against **fresh `main`** (including dependencies, supply-chain-pinned actions, data-input limits, independent oracle integrity, and path consistency), address only provable findings in scoped PRs, and seek independent review before a decision to merge the experimental pilot. Do not start Ghidra/P3 or close the full EX-02 milestone from a synthetic four-variant source corpus.
+**Immediate next technical action:** review the *full net diff* and acceptance contract of #62 against **fresh `main`** (including dependencies, [CI supply-chain pinning #72](https://github.com/ELITEAYOTO/REL/issues/72), data-input limits, independent oracle integrity, and path consistency), address only provable findings in scoped PRs, and seek independent review before a decision to merge the experimental pilot. Do not start Ghidra/P3 or close the full EX-02 milestone from a synthetic four-variant source corpus.
 
 ## 2. Priority / state machine for the next session
 

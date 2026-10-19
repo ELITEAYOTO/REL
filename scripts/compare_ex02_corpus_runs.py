@@ -18,6 +18,7 @@ REPORT_FILES = {
     "brepro": "rel-ex02-brepro-pairs.json",
 }
 HASH = re.compile(r"[0-9a-f]{64}\Z")
+MAX_EVIDENCE_BYTES = 2 * 1024 * 1024
 
 
 def check_provenance(report: dict, mode: str) -> None:

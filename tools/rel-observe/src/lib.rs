@@ -218,11 +218,9 @@ mod second_pass_tests {
         for offset in [0, 64 * 1024, bytes.len() - 1] {
             let mut mutated = bytes.clone();
             mutated[offset] ^= 0xff;
-            assert!(
-                verify_second_pass(&mut Cursor::new(mutated), &bytes)
-                    .unwrap_err()
-                    .contains("bytes changed")
-            );
+            assert!(verify_second_pass(&mut Cursor::new(mutated), &bytes)
+                .unwrap_err()
+                .contains("bytes changed"));
         }
     }
 
@@ -233,10 +231,8 @@ mod second_pass_tests {
         assert!(verify_second_pass(&mut Cursor::new(short), &bytes).is_err());
         let mut long = bytes.clone();
         long.push(8);
-        assert!(
-            verify_second_pass(&mut Cursor::new(long), &bytes)
-                .unwrap_err()
-                .contains("grew")
-        );
+        assert!(verify_second_pass(&mut Cursor::new(long), &bytes)
+            .unwrap_err()
+            .contains("grew"));
     }
 }

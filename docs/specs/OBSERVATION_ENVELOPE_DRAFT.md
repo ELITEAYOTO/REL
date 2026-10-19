@@ -106,3 +106,18 @@ This evidence says nothing about whether instructions at runtime are
 executable or compatible, what imported APIs mean, or whether an
 arbitrary hostile binary can be analyzed safely. Overall EX-01 and
 P1.5-A remain incomplete; no change to manifest v1.0.0.
+
+## Candidate: controlled section-header observations (CI pending)
+
+The bounded `rel-observe section-headers` command exposes the declared
+40-byte section headers as a separate scope `pe.section_headers`.
+It anchors each complete record to a SHA-bound file offset, carries all
+raw record bytes in hex and includes a minimal normalized summary.
+A declared count beyond 32 yields `unsupported`; missing COFF,
+optional-header or any declared section-header bytes yields `partial`
+with `indeterminate` and no decisive evidence. A declared zero count
+can justify only the absence of **declared records in this header**,
+not absence of executable data or runtime behavior. Do not treat
+RVA/raw-pointer field values as proof that mapped ranges are valid.
+This remains a controlled-input alpha domain, not general hostile
+binary parsing or decompilation. The v1.0.0 manifest is unchanged.

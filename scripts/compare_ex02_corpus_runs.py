@@ -7,6 +7,7 @@ No PE is executed, reconstructed, overwritten, or normalized.
 from __future__ import annotations
 
 import argparse
+import itertools
 import json
 import re
 import zipfile
@@ -19,6 +20,11 @@ REPORT_FILES = {
 }
 HASH = re.compile(r"[0-9a-f]{64}\Z")
 MAX_EVIDENCE_BYTES = 2 * 1024 * 1024
+EXPECTED_PAIRS = {
+    (f"{compiler}-v{left}", f"{compiler}-v{right}")
+    for compiler in ("msvc", "clang")
+    for left, right in itertools.combinations(range(1, 5), 2)
+} | {(f"msvc-v{v}", f"clang-v{v}") for v in range(1, 5)}
 
 
 def check_provenance(report: dict, mode: str) -> None:
@@ -54,6 +60,64 @@ def check_provenance(report: dict, mode: str) -> None:
             raise ValueError(f"missing or invalid provenance: {key}")
 
 
+
+def check_report_structure(report: dict) -> None:
+    """Reject incomplete/mislabeled evidence before comparing build identities."""
+    cases = report.get("cases")
+    if type(report.get("case_count")) is not int or report["case_count"] != 8:
+        raise ValueError("invalid case count")
+    if not isinstance(cases, list) or len(cases) != 8:
+        raise ValueError("expected exactly eight corpus build cases")
+    ids = [row.get("id") for row in cases if isinstance(row, dict)]
+    if len(ids) != 8 or set(ids) != EXPECTED_IDS or len(set(ids)) != 8:
+        raise ValueError("missing or duplicate variant IDs")
+    for row in cases:
+        case_id = row["id"]
+        compiler, variant_text = case_id.split("-v", 1)
+        expected_version = int(variant_text)
+        if row.get("compiler") != compiler or type(row.get("variant")) is not int or row["variant"] != expected_version:
+            raise ValueError(f"{case_id}: inconsistent compiler/variant identity")
+        if row.get("source_sha256") != report["source_sha256"]:
+            raise ValueError(f"{case_id}: source provenance mismatch")
+        if not isinstance(row.get("sha256"), str) or HASH.fullmatch(row["sha256"]) is None:
+            raise ValueError(f"{case_id}: malformed SHA-256")
+        for key in ("size_bytes", "import_count", "export_count"):
+            value = row.get(key)
+            minimum = 1 if key == "size_bytes" else 0
+            if type(value) is not int or value < minimum:
+                raise ValueError(f"{case_id}: invalid {key}")
+
+    pairs = report.get("pairs")
+    if type(report.get("pair_count")) is not int or report["pair_count"] != len(EXPECTED_PAIRS):
+        raise ValueError("invalid pair count")
+    if not isinstance(pairs, list) or len(pairs) != len(EXPECTED_PAIRS):
+        raise ValueError("incomplete pair observations")
+    seen = set()
+    for pair in pairs:
+        if not isinstance(pair, dict):
+            raise ValueError("malformed pair observation")
+        identity = (pair.get("left"), pair.get("right"))
+        if identity not in EXPECTED_PAIRS or identity in seen:
+            raise ValueError("missing, duplicated or unexpected A/B pair")
+        seen.add(identity)
+        if pair.get("oracle") != "pefile-independent-PE-structures":
+            raise ValueError(f"{identity}: invalid independent oracle identifier")
+        if pair.get("section_status") not in ("changed", "unchanged", "ambiguous"):
+            raise ValueError(f"{identity}: invalid section status")
+        for key in ("import_added", "import_removed", "export_added", "export_removed"):
+            items = pair.get(key)
+            if not isinstance(items, list) or any(not isinstance(x, str) for x in items):
+                raise ValueError(f"{identity}: malformed delta: {key}")
+            if items != sorted(set(items)):
+                raise ValueError(f"{identity}: noncanonical delta: {key}")
+        if set(pair["import_added"]) & set(pair["import_removed"]):
+            raise ValueError(f"{identity}: import both added and removed")
+        if set(pair["export_added"]) & set(pair["export_removed"]):
+            raise ValueError(f"{identity}: export both added and removed")
+    if seen != EXPECTED_PAIRS:
+        raise ValueError("incomplete pair coverage")
+
+
 def load_report(path: Path, mode: str) -> dict:
     if path.suffix.lower() == ".zip":
         with zipfile.ZipFile(path) as archive:
@@ -81,23 +145,15 @@ def load_report(path: Path, mode: str) -> dict:
     if report.get("link_mode") != mode:
         raise ValueError("wrong linker mode for comparison")
     check_provenance(report, mode)
-    cases = report.get("cases")
-    if not isinstance(cases, list) or len(cases) != len(EXPECTED_IDS):
-        raise ValueError("expected exactly eight corpus build cases")
-    ids = [row.get("id") for row in cases]
-    if set(ids) != EXPECTED_IDS or len(set(ids)) != len(ids):
-        raise ValueError("missing or duplicate variant IDs")
-    for row in cases:
-        if not isinstance(row.get("sha256"), str) or HASH.fullmatch(row["sha256"]) is None:
-            raise ValueError(f"{row.get('id')}: malformed SHA-256")
-        if not isinstance(row.get("size_bytes"), int) or row["size_bytes"] <= 0:
-            raise ValueError(f"{row['id']}: invalid source file size")
+    check_report_structure(report)
     return report
 
 
 def compare_reports(first: dict, second: dict, *, require_identical: bool) -> dict:
     check_provenance(first, first.get("link_mode"))
     check_provenance(second, second.get("link_mode"))
+    check_report_structure(first)
+    check_report_structure(second)
     keys = (
         "source_sha256",
         "compilers",

@@ -241,7 +241,10 @@ class CorpusCrossRunTests(unittest.TestCase):
     def test_an_actual_binary_change_does_not_assert_same_oracle(self):
         changed = sample()
         changed["cases"][0]["sha256"] = "b" * 64
-        changed["pairs"][0]["import_added"] = ["KERNEL32.dll!Other"]
+        affected = next(
+            pair for pair in changed["pairs"] if pair["left"] == "msvc-v1"
+        )
+        affected["import_added"] = ["KERNEL32.dll!Other"]
         result = compare_reports(sample(), changed, require_identical=False)
         self.assertEqual(result["different_cases"], ["msvc-v1"])
 

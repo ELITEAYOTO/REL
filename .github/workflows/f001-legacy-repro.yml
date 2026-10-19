@@ -1,0 +1,172 @@
+name: F001 Legacy Goblin Isolated Reproduction (temporary)
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/f001-legacy-repro.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  f001-legacy-repro:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Validate original F001 and immutable production graph
+        shell: bash
+        run: |
+          printf '%s  %s\n' 'f65f21c07542483584cf156f1171ef6d02af1ce7168c573da79f8b81b96cc59e' 'fixtures/regressions/goblin-0.9.3-tls-oob.bin' | sha256sum --check -
+          rustc --version --verbose
+          git diff --exit-code -- Cargo.lock crates/rel-pe/src/lib.rs
+      - name: Build standalone historical goblin 0.9.3 probe (NOT REL dependency)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/f001-legacy/src"
+          cat > "$RUNNER_TEMP/f001-legacy/Cargo.toml" <<'TOML'
+          [package]
+          name = "f001-legacy-probe"
+          version = "0.0.0"
+          edition = "2021"
+          [dependencies]
+          goblin = "=0.9.3"
+          TOML
+          cat > "$RUNNER_TEMP/f001-legacy/src/main.rs" <<'RS'
+          use std::env;
+          use std::fs;
+          use std::process;
+          fn main() {
+              let path = env::args().nth(1).expect("input path required");
+              let bytes = fs::read(path).expect("read controlled fixture");
+              let result = std::panic::catch_unwind(|| goblin::pe::PE::parse(&bytes));
+              // 77 means the old parser unwound; the default hook records
+              // the source location. Never execute/load the PE input.
+              if result.is_err() {
+                  process::exit(77);
+              }
+          }
+          RS
+          cargo generate-lockfile --manifest-path "$RUNNER_TEMP/f001-legacy/Cargo.toml"
+          cargo build --release --locked --manifest-path "$RUNNER_TEMP/f001-legacy/Cargo.toml"
+          cargo tree --locked --manifest-path "$RUNNER_TEMP/f001-legacy/Cargo.toml" > legacy-cargo-tree.txt
+          grep -F 'goblin v0.9.3' legacy-cargo-tree.txt
+          sha256sum "$RUNNER_TEMP/f001-legacy/Cargo.lock" > legacy-lock-sha.txt
+      - name: Replay exactly and minimize same old TLS panic class
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p f001-legacy-evidence
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import math
+          import os
+          import pathlib
+          import re
+          import resource
+          import subprocess
+          import tempfile
+          import time
+
+          original_path = pathlib.Path("fixtures/regressions/goblin-0.9.3-tls-oob.bin")
+          data = original_path.read_bytes()
+          expected = "f65f21c07542483584cf156f1171ef6d02af1ce7168c573da79f8b81b96cc59e"
+          assert len(data) == 1104 and hashlib.sha256(data).hexdigest() == expected
+          binary = pathlib.Path(os.environ["RUNNER_TEMP"]) / "f001-legacy/target/release/f001-legacy-probe"
+          work = pathlib.Path("f001-legacy-evidence")
+          needle = re.compile(r"range start index 383194904 out of range for slice of length \d+")
+          attempts = 0
+          timeouts = 0
+
+          def limit_child():
+              resource.setrlimit(resource.RLIMIT_AS, (1024 * 1024 * 1024, 1024 * 1024 * 1024))
+              resource.setrlimit(resource.RLIMIT_CPU, (2, 3))
+
+          def probe(candidate):
+              global attempts, timeouts
+              attempts += 1
+              with tempfile.NamedTemporaryFile(dir=work, suffix=".bin") as tmp:
+                  tmp.write(candidate)
+                  tmp.flush()
+                  try:
+                      completed = subprocess.run(
+                          [str(binary), tmp.name],
+                          capture_output=True,
+                          text=True,
+                          timeout=3,
+                          preexec_fn=limit_child,
+                          check=False,
+                      )
+                  except subprocess.TimeoutExpired:
+                      timeouts += 1
+                      return False, "TIMEOUT"
+              matches = completed.returncode == 77 and needle.search(completed.stderr)
+              return bool(matches), completed.stderr[:1400]
+
+          started = time.monotonic()
+          valid, original_panic = probe(data)
+          if not valid:
+              print("Original did not reproduce historical index panic:", original_panic)
+              raise SystemExit(1)
+          print("F001_ORIGINAL_REPRODUCED", len(data), original_panic[:500])
+          (work / "original-panic.txt").write_text(original_panic)
+
+          minimized = data
+          granularity = 2
+          deadline = time.monotonic() + 180
+          while len(minimized) > 1 and attempts < 1500 and time.monotonic() < deadline:
+              chunk = math.ceil(len(minimized) / granularity)
+              changed = False
+              for start in range(0, len(minimized), chunk):
+                  candidate = minimized[:start] + minimized[start + chunk:]
+                  if not candidate:
+                      continue
+                  valid, _ = probe(candidate)
+                  if valid:
+                      minimized = candidate
+                      granularity = max(2, granularity - 1)
+                      changed = True
+                      break
+                  if attempts >= 1500 or time.monotonic() >= deadline:
+                      break
+              if not changed:
+                  if granularity >= len(minimized):
+                      break
+                  granularity = min(len(minimized), granularity * 2)
+
+          verified, minimized_panic = probe(minimized)
+          if not verified:
+              raise SystemExit("Minimized candidate lost original panic class")
+          (work / "minimized-f001-legacy.bin").write_bytes(minimized)
+          (work / "minimized-panic.txt").write_text(minimized_panic)
+          evidence = {
+              "scope": "standalone historical goblin 0.9.3 PE parse (no binary execution)",
+              "source_commit": os.environ["GITHUB_SHA"],
+              "original_size": len(data),
+              "original_sha256": expected,
+              "minimized_size": len(minimized),
+              "minimized_sha256": hashlib.sha256(minimized).hexdigest(),
+              "same_exact_old_panic_start_index": True,
+              "attempts": attempts,
+              "timeouts": timeouts,
+              "elapsed_seconds": round(time.monotonic() - started, 3),
+              "work_limit_attempts": 1500,
+              "work_limit_seconds": 180,
+              "linux_child_address_space_mib": 1024,
+              "linux_child_cpu_seconds": 2,
+          }
+          (work / "result.json").write_text(json.dumps(evidence, indent=2) + "\n")
+          print("F001_LEGACY_RESULT", json.dumps(evidence, sort_keys=True))
+          PY
+      - name: Collect isolated repro and minimization evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: rel-f001-goblin-093-evidence-${{ github.run_id }}
+          path: |
+            f001-legacy-evidence/
+            legacy-cargo-tree.txt
+            legacy-lock-sha.txt
+          if-no-files-found: warn

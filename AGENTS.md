@@ -3,7 +3,7 @@
 ## Read first
 1. `README.md`, `ROADMAP.md`, `CHANGELOG.md`.
 2. `docs/ARCHITECTURE.md`, `docs/governance/DECISIONS_FIGEES.md` and accepted `docs/adr/ADR-0013-vision-evidence-evolution.md`.
-3. `docs/governance/CODE_QUALITY.md`, `docs/governance/STRATEGY_AND_GATES.md` and `docs/governance/HANDOFF_NEXT_CHAT.md`.
+3. `docs/governance/CODE_QUALITY.md`, `docs/governance/STRATEGY_AND_GATES.md`, **`docs/governance/CURRENT_STATE.md`**, then `docs/governance/HANDOFF_NEXT_CHAT.md` only for historical detail. Always verify current GitHub state.
 4. Relevant public contracts and tests before editing source.
 
 ## Immutable-by-default architecture

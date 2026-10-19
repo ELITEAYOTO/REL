@@ -10,6 +10,8 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
+import stat
 import struct
 import sys
 from pathlib import Path
@@ -18,11 +20,80 @@ from jsonschema import ValidationError
 from validate_observation_envelope import validate
 
 MAX_INPUT = 2 * 1024 * 1024
+MAX_REPORT = 2 * 1024 * 1024
 CONFIGS = {
     "pe.dos_magic": b"rel-observe:dos-magic:v1;limit=2097152;require-mz-and-pe-signatures",
     "pe.coff_machine": b"rel-observe:coff-machine:v1;limit=2097152;require-mz-and-pe-signatures",
     "pe.section_headers": b"rel-observe:section-headers:v1;limit=2097152;max=32;record=40",
 }
+
+
+def _read_after_preflight(path: Path, before: os.stat_result, limit: int) -> bytes:
+    """Acquire a regular file by descriptor; preflight is not a snapshot."""
+    flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_CLOEXEC", 0)
+    if os.name == "posix":
+        # A swapped-in FIFO cannot block at open; leaf symlinks are refused.
+        flags |= os.O_NONBLOCK | os.O_NOFOLLOW
+    descriptor = os.open(path, flags)
+    with os.fdopen(descriptor, "rb") as reader:
+        opened = os.fstat(reader.fileno())
+        if not stat.S_ISREG(opened.st_mode):
+            raise ValueError("opened evidence input must be a regular file")
+        if (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino):
+            raise ValueError("evidence input identity changed before opening")
+        if opened.st_size > limit:
+            raise ValueError("evidence input exceeds configured byte limit")
+        data = reader.read(limit + 1)
+        if len(data) > limit or len(data) != opened.st_size:
+            raise ValueError("evidence input changed size or exceeded byte limit")
+
+        # Catch observable in-place modifications while using the same handle.
+        # This is neither an atomic snapshot nor a lock against concurrent writes.
+        reader.seek(0)
+        for offset in range(0, len(data), 64 * 1024):
+            expected = data[offset:offset + 64 * 1024]
+            if reader.read(len(expected)) != expected:
+                raise ValueError("evidence input changed during verification")
+        if reader.read(1):
+            raise ValueError("evidence input grew during verification")
+        after = os.fstat(reader.fileno())
+        if after.st_size != opened.st_size or after.st_mtime_ns != opened.st_mtime_ns:
+            raise ValueError("evidence input metadata changed during verification")
+        return data
+
+
+def read_bounded_regular(path: Path, limit: int) -> bytes:
+    """Read a bounded controlled file, rejecting observable nonregular inputs."""
+    before = path.lstat()
+    if not stat.S_ISREG(before.st_mode):
+        raise ValueError("evidence input must be a regular file (no leaf symlink)")
+    if before.st_size > limit:
+        raise ValueError("evidence input exceeds configured byte limit")
+    return _read_after_preflight(path, before, limit)
+
+
+def unique_json_keys(pairs: list[tuple[str, object]]) -> dict:
+    """Duplicate members make evidence documents ambiguous, including nested keys."""
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON object key: {key}")
+        result[key] = value
+    return result
+
+
+def reject_non_json_number(value: str) -> None:
+    raise ValueError(f"non-JSON numeric constant: {value}")
+
+
+def decode_report(payload: bytes) -> dict:
+    report = json.loads(
+        payload, object_pairs_hook=unique_json_keys,
+        parse_constant=reject_non_json_number,
+    )
+    if not isinstance(report, dict):
+        raise ValueError("EX-01 report must be a JSON object")
+    return report
 
 
 def sha256(data: bytes) -> str:
@@ -209,12 +280,10 @@ def main() -> int:
     parser.add_argument("--report", type=Path, required=True, help="EX-01 JSON report")
     args = parser.parse_args()
     try:
-        if args.input.stat().st_size > MAX_INPUT:
-            raise ValueError("input exceeds 2 MiB")
-        data = args.input.read_bytes()
-        report = json.loads(args.report.read_text(encoding="utf-8"))
+        data = read_bounded_regular(args.input, MAX_INPUT)
+        report = decode_report(read_bounded_regular(args.report, MAX_REPORT))
         verify(report, data)
-    except (ValueError, ValidationError, OSError, TypeError) as error:
+    except (ValueError, ValidationError, OSError, TypeError, RecursionError) as error:
         print(f"FAIL EX-01 evidence verification: {error}", file=sys.stderr)
         return 1
     print("PASS EX-01 source-backed evidence verification")

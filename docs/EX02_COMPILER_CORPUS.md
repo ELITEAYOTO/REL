@@ -59,6 +59,10 @@ Le workflow [#39209103249](https://github.com/ELITEAYOTO/REL/actions/runs/392091
 
 Ces preuves s'appliquent à **ce commit de la PR et ce job Windows**, non aux futurs exécutables compilés avec d'autres versions d'outils.
 
+### Limite de reproductibilité binaire observée entre CI
+
+Comparaison des artefacts Windows [#39209103249](https://github.com/ELITEAYOTO/REL/actions/runs/39209103249) et [#39209894303](https://github.com/ELITEAYOTO/REL/actions/runs/39209894303) : les **huit builds ont changé de SHA-256**, alors que les tailles enregistrées de chacun sont restées identiques, les sources C avaient le même SHA et les versions de compilateur affichées sont identiques (MSVC 19.51.36260 et Clang-cl 20.1.8). Le corpus n'est donc **pas bit-à-bit reproductible entre ces deux jobs** dans sa configuration actuelle. Ce constat ne localise **pas** la cause (horodatage, linker, SDK, environnement, etc.). Chaque oracle de CI reste valide pour les octets de **son propre job**, sans attribuer à un changement de comportement une variation de hash. Diagnostic à mener dans [l'issue #69](https://github.com/ELITEAYOTO/REL/issues/69) avant de figer des hashes inter-jobs.
+
 ## Limites et prochaines étapes
 
 - Deux compilateurs sur le même environnement Windows et une **seule source C** paramétrée n'établissent pas la diversité réelle des programmes commerciaux/open source, des options de compilation, ni des différents changements entre releases.

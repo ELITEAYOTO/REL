@@ -40,7 +40,7 @@ pub(crate) fn pe_nt_offset(bytes: &[u8]) -> Result<usize, String> {
     let nt_end = nt_offset
         .checked_add(4)
         .ok_or("NT signature offset overflow")?;
-    if bytes.get(nt_offset..nt_end) != Some(b"PE\\0\\0".as_slice()) {
+    if bytes.get(nt_offset..nt_end) != Some(b"PE\0\0".as_slice()) {
         return Err("EX-01 requires a minimal PE signature".to_owned());
     }
     Ok(nt_offset)
@@ -59,11 +59,11 @@ pub(crate) fn envelope(
     let digest = Sha256::digest(bytes);
     let config_digest = Sha256::digest(config.as_bytes());
     let mut run = Sha256::new();
-    run.update(b"REL-EX01-RUN-v1\\0");
+    run.update(b"REL-EX01-RUN-v1\0");
     run.update(digest);
     run.update(config_digest);
     run.update(domain.as_bytes());
-    run.update(b"\\0");
+    run.update(b"\0");
     run.update(VERSION.as_bytes());
     json!({
         "schema_version": "0.1.0-experimental",

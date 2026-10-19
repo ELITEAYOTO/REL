@@ -42,7 +42,7 @@ fn refuses_empty_truncated_non_pe_or_too_large_inputs() {
 // The COFF field is located immediately after the 4-byte PE signature.
 fn coff_offset(bytes: &[u8]) -> usize {
     let nt = u32::from_le_bytes(bytes[0x3c..0x40].try_into().unwrap()) as usize;
-    assert_eq!(&bytes[nt..nt + 4], b"PE\\0\\0");
+    assert_eq!(&bytes[nt..nt + 4], b"PE\0\0");
     nt + 4
 }
 

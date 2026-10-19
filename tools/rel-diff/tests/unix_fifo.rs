@@ -22,13 +22,11 @@ fn rejects_fifo_and_leaf_symlink_without_blocking_or_stdout() {
         "a".repeat(64)
     );
     fs::write(&source, data).expect("write manifest");
-    assert!(
-        Command::new("mkfifo")
-            .arg(&fifo)
-            .status()
-            .expect("mkfifo utility")
-            .success()
-    );
+    assert!(Command::new("mkfifo")
+        .arg(&fifo)
+        .status()
+        .expect("mkfifo utility")
+        .success());
     symlink(&source, &link).expect("create leaf symlink");
 
     for invalid in [&fifo, &link] {

@@ -223,6 +223,31 @@ def verify(binary, inspector):
                     f"invalid candidate {index} was not rejected: {candidate}"
                 ) from error
 
+        # The public JSON Schema accepts mathematically integral values that
+        # the experimental Rust/u64 consumer cannot represent. Document
+        # fail-closed behavior rather than claiming total v1 equivalence.
+        within_u64 = copy.deepcopy(a)
+        within_u64["size_bytes"] = (1 << 64) - 1
+        input_validator.validate(within_u64)
+        accepted(binary, directory, output_validator, a, within_u64)
+        beyond_u64 = copy.deepcopy(a)
+        beyond_u64["size_bytes"] = 1 << 64
+        input_validator.validate(beyond_u64)
+        rejected(binary, directory, a, beyond_u64)
+        integral_float = copy.deepcopy(a)
+        integral_float["size_bytes"] = 1.0
+        input_validator.validate(integral_float)
+        rejected(binary, directory, a, integral_float)
+
+        # Both manifest inputs fit under 16 MiB, but their independent
+        # additions/removals would exceed the 16 MiB serialized report cap.
+        large_left = manifest("a", ["A" * (8 * 1024 * 1024)], [], [])
+        large_right = manifest("b", ["B" * (8 * 1024 * 1024)], [], [])
+        too_much_output = execute(binary, directory, large_left, large_right)
+        assert too_much_output.returncode != 0
+        assert not too_much_output.stdout, "overflow published a partial report"
+        assert b"output limit" in too_much_output.stderr
+
         right_path = directory / "right.json"
         left_path = directory / "left.json"
         right_path.write_text("{not json", encoding="utf-8")

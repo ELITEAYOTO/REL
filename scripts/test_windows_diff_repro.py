@@ -41,12 +41,12 @@ class ByteDifferenceTests(unittest.TestCase):
             target = Path(temp) / "snapshot"
             for name in CASE_NAMES:
                 (source / name).write_bytes(b"MZ\x00\xff" + name.encode())
-            for name in ("msvc-version.txt", "clang-cl-version.txt"):
+            for name in ("msvc-version.txt", "clang-cl-version.txt", "linker-version.txt"):
                 (source / name).write_text("compiler version\n", encoding="utf-8")
             snapshot(source, target)
             self.assertEqual(
                 {p.name for p in target.iterdir()},
-                {*CASE_NAMES, "msvc-version.txt", "clang-cl-version.txt"},
+                {*CASE_NAMES, "msvc-version.txt", "clang-cl-version.txt", "linker-version.txt"},
             )
             for name in CASE_NAMES:
                 self.assertEqual((target / name).read_bytes(), (source / name).read_bytes())

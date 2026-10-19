@@ -76,7 +76,8 @@ jobs:
           assert len(data) == 1104 and hashlib.sha256(data).hexdigest() == expected
           binary = pathlib.Path(os.environ["RUNNER_TEMP"]) / "f001-legacy/target/release/f001-legacy-probe"
           work = pathlib.Path("f001-legacy-evidence")
-          needle = re.compile(r"range start index 383194904 out of range for slice of length \d+")
+          needle = re.compile(r"range (start|end) index \d+ out of range for slice of length \d+")
+          observed_kind = None
           attempts = 0
           timeouts = 0
 
@@ -102,15 +103,18 @@ jobs:
                   except subprocess.TimeoutExpired:
                       timeouts += 1
                       return False, "TIMEOUT"
-              matches = completed.returncode == 77 and needle.search(completed.stderr)
-              return bool(matches), completed.stderr[:1400]
+              matched = needle.search(completed.stderr)
+              same_source = "goblin-0.9.3/src/pe/tls.rs:228:" in completed.stderr
+              same_kind = matched is not None and (observed_kind is None or matched.group(1) == observed_kind)
+              return bool(completed.returncode == 77 and same_source and same_kind), completed.stderr[:1400]
 
           started = time.monotonic()
           valid, original_panic = probe(data)
           if not valid:
               print("Original did not reproduce historical index panic:", original_panic)
               raise SystemExit(1)
-          print("F001_ORIGINAL_REPRODUCED", len(data), original_panic[:500])
+          observed_kind = needle.search(original_panic).group(1)
+          print("F001_ORIGINAL_REPRODUCED", len(data), "kind="+observed_kind, original_panic[:500])
           (work / "original-panic.txt").write_text(original_panic)
 
           minimized = data
@@ -148,7 +152,9 @@ jobs:
               "original_sha256": expected,
               "minimized_size": len(minimized),
               "minimized_sha256": hashlib.sha256(minimized).hexdigest(),
-              "same_exact_old_panic_start_index": True,
+              "same_tls_source_location": "goblin-0.9.3/src/pe/tls.rs:228",
+              "observed_slice_panic_kind": observed_kind,
+              "historical_start_index_383194904_reproduced": "range start index 383194904" in original_panic,
               "attempts": attempts,
               "timeouts": timeouts,
               "elapsed_seconds": round(time.monotonic() - started, 3),

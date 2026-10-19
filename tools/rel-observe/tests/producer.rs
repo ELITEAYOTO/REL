@@ -100,3 +100,72 @@ fn unknown_machine_is_reported_as_raw_hex_not_made_up_architecture() {
     assert_eq!(report["scope"]["status"], "complete");
     assert!(rel_observe::observe_coff_machine_bytes(&[]).is_err());
 }
+
+
+fn section_fields(bytes: &[u8]) -> (usize, usize) {
+    let coff_start = coff_offset(bytes);
+    let coff = &bytes[coff_start..coff_start + 20];
+    let count = u16::from_le_bytes([coff[2], coff[3]]) as usize;
+    let optional_size = u16::from_le_bytes([coff[16], coff[17]]) as usize;
+    (count, coff_start + 20 + optional_size)
+}
+
+#[test]
+fn section_records_match_exact_fixture_bytes_without_inferring_payload_validity() {
+    for source in [PE32, PE64] {
+        let (count, start) = section_fields(source);
+        assert!(count > 0 && count <= 32);
+        let report = rel_observe::observe_section_headers_bytes(source).unwrap();
+        assert_eq!(report["scope"]["domain"], "pe.section_headers");
+        assert_eq!(report["scope"]["status"], "complete");
+        assert_eq!(report["observations"].as_array().unwrap().len(), count);
+        for index in 0..count {
+            let offset = start + index * 40;
+            assert_eq!(report["observations"][index]["status"], "present");
+            assert_eq!(report["evidence"][index]["location"]["start"], offset);
+            assert_eq!(report["evidence"][index]["location"]["length"], 40);
+            assert_eq!(
+                report["observations"][index]["raw_value"].as_str().unwrap().len(),
+                80
+            );
+        }
+        assert_eq!(
+            report,
+            rel_observe::observe_section_headers_bytes(source).unwrap()
+        );
+    }
+}
+
+#[test]
+fn section_truncations_abstain_with_diagnostics() {
+    let (count, table) = section_fields(PE32);
+    assert!(count > 0);
+    let coff = coff_offset(PE32);
+    for end in [coff + 19, table.saturating_sub(1), table, table + count * 40 - 1] {
+        let report = rel_observe::observe_section_headers_bytes(&PE32[..end]).unwrap();
+        assert_eq!(report["scope"]["status"], "partial");
+        assert_eq!(report["observations"][0]["status"], "indeterminate");
+        assert!(report["observations"][0]["raw_value"].is_null());
+        assert!(report["evidence"].as_array().unwrap().is_empty());
+        assert_eq!(report["diagnostics"][0]["severity"], "warning");
+    }
+}
+
+#[test]
+fn section_count_limit_and_empty_declaration_never_invent_entries() {
+    let mut bytes = PE32.to_vec();
+    let coff = coff_offset(&bytes);
+    bytes[coff + 2..coff + 4].copy_from_slice(&33_u16.to_le_bytes());
+    let unsupported = rel_observe::observe_section_headers_bytes(&bytes).unwrap();
+    assert_eq!(unsupported["scope"]["status"], "unsupported");
+    assert_eq!(unsupported["observations"][0]["status"], "indeterminate");
+    assert!(unsupported["evidence"].as_array().unwrap().is_empty());
+
+    bytes[coff + 2..coff + 4].copy_from_slice(&0_u16.to_le_bytes());
+    let empty = rel_observe::observe_section_headers_bytes(&bytes).unwrap();
+    assert_eq!(empty["scope"]["status"], "complete");
+    assert_eq!(empty["observations"][0]["status"], "absent_in_scope");
+    assert_eq!(empty["evidence"][0]["location"]["start"], coff + 2);
+    assert_eq!(empty["evidence"][0]["location"]["length"], 2);
+    assert!(rel_observe::observe_section_headers_bytes(b"invalid").is_err());
+}

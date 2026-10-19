@@ -106,6 +106,16 @@ def check_report_structure(report: dict) -> None:
             if type(value) is not int or value < minimum:
                 raise ValueError(f"{case_id}: invalid {key}")
 
+    # A raw SHA-256 identity cannot describe two different sets of extracted
+    # counts or lengths within a single evidence report.
+    by_id = {case["id"]: case for case in cases}
+    by_sha = {}
+    for case in cases:
+        first = by_sha.setdefault(case["sha256"], case)
+        for field in ("size_bytes", "import_count", "export_count"):
+            if first[field] != case[field]:
+                raise ValueError(f"{case['id']}: conflicting {field} for identical raw PE")
+
     pairs = report.get("pairs")
     if type(report.get("pair_count")) is not int or report["pair_count"] != len(EXPECTED_PAIRS):
         raise ValueError("invalid pair count")
@@ -135,6 +145,15 @@ def check_report_structure(report: dict) -> None:
             raise ValueError(f"{identity}: import both added and removed")
         if set(pair["export_added"]) & set(pair["export_removed"]):
             raise ValueError(f"{identity}: export both added and removed")
+        # Same raw PE bytes cannot have a changed metadata delta. Repeated
+        # section names can still legitimately produce an ambiguous status.
+        if by_id[identity[0]]["sha256"] == by_id[identity[1]]["sha256"]:
+            if pair["section_status"] == "changed" or any(
+                pair[key] for key in (
+                    "import_added", "import_removed", "export_added", "export_removed"
+                )
+            ):
+                raise ValueError(f"{identity}: contradictory delta for identical raw PE")
     if seen != EXPECTED_PAIRS:
         raise ValueError("incomplete pair coverage")
 

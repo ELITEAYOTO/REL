@@ -248,6 +248,39 @@ class CorpusCrossRunTests(unittest.TestCase):
         result = compare_reports(sample(), changed, require_identical=False)
         self.assertEqual(result["different_cases"], ["msvc-v1"])
 
+
+    def test_identical_sha_within_one_report_requires_consistent_evidence(self):
+        report = sample()
+        # Simulate two compiler variants that emitted byte-identical PEs.
+        report["cases"][1]["sha256"] = report["cases"][0]["sha256"]
+        report["cases"][1]["import_count"] = report["cases"][0]["import_count"]
+        report["cases"][1]["export_count"] = report["cases"][0]["export_count"]
+        accepted = compare_reports(report, copy.deepcopy(report), require_identical=True)
+        self.assertEqual(accepted["identical_raw_build_count"], 8)
+
+        for field in ("size_bytes", "import_count", "export_count"):
+            malformed = copy.deepcopy(report)
+            malformed["cases"][1][field] += 1
+            with self.subTest(field=field), self.assertRaisesRegex(
+                ValueError, "identical raw PE"
+            ):
+                compare_reports(malformed, copy.deepcopy(malformed), require_identical=True)
+
+        for field in (
+            "import_added", "import_removed", "export_added", "export_removed",
+            "section_status",
+        ):
+            malformed = copy.deepcopy(report)
+            pair = next(
+                item for item in malformed["pairs"]
+                if (item["left"], item["right"]) == ("msvc-v1", "msvc-v2")
+            )
+            pair[field] = "changed" if field == "section_status" else ["KERNEL32.dll!X"]
+            with self.subTest(field=field), self.assertRaisesRegex(
+                ValueError, "contradictory delta for identical raw PE"
+            ):
+                compare_reports(malformed, copy.deepcopy(malformed), require_identical=True)
+
     def test_report_source_and_version_must_match_known_contract(self):
         changed = sample()
         changed["source"] = "different-source.c"

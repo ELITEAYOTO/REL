@@ -8,7 +8,7 @@ The existing scripts/profile_resources.py gathers sampled RSS/CPU and has a prof
 
 - Default wall-time budget: 30 seconds, user-adjustable up to 600. If exceeded, kill and reap the direct child; wrapper exit code 124.
 - Default observed-RSS threshold: 512 MiB, user-adjustable from 16 to 4096 MiB. Poll at a nominal 10 ms cadence, and kill/reap the direct child when a sample exceeds the threshold; exit code 125.
-- Capture child stdout and stderr into temporary files (not pipes). Return complete child stdout only on success and after a 16 MiB plus newline byte check; suppress partial stdout after failures. Nonzero child exit, monitoring failure or oversized output returns 1.
+- Capture child stdout and stderr into temporary files (not pipes). Return complete child stdout only on success, with a 16 MiB plus newline byte check; suppress partial stdout after failures. A sampled temporary-file length check also kills a still-running child when stdout grows past this cap or stderr past 1 MiB. The same limits are checked on exit. Nonzero child exit, monitoring failure or oversized output returns 1. This is not a strict filesystem disk quota: bytes can overshoot between polls.
 - Use Python 3.12 and psutil==7.0.0, already pinned in the profiling CI. Do not change Rust crates, binary-manifest v1.0.0 or the default rel-inspect CLI.
 
 ## Running against a controlled reference fixture
@@ -22,7 +22,7 @@ Use target/release/rel-inspect.exe under Windows. Output is the unchanged JSON m
 
 ## Tests
 
-The cross-platform suite exercises exact successful stdout bytes, withholding partial stdout on a nonzero exit, killing a sleeping process on timeout, killing a synthetic Python allocation when its **sampled** RSS breaches a threshold, a test-only small stdout cap, invalid budget rejection, and an actual REL PE64 fixture with manifest schema/hash/size assertions. Run tests after the existing CI psutil installation on Windows and Ubuntu.
+The cross-platform suite exercises exact successful stdout bytes, withholding partial stdout on a nonzero exit, killing a sleeping process on timeout, killing a synthetic Python allocation when its **sampled** RSS breaches a threshold, short stdout/stderr spool budgets with a still-running child, a child that exits with oversized stderr, invalid budget rejection, and an actual REL PE64 fixture with manifest schema/hash/size assertions. Run tests after the existing CI psutil installation on Windows and Ubuntu.
 
 ## Validation evidence
 
@@ -33,7 +33,7 @@ The cross-platform suite exercises exact successful stdout bytes, withholding pa
 - The wall timeout is a best-effort supervisor deadline with process-termination latency; it is not a CPU-time budget. Process creation is outside the monitored loop.
 - RSS is **sampled, not kernel-enforced**. Short spikes or a quick child exit can escape observation. A successful run does not establish that peak memory stayed below its threshold.
 - Only the **direct child** is killed, not arbitrary descendants; the wrapper is not an OS sandbox, Job Object, cgroup or rlimit. It is not a safe way to run arbitrary hostile programs.
-- Captured stdout goes to a temporary file; a child can still fill disk before exiting. The final stdout size check is not an incremental disk-write quota.
+- Captured stdout and stderr go to temporary files. The wrapper samples their current lengths while the child runs and rejects oversized spools early (16 MiB + newline stdout, 1 MiB stderr), rather than waiting until process exit. This is **still not** a kernel disk-write quota: very fast bursts between polls, other child filesystem writes, and descendants are not contained.
 - The regular rel-inspect CLI is unchanged and does **not** enforce these limits when run directly. Other unresolved risks include path races, coherent file snapshots, process isolation and a broader licensed PE corpus.
 - Thresholds are provisional engineering defaults, not validated production resource ceilings. OS-native containment and enforceable RAM/CPU controls remain future P1.5-A/B work.
 

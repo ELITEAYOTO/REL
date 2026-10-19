@@ -22,7 +22,7 @@
 
 ## 2. Priority / state machine for the next session
 
-**Current priority: independent **PR #62 consolidation and handoff quality**, not starting P2/Ghidra.**
+**Current priority: independent PR #62 consolidation and handoff quality, not starting P2/Ghidra.** See the [dated pre-merge review checklist](../audits/2026-10-19-ex02-premerge-review.md) for explicit blockers and acceptance gates.
 
 A. Inspect #62 **as a whole**, not just the latest commits: changed files, size, naming/architecture contracts, acceptance criteria, build steps and producer/consumer boundaries. Verify today's head and diff relative to *current* `main`. Look for unsupported data, weak oracles, stale/contradictory docs, supply-chain gaps and hidden regressions.
 

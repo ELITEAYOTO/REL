@@ -138,6 +138,82 @@ def verify_numeric_consumer_subset(binary, directory, schema, report_schema, bas
     accepted(binary, directory, report_schema, baseline, nullable)
 
 
+def verify_dense_escaped_metadata(binary, directory, input_validator, output_validator):
+    """Independent sets/section oracle under dense and escaped metadata."""
+    def named(prefix, index, padding):
+        suffix = "\t\n\\é" if index % 17 == 0 else "_"
+        return f"{prefix}{index:05d}{suffix}" + "X" * padding
+
+    def section(index, changed=False):
+        return {
+            "name": named(".sec", index, 320),
+            "offset": index * 64 + int(changed),
+            "size": index % 31,
+            "virtual_address": None if index % 19 == 0 else 4096 + index * 96,
+        }
+
+    left = manifest(
+        "a",
+        [f"Lib{i:05d}.DLL!{named('proc', i, 256)}" for i in range(2048)],
+        [named("Exp", i, 256) for i in range(1536)],
+        [section(i) for i in range(256)],
+    )
+    right = manifest(
+        "b",
+        [f"Lib{i:05d}.DLL!{named('proc', i, 256)}" for i in range(1024, 3072)],
+        [named("Exp", i, 256) for i in range(768, 2304)],
+        [section(i, i < 256) for i in range(128, 384)],
+    )
+    for candidate in (left, right):
+        input_validator.validate(candidate)
+        assert len(json.dumps(candidate).encode("utf-8")) < MAX_INPUT
+
+    forward, forward_bytes = accepted(binary, directory, output_validator, left, right)
+    backward, _ = accepted(binary, directory, output_validator, right, left)
+    assert forward["sections"]["status"] == "changed"
+    assert not forward["import_dll_case_only"]
+    assert not forward["size_changed"] and not forward["arch_changed"]
+    for field in ("imports", "exports"):
+        a, b = set(left[field]), set(right[field])
+        assert forward[field]["added"] == sorted(b - a)
+        assert forward[field]["removed"] == sorted(a - b)
+        assert backward[field]["added"] == forward[field]["removed"]
+        assert backward[field]["removed"] == forward[field]["added"]
+
+    a = {item["name"] for item in left["sections"]}
+    b = {item["name"] for item in right["sections"]}
+    assert forward["sections"]["added"] == sorted(b - a)
+    assert forward["sections"]["removed"] == sorted(a - b)
+    assert forward["sections"]["changed"] == sorted(a & b)
+    assert backward["sections"]["added"] == forward["sections"]["removed"]
+    assert backward["sections"]["removed"] == forward["sections"]["added"]
+    assert backward["sections"]["changed"] == forward["sections"]["changed"]
+
+    permuted_left, permuted_right = copy.deepcopy(left), copy.deepcopy(right)
+    for item in (permuted_left, permuted_right):
+        for field in ("imports", "exports", "sections"):
+            item[field].reverse()
+    _, permuted_bytes = accepted(
+        binary, directory, output_validator, permuted_left, permuted_right
+    )
+    assert permuted_bytes == forward_bytes, "dense diff depends on input ordering"
+
+    ambiguous_left = copy.deepcopy(left)
+    ambiguous_left["sections"].append(copy.deepcopy(left["sections"][0]))
+    ambiguous, _ = accepted(binary, directory, output_validator, ambiguous_left, right)
+    assert ambiguous["sections"]["status"] == "ambiguous"
+    assert not any(ambiguous["sections"][key] for key in ("added", "removed", "changed"))
+    assert ambiguous["imports"] == forward["imports"]
+    assert ambiguous["exports"] == forward["exports"]
+
+    for field in ("imports", "exports"):
+        duplicated = copy.deepcopy(left)
+        duplicated[field].append(duplicated[field][0])
+        input_validator.validate(duplicated)  # Schema permits repeated observations.
+        rejected(binary, directory, duplicated, right)
+        rejected(binary, directory, right, duplicated)
+
+
 def verify(binary, inspector):
     root = Path(__file__).resolve().parents[1]
     contract = json.loads(
@@ -288,6 +364,11 @@ def verify(binary, inspector):
         # Also reject on the left input, not only the right.
         verify_numeric_consumer_subset(
             binary, directory, input_validator, output_validator, a,
+        )
+
+        # Dense/escaped strings, inverse deltas, abstention and failed duplicates.
+        verify_dense_escaped_metadata(
+            binary, directory, input_validator, output_validator,
         )
 
         # End-to-end output budget: both controlled inputs stay below the

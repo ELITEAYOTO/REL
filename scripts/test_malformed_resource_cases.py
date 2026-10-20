@@ -61,7 +61,7 @@ class MalformedCorpusTests(unittest.TestCase):
             raw = verified_export_header_offset(fixture, coff, opt)
             self.assertLessEqual(raw + 40, len(fixture))
             damaged = bytearray(fixture)
-            first_directory = opt + (96 if damaged[opt:opt + 2] == b"\\x0b\\x01" else 112)
+            first_directory = opt + (96 if int.from_bytes(damaged[opt:opt + 2], "little") == 0x10b else 112)
             damaged[first_directory:first_directory + 4] = (0xfffffff0).to_bytes(4, "little")
             with self.assertRaisesRegex(ValueError, "not raw-section mapped"):
                 verified_export_header_offset(damaged, coff, opt)

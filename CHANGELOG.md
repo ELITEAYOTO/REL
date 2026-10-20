@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased] — 2026-10-20 static PE32 DLL CI regression (candidate)
+## [Unreleased] — 2026-10-20 static PE32 DLL CI regression (scoped integrated)
 
 - Compile two x86 PE32 DLL cases on the Windows runner using MSVC and
   Clang-cl, from a small tracked C source. Run a separate pinned `pefile`
@@ -8,9 +8,9 @@
   against the REL static analyzer's hash and manifest; capture JSON evidence.
 - No binaries added to git, no executable/DLL loaded by CI, no license grant
   or claim of externally redistributable representative corpus. Issue #9 and
-  source licensing #16 remain open; validate the exact PR SHA before merge.
+  source licensing #16 remain open. [PR #92](https://github.com/ELITEAYOTO/REL/pull/92) and [post-merge Windows/Ubuntu CI #39353437460](https://github.com/ELITEAYOTO/REL/actions/runs/39353437460) passed.
 
-## [Unreleased] — 2026-10-20 Linux watchdog descendant cleanup (candidate)
+## [Unreleased] — 2026-10-20 Linux watchdog descendant cleanup (scoped integrated)
 
 - The optional Linux inspection supervisor now creates a dedicated process session
   and signals its process group on both success and failure, preventing ordinary
@@ -19,7 +19,7 @@
   Windows behavior. This does **not** prevent a descendant from escaping into a
   different process group, enforce aggregate CPU/RSS, or establish a sandbox.
 - No changes to the Rust parser, the public `binary-manifest v1.0.0` contract,
-  third-party licenses or production default CLI. Issue #9 remains open.
+  third-party licenses or production default CLI. [PR #91](https://github.com/ELITEAYOTO/REL/pull/91) and [post-merge Windows/Ubuntu CI #39352685559](https://github.com/ELITEAYOTO/REL/actions/runs/39352685559) passed; issue #9 remains open.
 
 ## [Unreleased] — 2026-10-20 documentation handoff
 

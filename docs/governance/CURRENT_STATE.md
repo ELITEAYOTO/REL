@@ -1,6 +1,6 @@
 # REL — Current state and next-chat entry
 
-**Checkpoint: 2026-10-20, immediately after PR #89.** This is a dated
+**Checkpoint: 2026-10-20, after PR #92 and exact post-squash main CI.** This is a dated
 verification, NOT a live GitHub API. Always fetch current main SHA, open PRs,
 issues and completed CI before acting. The large
 [historical handoff archive](HANDOFF_NEXT_CHAT.md) contains old snapshots;
@@ -29,28 +29,37 @@ the canonical entry point is THIS document.
 ## 1. Last verified integration
 
 Repository: [ELITEAYOTO/REL](https://github.com/ELITEAYOTO/REL).
-Main at this checkpoint:
-[c9d092ccfc4d0a92edc0f5d70440ab2f977326a4](https://github.com/ELITEAYOTO/REL/commit/c9d092ccfc4d0a92edc0f5d70440ab2f977326a4).
-[Exact post-squash CI #39345880829](https://github.com/ELITEAYOTO/REL/actions/runs/39345880829)
+Main at this dated checkpoint:
+[ce6c4e057bdb07806082169d6b3a49f721a7686e](https://github.com/ELITEAYOTO/REL/commit/ce6c4e057bdb07806082169d6b3a49f721a7686e).
+[Exact post-squash main CI #39353437460](https://github.com/ELITEAYOTO/REL/actions/runs/39353437460)
 **completed/success on Windows AND Ubuntu**.
 **Open PR count: 0. Open issue count: 10** at this dated checkpoint.
 
-Last shipped increment:
-[PR #89](https://github.com/ELITEAYOTO/REL/pull/89) (squashed as c9d092c).
-New scripts profile deterministic malformed-PE CLI rejection and upload
-reproducible per-OS JSON evidence. **No production parser, dependency,
-public schema or existing positive benchmark format changed.**
+Two new scoped, integrated partial gates (issue #9 remains OPEN):
 
-Relevant earlier integrated milestones:
+| Work | Exact-head validation | Squashed main validation |
+| --- | --- | --- |
+| [PR #91](https://github.com/ELITEAYOTO/REL/pull/91): optional Linux watchdog starts a dedicated process group, cleans ordinary descendants on failure/normal exit; two Linux regressions | [PR CI #39351908549](https://github.com/ELITEAYOTO/REL/actions/runs/39351908549) and [branch #39351884313](https://github.com/ELITEAYOTO/REL/actions/runs/39351884313), both Windows/Ubuntu success on d695fe3 | [24ef315](https://github.com/ELITEAYOTO/REL/commit/24ef31545685377a34c179754c726eae2cde82d7), [CI #39352685559](https://github.com/ELITEAYOTO/REL/actions/runs/39352685559) success |
+| [PR #92](https://github.com/ELITEAYOTO/REL/pull/92): two Windows-runner-built x86 PE32 DLL inputs (MSVC/Clang-cl) inspected by pinned independent pefile; evidence JSON uploaded | [PR CI #39353143656](https://github.com/ELITEAYOTO/REL/actions/runs/39353143656) and [branch #39353113893](https://github.com/ELITEAYOTO/REL/actions/runs/39353113893), both Windows/Ubuntu success on eda2468 | [ce6c4e0](https://github.com/ELITEAYOTO/REL/commit/ce6c4e057bdb07806082169d6b3a49f721a7686e), [CI #39353437460](https://github.com/ELITEAYOTO/REL/actions/runs/39353437460) success |
+
+**Boundaries:** watchdog process-group cleanup is not a cgroup, full
+process-tree kill guarantee or aggregate CPU/RSS/disk quota. Generated PE32
+DLLs are never loaded/executed or committed to Git; source/binary
+redistribution status is **not-established**, and the two frontends can share
+linker, CRT and Windows SDK. Neither change completes #9. No public
+`binary-manifest v1.0.0` change or production parser edit.
+
+Earlier milestones:
 
 | Work | Verified proof and status |
 | --- | --- |
+| Malformed PE resource observations | [#89](https://github.com/ELITEAYOTO/REL/pull/89), [main CI #39345880829](https://github.com/ELITEAYOTO/REL/actions/runs/39345880829): 13 controlled malformed cases, 39 expected rejects per OS; sample-based, not representative |
 | EX-01 input and evidence | [#75](https://github.com/ELITEAYOTO/REL/pull/75), [#77](https://github.com/ELITEAYOTO/REL/pull/77): narrow source-backed producers/verifier, full #14 gate OPEN |
 | EX-02 metadata-only pilot | [#62](https://github.com/ELITEAYOTO/REL/pull/62), [main CI #39305827604](https://github.com/ELITEAYOTO/REL/actions/runs/39305827604): pilot on main, full #15 gate OPEN |
 | Watchdog stdout/stderr spool checks | [#79](https://github.com/ELITEAYOTO/REL/pull/79): sampled, NOT a hard disk quota |
 | Pinned isolated fuzz toolchain | [#83](https://github.com/ELITEAYOTO/REL/pull/83), [main CI #39316683354](https://github.com/ELITEAYOTO/REL/actions/runs/39316683354): fuzz-specific dated nightly and Cargo-generated lock; scoped #12 CLOSED |
-| Extended PE fuzz | [run #39318875380](https://github.com/ELITEAYOTO/REL/actions/runs/39318875380): 2,562,113 executions / 301 s, no crash in THAT run. Trigger-only temporary PR #84 closed unmerged; NOT a verified manual dispatch event on main |
-| Goblin TLS F001 | [#86](https://github.com/ELITEAYOTO/REL/pull/86) and [#88](https://github.com/ELITEAYOTO/REL/pull/88), [main CI #39340610502](https://github.com/ELITEAYOTO/REL/actions/runs/39340610502): historical Goblin 0.9.3 OOB reproduced in isolated code; 1048-byte reduced witness; scoped #11 CLOSED |
+| Extended PE fuzz | [run #39318875380](https://github.com/ELITEAYOTO/REL/actions/runs/39318875380): 2,562,113 executions / 301 s, no crash in THAT run; temporary trigger-only PR #84 closed unmerged |
+| Goblin TLS F001 | [#86](https://github.com/ELITEAYOTO/REL/pull/86) and [#88](https://github.com/ELITEAYOTO/REL/pull/88), [main CI #39340610502](https://github.com/ELITEAYOTO/REL/actions/runs/39340610502): historical 0.9.3 OOB reproduced; 1048-byte reduced witness, scoped #11 CLOSED |
 
 ## 2. Last negative-PE campaign: issue #9, PARTIAL
 
@@ -120,7 +129,7 @@ PE corpus and enforced resource limits,
 [#69](https://github.com/ELITEAYOTO/REL/issues/69) reproducible build hash drift,
 [#72](https://github.com/ELITEAYOTO/REL/issues/72) supply-chain/CI pin review.
 
-**First priority:** advance #9 with a **license-cleared independently
+**First priority:** advance #9 beyond the controlled CI-built PE32 DLLs with a **license-cleared independently
 verified PE32/PE32+ EXE/DLL corpus**, mapping producer/version, exact
 redistribution terms, SHA-256, odd imports/exports/sections and a
 separate pefile oracle; alternatively demonstrate and close ONE concrete

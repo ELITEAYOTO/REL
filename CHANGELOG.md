@@ -2,6 +2,11 @@
 
 ## [Unreleased] — 2026-10-19
 
+### P1.5 — Controlled malformed PE failure-path resource evidence (issue #9 partial)
+
+- Add a cross-platform, fail-closed negative CLI corpus: 13 locally derived/hash-verified PE32/PE64/F001 cases including an 8 MiB overlay, expected diagnostics and no partial JSON. Capture three separate wall-time/sampled CPU/RSS observations per case with source and analyzer hashes in CI artifacts. These are not kernel memory caps or a legally cleared independent external corpus.
+
+
 ### P1.5 — Reproducible fuzz tooling (issue #12, scoped)
 
 - Generate a separate fuzz workspace lockfile with Cargo, pin libfuzzer-sys 0.4.13 and nightly-2026-10-19 without changing the stable workspace or parser. Verify locked Cargo metadata and detect lockfile drift in CI.

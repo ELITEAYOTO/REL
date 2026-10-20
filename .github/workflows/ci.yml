@@ -135,6 +135,10 @@ jobs:
           name: rel-mingw-x64-oracle-ubuntu
           path: rel-mingw-x64-oracle.json
           if-no-files-found: error
+      - name: Independent static TLS callback oracle (Windows and Linux)
+        run: |
+          python -m pip install pefile==2024.8.26
+          python scripts/test_tls_callbacks_oracle.py
       - name: Independent Windows PE oracle
         if: runner.os == 'Windows'
         run: |

@@ -1,5 +1,31 @@
 # REL — Handoff for next ChatGPT / contributor
 
+## Fresh resume checkpoint — 2026-10-20 after PR #89
+
+**READ [CURRENT_STATE.md](CURRENT_STATE.md) first.** This file is a
+historical multi-session archive whose older status statements are
+not automatically correct. For example EX-02 PR #62 is now merged,
+scoped F001 #11 and reproducible fuzz #12 are closed, and the latest
+malformed PE resource campaign #89 is integrated.
+
+Main at this checkpoint:
+[c9d092c](https://github.com/ELITEAYOTO/REL/commit/c9d092ccfc4d0a92edc0f5d70440ab2f977326a4).
+[Postmerge Windows/Ubuntu CI #39345880829](https://github.com/ELITEAYOTO/REL/actions/runs/39345880829)
+success; zero open PRs and ten open issues at that instant.
+[Issue #9](https://github.com/ELITEAYOTO/REL/issues/9)
+remains OPEN: 13 controlled malformed input cases, 39 expected
+rejections per OS and sampled resources passed, but licensing and
+representative EXE/DLL corpus diversity and genuine hard resource
+isolation are still outstanding.
+
+**Next chat:** fetch live GitHub state, read AGENTS/ROADMAP/ADR-0013,
+then work on a measured missing gate in #9; avoid modifying public
+contracts or adding unlicensed samples. If authorized to squash a PR,
+verify final-head CI AND new main SHA postmerge CI. Preserve this
+historical archive as provenance, not a live todo list.
+
+---
+
 > **Start with [CURRENT_STATE.md](CURRENT_STATE.md)** for the short, current-oriented resume protocol. This long file is a multi-session **historical archive** and its older "Immediate priorities" sections are not necessarily current. Query GitHub HEADs, PRs and CI again; never infer shipping status from these logs.
 
 ## Repository and current state

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import signal
 import subprocess
 import sys
 import tempfile
@@ -44,6 +45,20 @@ def reject_oversized_spools(stdout, stderr, max_stdout: int, max_stderr: int) ->
         raise WorkerFailed("analyzer stderr exceeded diagnostic spool budget")
 
 
+def stop_linux_process_group(child: psutil.Popen) -> None:
+    """Kill the child's dedicated Linux process group, including ordinary forks.
+
+    Descendants that deliberately create another session can escape; this is
+    cleanup of an owned group, not a process-tree security boundary.
+    """
+    if not sys.platform.startswith("linux"):
+        return
+    try:
+        os.killpg(child.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
+
+
 def supervise(
     command: Sequence[str],
     *,
@@ -68,7 +83,9 @@ def supervise(
         if os.name != "nt":
             raise ValueError("Windows Job Object budget requires Windows")
 
-    child_options = {}
+    # A dedicated session makes ordinary descendants terminate with the analyzer
+    # even if they outlive their parent. No process-group isolation on Windows.
+    child_options = {"start_new_session": True} if sys.platform.startswith("linux") else {}
     if max_address_space_bytes is not None or max_cpu_seconds is not None:
         if not sys.platform.startswith("linux"):
             if max_address_space_bytes is not None:
@@ -135,6 +152,7 @@ def supervise(
                 time.sleep(min(poll_seconds, max(0.0, wall_seconds - elapsed)))
 
             status = child.wait()
+            stop_linux_process_group(child)
             reject_oversized_spools(
                 stdout, stderr, max_stdout_bytes, max_stderr_bytes
             )
@@ -152,6 +170,7 @@ def supervise(
             if job is not None:
                 job.close()
             if child is not None:
+                stop_linux_process_group(child)
                 if child.poll() is None:
                     try:
                         child.kill()

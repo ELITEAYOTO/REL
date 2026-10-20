@@ -52,13 +52,23 @@ def sampled_linux_tree_rss(child: psutil.Popen, direct_rss: int) -> int:
     This double-counts shared resident pages; transient/escaped children
     can disappear between polls. It is NOT a kernel-enforced memory budget.
     """
+    # Do not quietly report a partial sum when the tree cannot be
+    # enumerated. An unhandled psutil exception would also bypass the
+    # wrapper's expected WorkerFailed diagnostic.
+    try:
+        descendants = child.children(recursive=True)
+    except (psutil.NoSuchProcess, psutil.AccessDenied) as error:
+        raise WorkerFailed("unable to enumerate analyzer descendants") from error
+
     total = direct_rss
-    for descendant in child.children(recursive=True):
+    for descendant in descendants:
         try:
             total += descendant.memory_info().rss
         except psutil.NoSuchProcess:
             # An exited descendant cannot be sampled in this poll.
             continue
+        except psutil.AccessDenied as error:
+            raise WorkerFailed("unable to sample descendant RSS") from error
     return total
 
 

@@ -13,8 +13,13 @@ import time
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import Mock, patch
 
-from run_bounded_inspection import LimitExceeded, WorkerFailed, supervise
+import psutil
+
+from run_bounded_inspection import (
+    LimitExceeded, WorkerFailed, sampled_linux_tree_rss, supervise,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 BINARY: Path | None = None
@@ -161,6 +166,56 @@ class WatchdogTests(unittest.TestCase):
                 )
             self.assertEqual(raised.exception.kind, "rss")
             self.assertIn("descendant-tree", str(raised.exception))
+
+    def test_tree_rss_enumeration_denial_is_controlled_failure(self) -> None:
+        parent = Mock()
+        for error in (psutil.AccessDenied(pid=123), psutil.NoSuchProcess(123)):
+            with self.subTest(exception=type(error).__name__):
+                parent.children.side_effect = error
+                with self.assertRaisesRegex(
+                    WorkerFailed, "unable to enumerate analyzer descendants"
+                ):
+                    sampled_linux_tree_rss(parent, 1024)
+                parent.children.assert_called_with(recursive=True)
+
+    def test_tree_rss_refuses_unreadable_descendant(self) -> None:
+        parent = Mock()
+        descendant = Mock()
+        descendant.memory_info.side_effect = psutil.AccessDenied(pid=234)
+        parent.children.return_value = [descendant]
+        with self.assertRaisesRegex(WorkerFailed, "unable to sample descendant RSS"):
+            sampled_linux_tree_rss(parent, 1024)
+
+    def test_tree_rss_skips_vanished_descendant_but_counts_live_one(self) -> None:
+        parent = Mock()
+        vanished = Mock()
+        vanished.memory_info.side_effect = psutil.NoSuchProcess(345)
+        live = Mock()
+        live.memory_info.return_value.rss = 4096
+        parent.children.return_value = [vanished, live]
+        self.assertEqual(sampled_linux_tree_rss(parent, 1024), 5120)
+
+    @unittest.skipUnless(sys.platform.startswith("linux"), "Linux tree RSS only")
+    def test_linux_tree_probe_denial_stops_worker_without_publishing_output(self) -> None:
+        # The real child is alive and has emitted bytes to its private spool.
+        # Force an inaccessible tree query; this must be a controlled error,
+        # not a traceback or a partial manifest on public stdout.
+        with patch(
+            "run_bounded_inspection.psutil.Popen.children",
+            side_effect=psutil.AccessDenied(pid=456),
+        ):
+            with self.assertRaisesRegex(
+                WorkerFailed, "unable to enumerate analyzer descendants"
+            ):
+                supervise(
+                    [
+                        CONTROLLED_PYTHON, "-c",
+                        "import time;print('partial',flush=True);time.sleep(10)",
+                    ],
+                    wall_seconds=5,
+                    max_sampled_rss_bytes=256 * 1024 * 1024,
+                    max_sampled_tree_rss_bytes=128 * 1024 * 1024,
+                )
 
     def test_sampled_tree_budget_rejected_on_unsupported_platform(self) -> None:
         if sys.platform.startswith("linux"):

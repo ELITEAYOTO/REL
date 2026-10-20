@@ -44,6 +44,26 @@ def save(
     return NegativeCase(name, path, source, source_sha, change, expected)
 
 
+def verified_export_header_offset(seed: bytes, coff: int, optional: int) -> int:
+    """Map the export header RVA through a raw section of a checked fixture."""
+    optional_size = int.from_bytes(seed[coff + 16:coff + 18], "little")
+    table = optional + optional_size
+    count = int.from_bytes(seed[coff + 2:coff + 4], "little")
+    directory = optional + (96 if int.from_bytes(seed[optional:optional + 2], "little") == 0x10b else 112)
+    rva = int.from_bytes(seed[directory:directory + 4], "little")
+    for index in range(count):
+        section = table + 40 * index
+        va = int.from_bytes(seed[section + 12:section + 16], "little")
+        size = int.from_bytes(seed[section + 16:section + 20], "little")
+        start = int.from_bytes(seed[section + 20:section + 24], "little")
+        if va <= rva and rva + 40 <= va + size:
+            offset = start + rva - va
+            if offset + 40 > len(seed):
+                break
+            return offset
+    raise ValueError("verified source export header is not raw-section mapped")
+
+
 def cases_from_verified_sources(fixtures: Path, directory: Path) -> list[NegativeCase]:
     """Never depend on unverified third-party binaries or execute PE samples."""
     cases: list[NegativeCase] = []
@@ -55,6 +75,7 @@ def cases_from_verified_sources(fixtures: Path, directory: Path) -> list[Negativ
         optional_size = int.from_bytes(seed[coff + 16:coff + 18], "little")
         section = optional + optional_size
         directory_start = optional + (96 if arch == "pe32" else 112)
+        export_header = verified_export_header_offset(seed, coff, optional)
         variations = (
             ("nt-offset-limit", 0x3c, (1048577).to_bytes(4, "little"),
              "PE header offset exceeds alpha limit"),
@@ -66,6 +87,14 @@ def cases_from_verified_sources(fixtures: Path, directory: Path) -> list[Negativ
              "import directory declaration exceeds alpha size limit"),
             ("export-size-limit", directory_start + 4, (1048577).to_bytes(4, "little"),
              "export directory declaration exceeds alpha size limit"),
+            ("export-rva-unmapped", directory_start, (0xfffffff0).to_bytes(4, "little"),
+             "export directory cannot be mapped to raw section data"),
+            ("export-rva-zero", directory_start, (0).to_bytes(4, "little"),
+             "invalid export directory RVA or size"),
+            ("export-function-count-limit", export_header + 20, (65537).to_bytes(4, "little"),
+             "export count exceeds alpha symbol limit"),
+            ("export-name-count-limit", export_header + 24, (65537).to_bytes(4, "little"),
+             "export count exceeds alpha symbol limit"),
         )
         for label, offset, replacement, diagnostic in variations:
             data = bytearray(seed)

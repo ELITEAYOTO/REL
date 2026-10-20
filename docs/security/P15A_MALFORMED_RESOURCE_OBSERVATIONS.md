@@ -13,12 +13,18 @@ time, sampled RSS and sampled CPU**, with exact mutated input hashes.
 This suite exercises that missing black-box evidence without executing any
 inspected binary and without adding permanent malformed EXE files.
 
-`scripts/profile_malformed_resources.py` builds exactly **13 temporary cases**:
+`scripts/profile_malformed_resources.py` now generates **21 temporary cases**, extending the original 13-case campaign without storing any new executable in Git:
 
 - For both the hash/size-verified PE32 and PE32+ fixtures: NT header offset
   beyond 1 MiB, 97 declared sections, section raw offset `0xffffffff`,
   declared import-directory size 1 MiB + 1, and declared export-directory
   size 1 MiB + 1 (10 cases)
+- For both verified PE32 and PE32+ seeds: four further export-table
+  declaration mutations (8 cases): RVA outside every raw-backed section,
+  zero RVA with nonzero directory size, function count 65,537, and name
+  count 65,537. The generator independently maps the original export
+  header RVA through the declared section table before changing the
+  count fields, and refuses a source that cannot be mapped
 - PE64 plus an **8 MiB zero-filled overlay** and 97-section declaration;
   this stresses controlled acquisition beyond an individual read chunk
 - The unchanged F001 original (1,104 bytes) and reduced witness (1,048
@@ -26,6 +32,11 @@ inspected binary and without adding permanent malformed EXE files.
 
 Each case must produce a **nonzero CLI exit**, expected diagnostic from
 the scoped parser/preflight and **zero stdout bytes** (no partial JSON).
+This update adds deterministic byte-exact mutation assertions and an
+unmapped-export source-mapping rejection regression. A successful CI run
+of the 21-case suite means **63 per-OS expected failures** at 3 samples
+per case, not a comprehensive hostile-import/export corpus. The earlier
+13-case / 39-per-OS PR #89 campaign remains a separate historical result.
 A failed or hanging case makes the CI step fail; its diagnostic is surfaced
 for triage. Input SHA-256, reference seed provenance, mutation, file size,
 runner/commit/analyzer hash, per-run observed elapsed time and possible
@@ -56,7 +67,7 @@ fixtures are never overwritten. No PE is loaded or executed.
 
 **Remaining issue #9 acceptance:** independent legally cleared PE/DLL
 fixtures, toolchain diversity beyond controlled Windows compiler probes,
-imports/exports/resources with adversarial but meaningful layouts,
+adversarial import payloads and richer export/resource semantics,
 large/sparse inputs under real enforced isolation and representative
 resource baselines. CI success is **not** a universal parser memory/time
 limit or proof that hostile files are safe.

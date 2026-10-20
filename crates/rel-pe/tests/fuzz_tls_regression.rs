@@ -51,7 +51,10 @@ fn minimized_legacy_tls_panic_input_is_rejected_without_unwinding() {
     let attempt = std::panic::catch_unwind(|| inspect(MINIMIZED_TLS));
     assert!(attempt.is_ok(), "REL exposed the legacy TLS panic");
     let outcome = attempt.unwrap();
-    assert!(outcome.is_err(), "malformed minimized F001 input was accepted");
+    assert!(
+        outcome.is_err(),
+        "malformed minimized F001 input was accepted"
+    );
     assert!(
         !matches!(outcome, Err(PeError::DependencyPanic)),
         "the minimized historical TLS seed still panics inside the parser"

@@ -1,6 +1,6 @@
 # REL — Handoff for next ChatGPT / contributor
 
-## Fresh resume checkpoint — 2026-10-20 after PR #111
+## Fresh resume checkpoint — 2026-10-20 after PR #113
 
 The canonical current-oriented source is [CURRENT_STATE.md](CURRENT_STATE.md).
 This header is a **dated handoff**, not live GitHub state. On resumption,
@@ -8,11 +8,34 @@ read [AGENTS.md](../../AGENTS.md), architecture, roadmap, frozen decisions,
 quality gates and [ADR-0013](../adr/ADR-0013-vision-evidence-evolution.md);
 then **query GitHub live** before making changes.
 
-**Last exact-main verification:** `7107a874921a5db4efd8c9b70359efed2986dae6`
-([commit](https://github.com/ELITEAYOTO/REL/commit/7107a874921a5db4efd8c9b70359efed2986dae6)),
-[CI #39376290685](https://github.com/ELITEAYOTO/REL/actions/runs/39376290685)
+**Last exact-main verification:** `958c1f40c4999149af7c4e1520cba9d33cf7de26`
+([commit](https://github.com/ELITEAYOTO/REL/commit/958c1f40c4999149af7c4e1520cba9d33cf7de26)),
+[CI #39378280259](https://github.com/ELITEAYOTO/REL/actions/runs/39378280259)
 **completed/success on Windows + Ubuntu**. At the checkpoint: **0 open PRs,
 9 open issues** (#72, #69, #68, #44, #16, #15, #14, #9, #8).
+
+[PR #113](https://github.com/ELITEAYOTO/REL/pull/113) adds Windows direct-analyzer
+native peak working set and final CPU through an owned duplicate of the
+creation handle, without replacing sampled RSS/CPU or Linux wait4 fields.
+Exact head `7d9f3aae293fb445bdf514ff48bec857acaeac6c` passed
+[PR CI #39378024313](https://github.com/ELITEAYOTO/REL/actions/runs/39378024313)
+and [branch CI #39377996849](https://github.com/ELITEAYOTO/REL/actions/runs/39377996849),
+both Windows/Ubuntu. Squash
+[958c1f4](https://github.com/ELITEAYOTO/REL/commit/958c1f40c4999149af7c4e1520cba9d33cf7de26)
+passed separate [exact-main CI #39378280259](https://github.com/ELITEAYOTO/REL/actions/runs/39378280259)
+on Windows/Ubuntu. Native Windows logs show all six tests passed, including
+real rel-inspect with psutil sampling denied. The paired gate requires all
+55 Windows measured runs (11 cases x 5) to contain valid native accounting;
+Linux still requires its seven-case wait4 evidence. Original-handle closure,
+immediate/nonzero exit and WinAPI failures are covered. Local controlled-child
+tests also passed Windows 10 build 19045. No independent reviewer approval is
+claimed; the author reviewed the scoped diff and checked exact CI evidence.
+
+**Limits:** direct process only, no descendant totals; Windows working set
+is neither committed memory nor a cross-OS equivalent of Linux ru_maxrss.
+CPython private creation-handle dependency fails closed. No inspected PE
+executes, no public contracts change, no new enforced budget or sandbox;
+issue #9 remains OPEN. See [resource measurements](../P15_RESOURCE_PROFILING.md).
 
 Recent integrations, each separately verified on its squashed `main`:
 - [#98](https://github.com/ELITEAYOTO/REL/pull/98): 21 temporary

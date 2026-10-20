@@ -22,6 +22,8 @@
 
 Le fichier JSON source contient le contexte d'environnement, la date exacte de capture, les empreintes de chacun des deux fichiers JSON d'entrée, les valeurs individuelles et les comptes d'échantillons. Les scénarios n'utilisent **aucun exécutable PE analysé**, uniquement des manifestes JSON artificiels. Aucune comparaison directe des vitesses entre OS ni seuil de performance contractuel n'est déductible ici.
 
+**Évolution du protocole après cette capture historique :** le profileur comprend désormais un troisième scénario synthétique mélangeant imports, exports et sections (2 048 éléments de chaque catégorie par côté, noms de sections partiellement partagés et modifiés). Ses résultats doivent être consultés dans les nouveaux artefacts CI et ne sont **pas** représentés par les quatre valeurs historiques ci-dessus ; aucune mesure ultérieure ne leur est substituée sans lecture des artefacts correspondants. L'oracle CLI couvre aussi une sortie acceptée de plus de 15 Mio, distincte du rejet sans stdout d'un rapport dépassant 16 Mio.
+
 ## Limites et prochaines validations
 
 - Le nouveau plafond de sortie JSON à 16 Mio est un **budget de rapport sérialisé**, pas un plafond de RSS, CPU, allocations temporaires ou temps d'analyse.

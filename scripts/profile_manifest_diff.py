@@ -22,23 +22,51 @@ TIMEOUT_SECONDS = 30
 POLL_SECONDS = 0.002
 
 
-def manifest(digest: str, imports: list[str]) -> dict:
+def manifest(
+    digest: str, imports: list[str], *,
+    exports: list[str] | None = None, sections: list[dict] | None = None,
+) -> dict:
     return {
         "schema_version": "1.0.0",
         "binary_sha256": digest * 64,
         "size_bytes": 1024,
         "format": "PE",
         "arch": "x86_64",
-        "sections": [
+        "sections": sections if sections is not None else [
             {"name": ".text", "offset": 512, "size": 64, "virtual_address": 4096}
         ],
         "imports": imports,
-        "exports": [],
+        "exports": exports if exports is not None else [],
         "warnings": [],
     }
 
 
-def profile_once(binary: Path, left: Path, right: Path, expected: tuple[str, str]) -> dict:
+def mixed_pair(count: int) -> tuple[dict, dict]:
+    """Controlled mixed-cardinality stress case, not a real PE layout."""
+    def make_side(digest: str) -> dict:
+        sections = []
+        for index in range(count):
+            shared = index < count // 2
+            name = f".shared{index:05}" if shared else f".{digest}{index:05}"
+            sections.append({
+                "name": name, "offset": 512 + 64 * index,
+                "size": (64 if digest == "a" else 80) if shared else 64,
+                "virtual_address": 4096 + 64 * index,
+            })
+        return manifest(
+            digest,
+            [f"KERNEL32.dll!{digest}Import{index:05}" for index in range(count)],
+            exports=[f"{digest}Export{index:05}" for index in range(count)],
+            sections=sections,
+        )
+
+    return make_side("a"), make_side("b")
+
+
+def profile_once(
+    binary: Path, left: Path, right: Path, expected: tuple[str, str],
+    expected_counts: tuple[int, int, int, int, int],
+) -> dict:
     started = time.perf_counter()
     sampled_rss = None
     sampled_cpu = None
@@ -78,6 +106,19 @@ def profile_once(binary: Path, left: Path, right: Path, expected: tuple[str, str
                 raise AssertionError("diff report lost the source manifest identities")
             if report["schema_version"] != "0.1.0-experimental":
                 raise AssertionError("unexpected report contract")
+            actual_counts = (
+                len(report["imports"]["added"]), len(report["exports"]["added"]),
+                len(report["sections"]["added"]), len(report["sections"]["removed"]),
+                len(report["sections"]["changed"]),
+            )
+            if actual_counts != expected_counts:
+                raise AssertionError(
+                    f"metadata delta counts {actual_counts} != {expected_counts}"
+                )
+            if len(report["imports"]["removed"]) != expected_counts[0]:
+                raise AssertionError("unexpected removed import count")
+            if len(report["exports"]["removed"]) != expected_counts[1]:
+                raise AssertionError("unexpected removed export count")
     return {
         "wall_ms": round(elapsed, 4),
         "sampled_peak_rss_bytes": sampled_rss,
@@ -109,7 +150,7 @@ def run(binary: Path, samples: int, warmup: int) -> dict:
         "warmup": warmup,
         "method": "release CLI subprocess; 2ms nominal RSS/CPU sampling; stdout redirected; controlled manifests",
         "limitations": [
-            "Synthetic imports are not an authorized real-world compiler build corpus.",
+            "Synthetic imports, exports and sections are not a real PE layout or authorized compiler build corpus.",
             "Polled RSS can miss transient process peaks; this is not a memory cap.",
             "Observed runner timings are not cross-platform or cross-run performance guarantees.",
         ],
@@ -117,11 +158,22 @@ def run(binary: Path, samples: int, warmup: int) -> dict:
     }
     with tempfile.TemporaryDirectory(prefix="rel-diff-profile-") as work:
         root = Path(work)
+        cases = []
         for name, count in (("minimal", 1), ("imports-8000", 8000)):
-            left = root / "left.json"
-            right = root / "right.json"
             a = manifest("a", [f"KERNEL32.dll!A{index:05}" for index in range(count)])
             b = manifest("b", [f"KERNEL32.dll!B{index:05}" for index in range(count)])
+            cases.append((name, count, 0, 1, a, b, (count, 0, 0, 0, 0)))
+        mixed_count = 2048
+        a, b = mixed_pair(mixed_count)
+        cases.append((
+            "mixed-metadata-2048", mixed_count, mixed_count, mixed_count,
+            a, b, (mixed_count, mixed_count, mixed_count // 2,
+                   mixed_count // 2, mixed_count // 2),
+        ))
+
+        for name, imports, exports, sections, a, b, counts in cases:
+            left = root / "left.json"
+            right = root / "right.json"
             payload_left = json.dumps(a).encode("utf-8")
             payload_right = json.dumps(b).encode("utf-8")
             left.write_bytes(payload_left)
@@ -129,12 +181,15 @@ def run(binary: Path, samples: int, warmup: int) -> dict:
             expected = (a["binary_sha256"], b["binary_sha256"])
             values = []
             for i in range(warmup + samples):
-                value = profile_once(binary, left, right, expected)
+                value = profile_once(binary, left, right, expected, counts)
                 if i >= warmup:
                     values.append(value)
             report["scenarios"].append({
                 "name": name,
-                "import_count_each": count,
+                "import_count_each": imports,
+                "export_count_each": exports,
+                "section_count_each": sections,
+                "expected_delta_counts": counts,
                 "left_input_bytes": len(payload_left),
                 "right_input_bytes": len(payload_right),
                 "left_json_sha256": hashlib.sha256(payload_left).hexdigest(),

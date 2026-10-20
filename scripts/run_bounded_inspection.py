@@ -2,6 +2,7 @@
 """Opt-in REL CLI watchdog; this runs the analyzer, never the inspected PE.
 
 It kills the direct child after a wall-time breach and checks sampled RSS.
+Linux can opt into sampled RSS sums for its discoverable descendant tree.
 On Linux, RLIMIT_FSIZE limits individual output files, while optional RLIMIT_AS
 and RLIMIT_CPU constrain virtual address space and per-process CPU time.
 These are not aggregate disk/RSS/process-tree limits, nor a sandbox.
@@ -45,6 +46,22 @@ def reject_oversized_spools(stdout, stderr, max_stdout: int, max_stderr: int) ->
         raise WorkerFailed("analyzer stderr exceeded diagnostic spool budget")
 
 
+def sampled_linux_tree_rss(child: psutil.Popen, direct_rss: int) -> int:
+    """Best-effort sum of parent and currently discoverable descendant RSS.
+
+    This double-counts shared resident pages; transient/escaped children
+    can disappear between polls. It is NOT a kernel-enforced memory budget.
+    """
+    total = direct_rss
+    for descendant in child.children(recursive=True):
+        try:
+            total += descendant.memory_info().rss
+        except psutil.NoSuchProcess:
+            # An exited descendant cannot be sampled in this poll.
+            continue
+    return total
+
+
 def stop_linux_process_group(child: psutil.Popen) -> None:
     """Kill the child's dedicated Linux process group, including ordinary forks.
 
@@ -68,6 +85,7 @@ def supervise(
     max_cpu_seconds: int | None = None,
     max_job_memory_bytes: int | None = None,
     max_job_cpu_seconds: int | None = None,
+    max_sampled_tree_rss_bytes: int | None = None,
     poll_seconds: float = POLL_SECONDS,
     max_stdout_bytes: int = MAX_STDOUT_BYTES,
     max_stderr_bytes: int = MAX_STDERR_BYTES,
@@ -77,6 +95,12 @@ def supervise(
         raise ValueError("invalid command or watchdog timing")
     if max_sampled_rss_bytes <= 0 or max_stdout_bytes <= 0 or max_stderr_bytes <= 0:
         raise ValueError("limits must be positive")
+
+    if max_sampled_tree_rss_bytes is not None:
+        if max_sampled_tree_rss_bytes <= 0:
+            raise ValueError("sampled tree RSS budget must be positive")
+        if not sys.platform.startswith("linux"):
+            raise ValueError("sampled descendant-tree RSS option requires Linux")
 
     if max_job_memory_bytes is not None:
         if max_job_memory_bytes <= 0:
@@ -168,6 +192,14 @@ def supervise(
                     raise LimitExceeded(
                         "rss", f"sampled child RSS exceeded {max_sampled_rss_bytes} bytes"
                     )
+                if max_sampled_tree_rss_bytes is not None:
+                    tree_rss = sampled_linux_tree_rss(child, rss)
+                    if tree_rss > max_sampled_tree_rss_bytes:
+                        raise LimitExceeded(
+                            "rss",
+                            "sampled descendant-tree RSS sum exceeded "
+                            f"{max_sampled_tree_rss_bytes} bytes",
+                        )
                 time.sleep(min(poll_seconds, max(0.0, wall_seconds - elapsed)))
 
             status = child.wait()
@@ -209,6 +241,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--wall-seconds", type=float, default=DEFAULT_WALL_SECONDS)
     parser.add_argument("--max-sampled-rss-mib", type=int, default=DEFAULT_SAMPLED_RSS_MIB)
     parser.add_argument(
+        "--max-sampled-tree-rss-mib", type=int,
+        help="Linux only: opt-in sum of sampled direct-child/descendant RSS (MiB)",
+    )
+    parser.add_argument(
         "--max-address-space-mib", type=int,
         help="Linux only: optional RLIMIT_AS virtual address-space cap (MiB)",
     )
@@ -229,6 +265,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser.error("--wall-seconds must be > 0 and <= 600")
     if not 16 <= args.max_sampled_rss_mib <= 4096:
         parser.error("--max-sampled-rss-mib must be between 16 and 4096")
+    if args.max_sampled_tree_rss_mib is not None:
+        if not sys.platform.startswith("linux"):
+            parser.error("--max-sampled-tree-rss-mib is supported only on Linux")
+        if not 16 <= args.max_sampled_tree_rss_mib <= 4096:
+            parser.error("--max-sampled-tree-rss-mib must be between 16 and 4096")
     if args.max_address_space_mib is not None:
         if not sys.platform.startswith("linux"):
             parser.error("--max-address-space-mib is supported only on Linux")
@@ -267,6 +308,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             ),
             max_cpu_seconds=args.max_cpu_seconds,
             max_job_cpu_seconds=args.max_job_cpu_seconds,
+            max_sampled_tree_rss_bytes=(
+                args.max_sampled_tree_rss_mib * 1024 * 1024
+                if args.max_sampled_tree_rss_mib is not None else None
+            ),
         )
     except LimitExceeded as error:
         print(f"rel-watchdog: {error}", file=sys.stderr)

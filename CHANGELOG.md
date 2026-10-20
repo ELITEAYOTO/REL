@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased] — P1.5 controlled malformed export-declaration campaign
+
+- Extend the existing generated-only PE rejection/profile campaign from 13 to 21 cases with unmapped/zero export RVAs and over-budget function/name counts on both PE32 and PE32+; verify mutation bytes and source RVA mapping independently of Rust preflight.
+- Preserve expected diagnostic, nonzero status, zero partial stdout and observed wall/RSS/CPU evidence on Windows and Ubuntu. This remains synthetic preflight-focused coverage, **not** an independently licensed representative PE corpus, import-table semantic validator, arbitrary hostile-binary sandbox or completion of issue #9.
+
 ## [Unreleased] — EX-02 numeric subset verification
 
 - Extend the existing independent CLI and Draft 2020-12 JSON Schema oracle across all four `u64`-backed manifest numeric fields, with zero, `u64::MAX`, out-of-range `2^64`, integral-decimal `1.0`, negative integers, nullable RVA and rejection from either input side. No public schema change.

@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — cgroup v2 read-only capability baseline (pending CI)
+
+- Add standard-library read-only Linux cgroup v2 mount/controller preflight, with cross-platform fake-input/negative regressions and output in existing Windows/Ubuntu CI logs. Explicitly report `candidate_unverified` rather than conflating mount availability with delegated process isolation.
+- This probe never writes cgroupfs, starts a target, changes the watchdog, enables controllers, migrates a PID, or modifies public parser/schema/fixtures. Linux cgroup delegation, `memory.max`, `cpu.max`, `cgroup.kill` behavior and runner permissions still require active controlled validation in a suitable delegated environment; #9 stays open.
+- Refresh canonical checkpoint through the verified #126 merge and CI.
+
 ## [Unreleased] — controlled errors for Linux descendant RSS sampling (pending CI)
 
 - Fail explicitly as `WorkerFailed` on inaccessible/vanished tree enumeration or inaccessible descendant RSS rather than letting raw psutil exceptions bypass the watchdog's documented error path; still skip a descendant that vanishes after successful enumeration.

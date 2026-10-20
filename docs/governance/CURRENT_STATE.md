@@ -1,6 +1,6 @@
 # REL — Current state and next-chat entry
 
-**Checkpoint: 2026-10-20, after PR #125 and exact post-squash main CI.** This is a dated
+**Checkpoint: 2026-10-20, after PR #126 and exact post-squash main CI.** This is a dated
 verification, NOT a live GitHub API. Always fetch current main SHA, open PRs,
 issues and completed CI before acting. The large
 [historical handoff archive](HANDOFF_NEXT_CHAT.md) contains old snapshots;
@@ -27,6 +27,12 @@ the canonical entry point is THIS document.
    Never infer hostile-file safety from green tests.
 
 ## 1. Latest verified integration (dated checkpoint)
+
+### Verified 2026-10-20: #126 Linux RSS-tree observation failures
+
+- [PR #126](https://github.com/ELITEAYOTO/REL/pull/126) converts inaccessible Linux descendant-tree enumeration / RSS measurements to controlled `WorkerFailed`, keeping explicit handling for post-enumeration process disappearance. Unit tests and controlled live Python process injection validated incomplete observations are not silently treated as below budget.
+- Exact final PR HEAD `ef04de3abc62c199072d0449eb1c03b538eddabe` passed [Windows/Ubuntu CI #39497894534](https://github.com/ELITEAYOTO/REL/actions/runs/39497894534). Squash `36e6450bafa64515db9536ceba2b9fcd49303796` passed separate exact-main [Windows/Ubuntu CI #39498388173](https://github.com/ELITEAYOTO/REL/actions/runs/39498388173) with all 15 expected artifact names. Detailed [issue #9 evidence](https://github.com/ELITEAYOTO/REL/issues/9#issuecomment-6301652564).
+- **Next specific gate:** examine actual Linux cgroup v2 mount/controller/delegation prerequisites **without modifying the runner** before considering privileged or delegated native enforcement. Read-only reports are evidence of *availability only*, never of child isolation. Avoid assuming a writable mount is sufficient for delegation.
 
 ### Verified 2026-10-20: #125 Linux sampled descendant-tree RSS gate
 

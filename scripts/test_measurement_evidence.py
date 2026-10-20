@@ -162,6 +162,13 @@ class EvidenceGateTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unexpected corpus size"):
             build_evidence(a, b, expected_cases=11)
 
+    def test_rejects_mingw_toolchain_provenance_drift(self) -> None:
+        a, b = make_pair()
+        a["results"][0]["toolchain_version"] = "GCC 13 | GNU ld 2.42"
+        b["scenarios"][0]["toolchain_version"] = "GCC 14 | GNU ld 2.42"
+        with self.assertRaisesRegex(ValueError, "input/provenance mismatch on toolchain_version"):
+            build_evidence(a, b)
+
     def test_rejects_optional_source_hash_drift(self) -> None:
         a, b = make_pair()
         a["results"][0]["resource_sha256"] = "d" * 64

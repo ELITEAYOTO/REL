@@ -99,6 +99,7 @@ def prepare_cases(
     windows_clang_probe: Path | None = None,
     windows_msvc_structured: Path | None = None,
     windows_clang_structured: Path | None = None,
+    linux_mingw_probe: Path | None = None,
 ) -> list[CorpusCase]:
     """Create deterministic, provenance-labeled PE cases without running them."""
     # Fail before producing any overlay if the optional compiler input is invalid.
@@ -113,6 +114,20 @@ def prepare_cases(
                 raise ValueError(f"{name} probe requires the Windows corpus mode")
             if not probe.is_file():
                 raise FileNotFoundError(probe)
+
+    mingw_version = None
+    if linux_mingw_probe is not None:
+        if include_windows_executable:
+            raise ValueError("MinGW probe requires the Linux corpus mode")
+        if not linux_mingw_probe.is_file():
+            raise FileNotFoundError(linux_mingw_probe)
+        version_path = linux_mingw_probe.with_name("mingw-toolchain-version.txt")
+        version_lines = version_path.read_text(encoding="utf-8").splitlines()
+        if (len(version_lines) != 2 or
+                "gcc" not in version_lines[0].lower() or
+                not version_lines[1].startswith("GNU ld ")):
+            raise ValueError("missing or invalid MinGW compiler/linker provenance")
+        mingw_version = " | ".join(line[:256] for line in version_lines)
 
     clang_version = None
     if windows_clang_probe is not None or windows_clang_structured is not None:
@@ -166,4 +181,14 @@ def prepare_cases(
     append_structured_cases(
         cases, windows_msvc_structured, windows_clang_structured, clang_version
     )
+    if linux_mingw_probe is not None:
+        source = ROOT / "fixtures" / "probes" / "msvc_probe.c"
+        cases.append(CorpusCase(
+            "mingw-w64-x64-local-build", linux_mingw_probe,
+            "ci-built-gnu-mingw-w64-x64-pe",
+            "fixtures/probes/msvc_probe.c",
+            hashlib.sha256(source.read_bytes()).hexdigest(),
+            "built-on-ubuntu-gnu-mingw-w64-x64",
+            toolchain_version=mingw_version,
+        ))
     return cases

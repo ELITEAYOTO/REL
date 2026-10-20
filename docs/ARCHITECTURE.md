@@ -1,4 +1,4 @@
-# Architecture P1
+# REL architecture — P1 alpha and experimental pilots
 
 - `rel-contracts`: serializable, parser-independent manifest types.
 - `rel-pe`: reads untrusted PE bytes statically; no execution.
@@ -11,8 +11,8 @@
 
 ## Adopted target direction — ADR-0013 (partially implemented)
 
-P1 runtime modules are `rel-contracts`, `rel-pe`, and `rel-inspect`; EX-01 adds the **separate, experimental** `rel-observe` producer rather than coupling its output into the existing P1 CLI. REL is a general reverse-engineering research platform targeting explainable change-tracking and provenance for **authorized** binary software.
+P1 runtime modules are `rel-contracts`, `rel-pe`, and `rel-inspect`. The independently versioned **EX-01 pilot** includes `rel-observe` producers for limited DOS signature, COFF machine and section-header evidence; it does not modify the P1 manifest. The **EX-02 pilot** `rel-diff` is an existing standalone Rust CLI that consumes v1 manifest JSON as data and emits a separate experimental metadata-diff report. Its crate has no `rel-pe` or bundled Ghidra dependency. Neither pilot's full acceptance gate is complete.
 
-Next experiments **EX-01** (independent experimental observation/coverage contract) and **EX-02** (Rust metadata-only manifest diff) follow critical P1.5-A hardening and precede **P2 external Python Ghidra adapter**. P3 stays deep function matching. A hypothetical `rel-diff` must depend on stable contract data, not on `rel-pe` internals or a bundled Ghidra. No empty module shells just to realize diagrams.
+ADR-0013 sequences critical P1.5-A hardening, EX-01 and EX-02 experiments before **P2 external Python Ghidra adapter**; P3 remains deep function matching. P2/P3 are **not implemented**. REL remains a general reverse-engineering platform for authorized analysis and explainable evolution, not a manifest-only product. No empty module shells just to realize diagrams.
 
 Gates [ADR-0013](adr/ADR-0013-vision-evidence-evolution.md), [strategy](governance/STRATEGY_AND_GATES.md), [EX-01](specs/OBSERVATION_ENVELOPE_DRAFT.md), [EX-02](specs/METADATA_DIFF_PILOT.md) and [threat model](security/THREAT_MODEL_ALPHA.md). Preserve JSON manifest v1.0.0; use a new ADR for any breaking schema/API change.

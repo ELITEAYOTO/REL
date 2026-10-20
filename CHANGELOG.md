@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased] — targeted PE data-directory mutation regressions
+
+- Extend the deterministic rel-pe mutation gate with 96 single-field RVA/size changes across import, export and TLS directory entries in both unchanged, SHA-256-verified PE32/PE32+ reference fixtures. Fail when goblin panics even if REL catches the unwind as `PeError::DependencyPanic`, aligning with the existing fuzz target.
+- Test-only change: no additional corpus binaries, production parser modifications, dependencies, runtime budgets or public manifest changes. Fixed-seed coverage does not prove hostile-input safety; #8 and #9 remain open.
+
 ## [Unreleased] — direct-interpreter watchdog test workloads
 
 - Launch controlled Python resource/Job Object test children through the base interpreter, avoiding Windows venv redirectors. Require the reported interpreter PID to equal the created process PID; keep CLI integration in the caller's Python environment.

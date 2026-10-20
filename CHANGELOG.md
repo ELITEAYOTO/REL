@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased] — EX-02 numeric subset verification
+
+- Extend the existing independent CLI and Draft 2020-12 JSON Schema oracle across all four `u64`-backed manifest numeric fields, with zero, `u64::MAX`, out-of-range `2^64`, integral-decimal `1.0`, negative integers, nullable RVA and rejection from either input side. No public schema change.
+- Correct obsolete governance language: the metadata-only EX-02 pilot is integrated, but full EX-02 acceptance remains open.
+
 ## [Unreleased] — P1.5 Linux per-file native spool ceiling
 
 - Add Linux `RLIMIT_FSIZE` to the opt-in supervised analyzer, before exec, using the larger existing spool budget plus one byte and respecting any smaller inherited hard limit. Add Linux-only tests for installed kernel limits and an oversized regular-file write attempted between polling intervals.

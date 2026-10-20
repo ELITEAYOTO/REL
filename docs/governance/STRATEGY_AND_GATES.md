@@ -14,7 +14,7 @@ Plateforme **générale de reverse engineering** ; valeur cible à démontrer : 
 | P1.5-A | lecture bornée, budgets CPU/RAM/sortie, gestion des chemins et fichiers changeants, corpus légal et oracle | EN COURS — comparaison double lecture sur le même descripteur EX-01 validée, pas de snapshot ni de sandbox ([PR #59](https://github.com/ELITEAYOTO/REL/pull/59), [CI #39188909312](https://github.com/ELITEAYOTO/REL/actions/runs/39188909312)) |
 | P1.5-B | fuzz prolongé + verrouillé, limites de worker, benchmarks variés, isolation selon OS | À POURSUIVRE, pas d'affirmation de sûreté globale |
 | EX-01 | schéma/validateur, trois producteurs de métadonnées bornées et vérificateur indépendant contre les octets sources | PILOTE PARTIEL VÉRIFIÉ ; vérification ≠ authenticité ou sécurité hostile ([PR #57](https://github.com/ELITEAYOTO/REL/pull/57), [CI #39186361225](https://github.com/ELITEAYOTO/REL/actions/runs/39186361225)) |
-| EX-02 | diff v1 de métadonnées PE, Rust CLI indépendant, cas ambigus et tests golden | PAS IMPLÉMENTÉ |
+| EX-02 | diff v1 de métadonnées PE, Rust CLI indépendant, cas ambigus et tests golden | PILOTE PARTIEL INTÉGRÉ via PR #62, main CI #39305827604 ; la gate complète #15 reste OUVERTE, sans diff de fonctions. |
 | P2 | adaptateur externe Ghidra headless Python | PAS IMPLÉMENTÉ |
 | P3 | matching de fonctions et évaluation précision/rappel/abstention | PAS IMPLÉMENTÉ |
 | P4+ | historique, capacités, essais comportementaux isolés, GUI | VISION |

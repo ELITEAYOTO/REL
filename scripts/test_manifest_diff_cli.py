@@ -92,6 +92,52 @@ def inspect_real_fixture_pair(binary, inspector, directory, input_validator, out
     assert forward["imports"]["removed"] == reverse["imports"]["added"]
 
 
+
+def verify_numeric_consumer_subset(binary, directory, schema, report_schema, baseline):
+    """Schema-valid != accepted by the experimental u64-only consumer.
+
+    Evaluate all numeric paths at zero and the u64 boundary, plus nullable RVA.
+    Crucially, schema-valid out-of-range/integral-decimal forms must not emit
+    a report, no matter which manifest is invalid.
+    """
+    fields = (
+        ("size_bytes", lambda item, v: item.__setitem__("size_bytes", v)),
+        ("sections.offset", lambda item, v: item["sections"][0].__setitem__("offset", v)),
+        ("sections.size", lambda item, v: item["sections"][0].__setitem__("size", v)),
+        ("sections.virtual_address",
+         lambda item, v: item["sections"][0].__setitem__("virtual_address", v)),
+    )
+    for field, assign in fields:
+        for value in (0, (1 << 64) - 1):
+            candidate = copy.deepcopy(baseline)
+            assign(candidate, value)
+            schema.validate(candidate)
+            try:
+                accepted(binary, directory, report_schema, baseline, candidate)
+            except AssertionError as error:
+                raise AssertionError(f"{field}={value}: valid u64 rejected") from error
+        for value in (1 << 64, 1.0):
+            candidate = copy.deepcopy(baseline)
+            assign(candidate, value)
+            schema.validate(candidate)  # Valid according to Draft 2020-12.
+            for left, right in ((baseline, candidate), (candidate, baseline)):
+                try:
+                    rejected(binary, directory, left, right)
+                except AssertionError as error:
+                    raise AssertionError(
+                        f"{field}={value!r}: schema-valid unsupported value accepted"
+                    ) from error
+        candidate = copy.deepcopy(baseline)
+        assign(candidate, -1)
+        assert not schema.is_valid(candidate), f"{field}: negative must fail schema"
+        rejected(binary, directory, baseline, candidate)
+
+    nullable = copy.deepcopy(baseline)
+    nullable["sections"][0]["virtual_address"] = None
+    schema.validate(nullable)
+    accepted(binary, directory, report_schema, baseline, nullable)
+
+
 def verify(binary, inspector):
     root = Path(__file__).resolve().parents[1]
     contract = json.loads(
@@ -237,29 +283,12 @@ def verify(binary, inspector):
                     f"invalid candidate {index} was not rejected: {candidate}"
                 ) from error
 
-        # The public JSON Schema accepts mathematically integral values that
-        # the experimental Rust/u64 consumer cannot represent. Document
-        # fail-closed behavior rather than claiming total v1 equivalence.
-        within_u64 = copy.deepcopy(a)
-        within_u64["size_bytes"] = (1 << 64) - 1
-        input_validator.validate(within_u64)
-        accepted(binary, directory, output_validator, a, within_u64)
-        beyond_u64 = copy.deepcopy(a)
-        beyond_u64["size_bytes"] = 1 << 64
-        input_validator.validate(beyond_u64)
-        rejected(binary, directory, a, beyond_u64)
-        integral_float = copy.deepcopy(a)
-        integral_float["size_bytes"] = 1.0
-        input_validator.validate(integral_float)
-        rejected(binary, directory, a, integral_float)
-        beyond_offset = copy.deepcopy(a)
-        beyond_offset["sections"][0]["offset"] = 1 << 64
-        input_validator.validate(beyond_offset)
-        rejected(binary, directory, a, beyond_offset)
-        integral_rva = copy.deepcopy(a)
-        integral_rva["sections"][0]["virtual_address"] = 1.0
-        input_validator.validate(integral_rva)
-        rejected(binary, directory, a, integral_rva)
+        # Exercise the public numeric contract separately from rel-diff's
+        # deliberate narrower u64 deserialization rule on ALL four fields.
+        # Also reject on the left input, not only the right.
+        verify_numeric_consumer_subset(
+            binary, directory, input_validator, output_validator, a,
+        )
 
         # Both manifest inputs fit under 16 MiB, but their independent
         # additions/removals would exceed the 16 MiB serialized report cap.

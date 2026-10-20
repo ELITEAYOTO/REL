@@ -110,3 +110,11 @@ the test workload selection, not the production supervisor. Sampled RSS still
 observes only the direct child, and this evidence does not establish containment
 for arbitrary launchers, brokered processes or hostile workloads. The PE inputs
 remain static data and are never executed.
+
+## Windows optional aggregate user-mode job CPU budget — pending PR verification (2026-10-20)
+
+The optional `--max-job-cpu-seconds N` argument accepts `1..300` on Windows; all other platforms reject it before worker start. The watchdog uses the **existing suspended-start, verified-assignment, kill-on-close Windows Job Object**, but now supports CPU-only or CPU+memory job modes. For CPU limits, it installs `JOB_OBJECT_LIMIT_JOB_TIME` (flag `0x00000004`) and `PerJobUserTimeLimit = N * 10_000_000` in the existing `JOBOBJECT_EXTENDED_LIMIT_INFORMATION` before the child is resumed. This is the sum of **user-mode** time consumed by processes in the assigned job, checked periodically by Windows. It is not a wall-time limit or user+kernel CPU sum; a process may overshoot before the periodic check. If a job CPU limit fires, Windows normally terminates job processes; the supervisor returns an ordinary worker failure, **not** a claimed uniquely identified CPU breach. The direct-child sampled RSS and wall deadlines remain separate.
+
+Windows CI regressions are required for CPU-only successful execution, a CPU-bound controlled child terminated before its generous wall timeout, combining memory and CPU limits, and the real PE64 manifest smoke. Unix CI verifies explicit refusal of this Windows-only flag. This enhancement runs **only the REL analyzer** on static PE data; no inspected binary is executed. A job may fail closed if Windows refuses nested job assignment. The direct REL CLI is unchanged.
+
+**Residual limits:** no guarantee over kernel-mode CPU time, escaped processes, handles exported to hostile processes, aggregate disk, coherent file snapshots, true RSS caps, or full attacker-resistant isolation. Windows job CPU limits are based on [Microsoft's documented `JOBOBJECT_BASIC_LIMIT_INFORMATION`](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-jobobject_basic_limit_information), which describes `JOB_OBJECT_LIMIT_JOB_TIME` and its 100 ns time unit. Never describe this incremental P1.5-A gate as closure of issue #9.

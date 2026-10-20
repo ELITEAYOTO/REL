@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — opt-in Windows job-wide user CPU-time limit (pending exact-head CI)
+
+- Extend the existing suspended-start Windows Job Object supervisor with an optional `--max-job-cpu-seconds 1..300` switch; allow CPU-only and combined CPU+job-memory limits, retaining existing default behavior. This is native cumulative **user-mode** CPU time for associated job processes, not Linux RLIMIT_CPU, wall time, or all-kernel CPU accounting.
+- Add a controlled busy-child native termination regression, successful CPU-only/combined tests, cross-platform invalid-flag checks and real static PE64 smoke with both flags. Existing Linux process group/RLIMIT_* behavior, fixtures, parser, dependencies, JSON v1.0.0 contract and default CLI remain unchanged.
+- The Windows native check is periodic and the supervisor cannot uniquely infer a CPU-limit breach from an exit code. This is not a full hostile-input sandbox or issue #9 closure. Results require successful final PR-head and separate post-merge Windows/Ubuntu CI before considering it shipped.
+
 ## [Unreleased] — CI first-party Node.js 24 action upgrade (pending exact-head validation)
 
 - Move the three existing first-party GitHub Actions in `ci.yml`, `fuzz.yml` and manual `fuzz-long.yml` to the verified official `v6` release commit SHAs, whose `action.yml` declares `node24`; preserve permissions, trigger behavior, artifact names and CLI commands. Respond to the concrete Node.js 20 deprecation warning seen in hosted-runner CI.

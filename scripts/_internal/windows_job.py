@@ -15,6 +15,7 @@ import psutil
 
 CREATE_SUSPENDED = 0x00000004
 JOB_OBJECT_EXTENDED_LIMIT_INFORMATION_CLASS = 9
+JOB_OBJECT_LIMIT_JOB_TIME = 0x00000004
 JOB_OBJECT_LIMIT_JOB_MEMORY = 0x00000200
 JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x00002000
 PROCESS_SET_QUOTA = 0x0100
@@ -104,18 +105,34 @@ class WindowsJob:
     before any target code executes; unassignable jobs fail closed.
     """
 
-    def __init__(self, max_job_memory_bytes: int) -> None:
-        if max_job_memory_bytes <= 0:
+    def __init__(
+        self, max_job_memory_bytes: int | None = None,
+        max_job_cpu_seconds: int | None = None,
+    ) -> None:
+        if max_job_memory_bytes is None and max_job_cpu_seconds is None:
+            raise ValueError("at least one Windows Job Object limit is required")
+        if max_job_memory_bytes is not None and max_job_memory_bytes <= 0:
             raise ValueError("job memory budget must be positive")
+        if max_job_cpu_seconds is not None and not 1 <= max_job_cpu_seconds <= 300:
+            raise ValueError("job CPU-time budget must be between 1 and 300 seconds")
         self._handle = CREATE_JOB(None, None)
         if not self._handle:
             raise windows_error("CreateJobObjectW")
         try:
             limits = ExtendedLimitInformation()
-            limits.BasicLimitInformation.LimitFlags = (
-                JOB_OBJECT_LIMIT_JOB_MEMORY | JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
-            )
-            limits.JobMemoryLimit = max_job_memory_bytes
+            # The job CPU limit counts cumulative user-mode time across
+            # assigned processes (100 ns units); it is NOT wall time or
+            # user+kernel CPU time. Windows checks the budget periodically.
+            flags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+            if max_job_memory_bytes is not None:
+                flags |= JOB_OBJECT_LIMIT_JOB_MEMORY
+                limits.JobMemoryLimit = max_job_memory_bytes
+            if max_job_cpu_seconds is not None:
+                flags |= JOB_OBJECT_LIMIT_JOB_TIME
+                limits.BasicLimitInformation.PerJobUserTimeLimit = (
+                    max_job_cpu_seconds * 10_000_000
+                )
+            limits.BasicLimitInformation.LimitFlags = flags
             if not SET_JOB(
                 self._handle,
                 JOB_OBJECT_EXTENDED_LIMIT_INFORMATION_CLASS,

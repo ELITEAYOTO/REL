@@ -1,6 +1,6 @@
 # REL — Current state and next-chat entry
 
-**Checkpoint: 2026-10-20, after PR #122 and exact post-squash main CI.** This is a dated
+**Checkpoint: 2026-10-20, after PR #123 and exact post-squash main CI.** This is a dated
 verification, NOT a live GitHub API. Always fetch current main SHA, open PRs,
 issues and completed CI before acting. The large
 [historical handoff archive](HANDOFF_NEXT_CHAT.md) contains old snapshots;
@@ -27,6 +27,12 @@ the canonical entry point is THIS document.
    Never infer hostile-file safety from green tests.
 
 ## 1. Latest verified integration (dated checkpoint)
+
+### Verified 2026-10-20: #123 (CI action pinning) and live main
+
+- [PR #123](https://github.com/ELITEAYOTO/REL/pull/123) upgraded three pinned first-party GitHub Actions to official SHA-verified v6 `node24` versions, with a fail-closed workflow pin guard. Exact PR HEAD `ef131674237e3def538af7d1ee005a2f4970d177` passed [CI #39397140983](https://github.com/ELITEAYOTO/REL/actions/runs/39397140983) on Windows and Ubuntu and [bounded fuzz #39397140991](https://github.com/ELITEAYOTO/REL/actions/runs/39397140991). Its squash `b57d513e620ac78ffbf617192262712e26d8ba58` passed [separate exact-main CI #39397537980](https://github.com/ELITEAYOTO/REL/actions/runs/39397537980) on both platforms with all 15 artifact names preserved and no Node.js 20 warning in these two job logs.
+- Supply-chain governance [issue #72](https://github.com/ELITEAYOTO/REL/issues/72) was closed as `completed` following [recorded proof](https://github.com/ELITEAYOTO/REL/issues/72#issuecomment-6287445154). This is not evidence of a hermetic runner, source dependency safety, or bitwise reproducible builds.
+- **Next open acceptance gate (#9):** the optional Linux CPU limiter is per-process, and Windows Job Objects already enforce optional committed memory, but lack a configured job-wide *user-mode* CPU budget. A scoped native job limit is worth validating before treating it as an increment. Retain the partial P1.5 status and ask GitHub for live HEAD/checks before acting.
 
 ### Verified 2026-10-20: #122 after #121
 

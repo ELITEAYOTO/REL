@@ -409,6 +409,58 @@ class WatchdogTests(unittest.TestCase):
                 escaped.exists(), "descendant survived kill-on-close"
             )
 
+    @unittest.skipUnless(os.name == "nt", "Windows Job Objects only")
+    def test_windows_job_cpu_only_runs_assigned_child(self) -> None:
+        # CPU-only mode must still assign before resuming the analyzer.
+        result = python_child(
+            "print('native CPU-only job')", max_job_cpu_seconds=10
+        )
+        self.assertEqual(result.strip(), b"native CPU-only job")
+
+    @unittest.skipUnless(os.name == "nt", "Windows Job Objects only")
+    def test_windows_job_cpu_limit_terminates_busy_child(self) -> None:
+        # Set a generous wall limit: a native per-job user-CPU limit
+        # should stop this busy direct child first (not a wall timeout).
+        with self.assertRaises(WorkerFailed) as raised:
+            supervise(
+                [CONTROLLED_PYTHON, "-c", "while True: pass"],
+                wall_seconds=20,
+                max_sampled_rss_bytes=512 * 1024 * 1024,
+                max_job_cpu_seconds=1,
+            )
+        self.assertIn("analyzer exited with status", str(raised.exception))
+
+    @unittest.skipUnless(os.name == "nt", "Windows Job Objects only")
+    def test_windows_job_cpu_and_memory_limits_can_be_combined(self) -> None:
+        result = python_child(
+            "print('both limits')",
+            max_job_memory_bytes=256 * 1024 * 1024,
+            max_job_cpu_seconds=10,
+        )
+        self.assertEqual(result.strip(), b"both limits")
+
+    def test_rejects_invalid_job_cpu_budget_before_launch(self) -> None:
+        if os.name == "nt":
+            with self.assertRaisesRegex(ValueError, "between 1 and 300"):
+                python_child("print('not launched')", max_job_cpu_seconds=0)
+        else:
+            with self.assertRaisesRegex(ValueError, "requires Windows"):
+                python_child("print('not launched')", max_job_cpu_seconds=1)
+
+    @unittest.skipUnless(os.name != "nt", "Windows supports this flag")
+    def test_nonwindows_cli_rejects_job_cpu_option_before_launch(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable, str(ROOT / "scripts" / "run_bounded_inspection.py"),
+                "--binary", str(BINARY), "--input", str(ROOT / "fixtures/pe64-basic.exe"),
+                "--max-job-cpu-seconds", "10",
+            ],
+            capture_output=True, check=False, timeout=10,
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn(b"supported only on Windows", result.stderr)
+        self.assertEqual(result.stdout, b"")
+
     def test_rejects_native_job_cap_on_unsupported_platform(self) -> None:
         if os.name != "nt":
             with self.assertRaisesRegex(ValueError, "requires Windows"):
@@ -442,7 +494,10 @@ class WatchdogTests(unittest.TestCase):
         if sys.platform.startswith("linux"):
             command.extend(["--max-address-space-mib", "2048", "--max-cpu-seconds", "10"])
         if os.name == "nt":
-            command.extend(["--max-job-memory-mib", "512"])
+            command.extend([
+                "--max-job-memory-mib", "512",
+                "--max-job-cpu-seconds", "10",
+            ])
         done = subprocess.run(
             command,
             capture_output=True,

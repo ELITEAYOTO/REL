@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -114,7 +115,7 @@ if __name__ == "__main__":
             parser.error("expected compiler and linker version lines")
         result["observed_compiler_version"] = lines[0][:256]
         result["observed_linker_version"] = lines[1][:256]
-        result["runner_commit"] = __import__("os").environ.get("GITHUB_SHA")
+        result["runner_commit"] = os.environ.get("GITHUB_SHA")
         args.output.write_text(
             json.dumps({"format": "rel-p15a-ci-built-x64-oracle-v1", "case": result},
                        indent=2, sort_keys=True) + "\\n",

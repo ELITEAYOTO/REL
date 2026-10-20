@@ -1,32 +1,62 @@
 # REL — Handoff for next ChatGPT / contributor
 
-## Fresh resume checkpoint — 2026-10-20 after PR #99
+## Fresh resume checkpoint — 2026-10-20 after PR #102
 
-**Read [CURRENT_STATE.md](CURRENT_STATE.md), then fetch live GitHub state.**
-Last verified code commit for this snapshot:
-[5f412de](https://github.com/ELITEAYOTO/REL/commit/5f412de9573d806cfa43e02ed426da04331d8769).
-[Exact main Windows/Ubuntu CI #39362984158](https://github.com/ELITEAYOTO/REL/actions/runs/39362984158)
-**completed/success**, with 0 open PRs and 9 open issues when checked.
+The canonical current-oriented source is [CURRENT_STATE.md](CURRENT_STATE.md).
+This header is a **dated handoff**, not live GitHub state. On resumption,
+read [AGENTS.md](../../AGENTS.md), architecture, roadmap, frozen decisions,
+quality gates and [ADR-0013](../adr/ADR-0013-vision-evidence-evolution.md);
+then **query GitHub live** before making changes.
 
-- [#97](https://github.com/ELITEAYOTO/REL/pull/97) increased EX-02's
-  independent JSON/u64 numeric boundary regression coverage; narrow
-  [audit #67](https://github.com/ELITEAYOTO/REL/issues/67) closed while
-  full EX-02 [#15](https://github.com/ELITEAYOTO/REL/issues/15) is OPEN.
-- [#98](https://github.com/ELITEAYOTO/REL/pull/98) verified 21 temporary
-  controlled malformed PE cases, three runs per OS. Not a licensed PE
-  corpus, peak-memory guarantee or hostile-input sandbox; #9 OPEN.
-- [#99](https://github.com/ELITEAYOTO/REL/pull/99) moved the three
-  import-only support modules to `scripts/_internal/` and preserved all
-  directly invoked CLI/CI script paths. See [scripts README](../../scripts/README.md)
-  for boundaries and further-move criteria.
-- Remaining priorities: [#9](https://github.com/ELITEAYOTO/REL/issues/9)
-  licensed independent PE corpus/resource ceilings, [#8](https://github.com/ELITEAYOTO/REL/issues/8)
-  broader fuzzing; [#16](https://github.com/ELITEAYOTO/REL/issues/16)
-  requires the owner's license choice.
+**Last exact-main verification:** `a920c87a1f37171833d2b33d2104cc07515cf8fd`
+([commit](https://github.com/ELITEAYOTO/REL/commit/a920c87a1f37171833d2b33d2104cc07515cf8fd)),
+[CI #39366427190](https://github.com/ELITEAYOTO/REL/actions/runs/39366427190)
+**completed/success on Windows + Ubuntu**. At the checkpoint: **0 open PRs,
+9 open issues** (#72, #69, #68, #44, #16, #15, #14, #9, #8).
 
-**Historical checkpoint content below is not live status.** Do not edit
-accepted ADRs, old CI claims or retained regression evidence to make them
-appear newly verified.
+Recent integrations, each separately verified on its squashed `main`:
+- [#98](https://github.com/ELITEAYOTO/REL/pull/98): 21 temporary
+  synthetic malformed-PE cases, not a legally cleared representative corpus
+  ([main CI #39361179574](https://github.com/ELITEAYOTO/REL/actions/runs/39361179574)).
+- [#99](https://github.com/ELITEAYOTO/REL/pull/99): move three import-only
+  helpers to `scripts/_internal/`, preserving script/CI entrypoints and
+  avoiding an unnecessary mass move
+  ([main CI #39362984158](https://github.com/ELITEAYOTO/REL/actions/runs/39362984158)).
+- [#100](https://github.com/ELITEAYOTO/REL/pull/100): dated canonical
+  documentation reconciliation
+  ([main CI #39364083241](https://github.com/ELITEAYOTO/REL/actions/runs/39364083241)).
+- [#101](https://github.com/ELITEAYOTO/REL/pull/101): EX-02 output
+  boundary and mixed metadata profiling
+  ([main CI #39364978891](https://github.com/ELITEAYOTO/REL/actions/runs/39364978891)).
+  Metrics are runner observations, **not** RSS/CPU ceilings; #68 open.
+- [#102](https://github.com/ELITEAYOTO/REL/pull/102): captured backend
+  `DependencyPanic` is visible to libFuzzer; PE32/PE32+ fuzz copies
+  must match pinned source hashes. Exact final PR-head
+  [fuzz #39366136892](https://github.com/ELITEAYOTO/REL/actions/runs/39366136892)
+  and [Windows/Ubuntu CI #39366136881](https://github.com/ELITEAYOTO/REL/actions/runs/39366136881)
+  succeeded; the separate [new-main CI #39366427190](https://github.com/ELITEAYOTO/REL/actions/runs/39366427190)
+  succeeded. Issue #8 remains open.
+
+**Next technical priorities:** #9 — authorized license-cleared PE/DLL
+corpus, independent oracles, enforceable resource limits; #8 —
+extended coverage-guided campaigns, distinct crash triage and minimized
+regressions; #68 — resource budgets and representative workload evidence.
+#14/#15 are experimental **partial** gates. #16 (project license) needs
+owner decision. #44 is a separate future authorized offline research
+concept, **not** a mandate to alter REL or run game binaries.
+
+**Development protocol:** one concrete defect or acceptance gate per PR;
+no cosmetic reorganizations of `scripts/` and no new source file without
+clear ownership. Preserve the public `binary-manifest v1.0.0` contract.
+Never execute analyzed PE/DLL data. Require exact final-head tests,
+Windows/Ubuntu CI and applicable independent or fuzz oracles **before**
+squash; verify the **new** main CI separately. A caught dependency panic,
+clean CI or bounded fuzz smoke is not evidence of arbitrary hostile-file
+safety. Record outcomes and unknowns precisely.
+
+**The archive below is historical.** Do not turn dated observations into
+current claims or append another ever-growing snapshot for ordinary
+checkpoint maintenance.
 
 ---
 

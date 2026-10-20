@@ -29,9 +29,9 @@ The exact final-head [PR CI #39373542657](https://github.com/ELITEAYOTO/REL/acti
 
 For the 119,877-byte MinGW input, the **single observed main run** reported CLI benchmark median 0.8897 ms, profile wall median 2.4179 ms, and maximal **sampled** RSS 241,664 bytes across five runs; each had just two RSS/CPU samples. CPU readings rounded to 0.0 ms do **not** mean no CPU usage. The sampled RSS is not a real process high-water mark; these very short-lived children can allocate between polls. Do not use these data to choose a production memory/CPU threshold. The generated binary hash differed between final PR-head and postmerge runs; the runner and APT toolchain are not immutable. These are not statistical performance baselines, CPU/RSS limits, representative corpus proof or a sandbox.
 
-## Linux direct-child kernel accounting (proposed; CI pending)
+## Linux direct-child kernel accounting (integrated; scoped CI verified)
 
-The resource profiler now proposes to obtain **final per-child** Linux
+The resource profiler obtains **final per-child** Linux
 `wait4` usage after `rel-inspect` exits (without an earlier `poll` or
 `wait` reaping it). New optional report fields are
 `kernel_peak_rss_bytes` (Linux `ru_maxrss` in KiB converted to bytes)
@@ -46,8 +46,7 @@ processes. It does **not** count arbitrary descendants, enforce a kernel
 memory/CPU ceiling, or make hosted-runner results cross-machine comparable.
 The Windows profiler still reports only samples, with null native fields.
 The input PE continues to be passed as data and is **never executed**.
-Actual exact-head Windows+Ubuntu tests and new-main CI must pass before
-this increment can be considered integrated.
+**Validation:** final-head [PR CI #39375982940](https://github.com/ELITEAYOTO/REL/actions/runs/39375982940) and [branch CI #39375978891](https://github.com/ELITEAYOTO/REL/actions/runs/39375978891) passed Windows and Ubuntu after fixing the original test's incorrect second `psutil.wait()` on an already reaped Linux child. The separate [main CI #39376290685](https://github.com/ELITEAYOTO/REL/actions/runs/39376290685) passed on exact squash [7107a874](https://github.com/ELITEAYOTO/REL/commit/7107a874921a5db4efd8c9b70359efed2986dae6). Ubuntu artifacts: [resource profile #12243094366](https://github.com/ELITEAYOTO/REL/actions/runs/39376290685/artifacts/12243094366), [paired integrity #12243179169](https://github.com/ELITEAYOTO/REL/actions/runs/39376290685/artifacts/12243179169) and [benchmark #12243865013](https://github.com/ELITEAYOTO/REL/actions/runs/39376290685/artifacts/12243865013). No calibrated production threshold is claimed.
 
 ## Reproduce
 

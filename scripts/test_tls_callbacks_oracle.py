@@ -9,54 +9,18 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-from pathlib import Path
 import struct
+from pathlib import Path
 import subprocess
 import tempfile
 
 import pefile
 
+from _internal.tls_fixture import RAW_TLS, TLS_RVA, TLS_SEED_SHA256, synthesize_tls
+
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "fixtures"
-RAW_TLS = 0x600  # .rdata RVA 0x2200, raw offset 0x400
-RAW_DATA = 0x700  # .rdata RVA 0x2300
-RAW_INDEX = 0x710
-RAW_CALLBACKS = 0x720
-TLS_RVA = 0x2200
-
-
-def synthesize_tls(source: bytes, *, is_64: bool) -> tuple[bytes, int, int]:
-    """Place a valid two-callback, zero-terminated TLS table in unused .rdata."""
-    data = bytearray(source)
-    assert len(data) == 2048 and data[RAW_TLS:0x740] == bytes(0x140)
-    assert data[:2] == b"MZ"
-    nt, = struct.unpack_from("<I", data, 0x3C)
-    assert nt == 0x80 and data[nt:nt + 4] == b"PE\x00\x00"
-    optional = nt + 24
-    magic, = struct.unpack_from("<H", data, optional)
-    assert magic == (0x20B if is_64 else 0x10B)
-
-    width = 8 if is_64 else 4
-    fmt = "<Q" if is_64 else "<I"
-    base, = struct.unpack_from(fmt, data, optional + (24 if is_64 else 28))
-    assert base == (0x140000000 if is_64 else 0x400000)
-    directory_start = 112 if is_64 else 96
-    count, = struct.unpack_from("<I", data, optional + directory_start - 4)
-    assert count >= 10
-    tls_slot = optional + directory_start + 9 * 8
-    assert struct.unpack_from("<II", data, tls_slot) == (0, 0)
-
-    struct.pack_into("<II", data, tls_slot, TLS_RVA, 40 if is_64 else 24)
-    for index, rva in enumerate((0x2300, 0x2304, 0x2310, 0x2320)):
-        struct.pack_into(fmt, data, RAW_TLS + index * width, base + rva)
-    data[RAW_DATA:RAW_DATA + 4] = b"\x12\x34\x56\x78"
-    for index, rva in enumerate((0x1000, 0x1010, 0)):
-        struct.pack_into(fmt, data, RAW_CALLBACKS + index * width, base + rva if rva else 0)
-
-    return bytes(data), base, width
-
-
 def reference_check(data: bytes, base: int, width: int) -> None:
     """Use pinned pefile, independently of REL, to inspect the PE layout."""
     parsed = pefile.PE(data=data, fast_load=False)
@@ -115,6 +79,7 @@ def main() -> None:
             assert expected[name]["sha256"] == hashlib.sha256(source).hexdigest()
 
             valid, base, width = synthesize_tls(source, is_64=is_64)
+            assert hashlib.sha256(valid).hexdigest() == TLS_SEED_SHA256[name]
             reference_check(valid, base, width)
             completed = invoke_rel(binary, valid, tmp / name)
             assert completed.returncode == 0, (

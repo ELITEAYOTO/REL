@@ -1,6 +1,6 @@
 # REL — Current state and next-chat entry
 
-**Checkpoint: 2026-10-20, after PR #119 and exact post-squash main CI.** This is a dated
+**Checkpoint: 2026-10-20, after PR #121 and exact post-squash main CI.** This is a dated
 verification, NOT a live GitHub API. Always fetch current main SHA, open PRs,
 issues and completed CI before acting. The large
 [historical handoff archive](HANDOFF_NEXT_CHAT.md) contains old snapshots;
@@ -29,6 +29,17 @@ the canonical entry point is THIS document.
 ## 1. Latest verified integration (dated checkpoint)
 
 Repository: [ELITEAYOTO/REL](https://github.com/ELITEAYOTO/REL).
+### Newest exact-main checkpoint after #120 and #121 (2026-10-20)
+
+- [PR #120](https://github.com/ELITEAYOTO/REL/pull/120) merged documentation-only checkpoint update as `0001a59e7afa3f5cdb27b6a84b2c9ad3e718f7e4`; separate [new-main CI #39392555005](https://github.com/ELITEAYOTO/REL/actions/runs/39392555005) passed Windows and Ubuntu.
+- [PR #121](https://github.com/ELITEAYOTO/REL/pull/121) added a temporary, source-hash-verified PE32/PE32+ TLS callback-table oracle using independent pinned `pefile==2024.8.26`. Both valid two-callback+null static fixtures and an unmappable TLS callback-pointer mutation were checked. The checked-in PE seeds, their SHA-256 values, parser source, and public v1.0.0 manifest were unchanged. Exact PR HEAD `27f4ee0daf52afa0d49defd3b941c72f3aed1b99` passed [PR CI #39394195143](https://github.com/ELITEAYOTO/REL/actions/runs/39394195143), Windows and Ubuntu. Squash `3f796e9c3a9c3c284a9d5dfbe6907daaa3c98f7f` passed separate [main CI #39394601401](https://github.com/ELITEAYOTO/REL/actions/runs/39394601401), Windows and Ubuntu.
+- Generated derived SHA-256: PE32 `7d3c836083d26d48619115f5025f85072878eff0405b98170eebdbca7836df64`; PE32+ `37f6d6582030a951f2c63c48108947f00ea68242961939f6d31452a80b5d2629`. The inputs are synthetic derivatives and not independent externally licensed corpus coverage.
+- Scope remains controlled-input alpha. No parser correction, TLS callback reporting in the public manifest, hardware CPU/RSS containment, general hostile-input safety, independent reviewer approval or full #8/#9 acceptance is claimed.
+
+**Next meaningful acceptance gate:** extend the *actual bounded fuzz corpus*, which currently preserves only three tracked seed binaries including two with empty TLS directories, using generated (not committed) static TLS callback fixtures; measure the resulting campaign before treating it as verified. Check GitHub before treating any branch or proposed test as integrated.
+
+### Previous verified baseline through #119 (historical)
+
 As checked on **2026-10-20**, `main` was
 [`9e871093c089a463f5311831d549eab2fb517bc2`](https://github.com/ELITEAYOTO/REL/commit/9e871093c089a463f5311831d549eab2fb517bc2).
 The **separate exact-new-main**

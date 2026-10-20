@@ -1,6 +1,6 @@
 # REL — Current state and next-chat entry
 
-**Checkpoint: 2026-10-20, after PR #105 and exact post-squash main CI.** This is a dated
+**Checkpoint: 2026-10-20, after PR #107 and exact post-squash main CI.** This is a dated
 verification, NOT a live GitHub API. Always fetch current main SHA, open PRs,
 issues and completed CI before acting. The large
 [historical handoff archive](HANDOFF_NEXT_CHAT.md) contains old snapshots;
@@ -30,8 +30,8 @@ the canonical entry point is THIS document.
 
 Repository: [ELITEAYOTO/REL](https://github.com/ELITEAYOTO/REL).
 Main at this dated checkpoint:
-[6a7c354b9fc1fbd703e50538c5bd3a41ac04e010](https://github.com/ELITEAYOTO/REL/commit/6a7c354b9fc1fbd703e50538c5bd3a41ac04e010).
-[Exact post-squash main CI #39369336388](https://github.com/ELITEAYOTO/REL/actions/runs/39369336388)
+[a9f816009dd00388118771c6a1b441be4582e1e1](https://github.com/ELITEAYOTO/REL/commit/a9f816009dd00388118771c6a1b441be4582e1e1).
+[Exact post-squash main CI #39371988276](https://github.com/ELITEAYOTO/REL/actions/runs/39371988276)
 **completed/success on Windows AND Ubuntu**.
 **Open PR count: 0. Open issue count: 9** at this dated checkpoint.
 
@@ -61,6 +61,9 @@ Additional narrowly integrated follow-ups on 2026-10-20:
 
 - [PR #104](https://github.com/ELITEAYOTO/REL/pull/104) now archives the bounded libFuzzer smoke log and exact provenance on success/failure and triggers on canonical seed-verification changes. Its exact final-head [fuzz CI #39368429610](https://github.com/ELITEAYOTO/REL/actions/runs/39368429610) and [Windows/Ubuntu PR CI #39368429622](https://github.com/ELITEAYOTO/REL/actions/runs/39368429622) passed; artifact `rel-pe-fuzz-smoke-39368429610-1` exists. Squash [6298979](https://github.com/ELITEAYOTO/REL/commit/6298979f7da08f6a1835af6b03a2a804e756488a) passed separate [main CI #39368846707](https://github.com/ELITEAYOTO/REL/actions/runs/39368846707). This does **not** expand the fuzz corpus or guarantee resource limits; #8 stays OPEN.
 - [PR #105](https://github.com/ELITEAYOTO/REL/pull/105) adds a Rust serializer regression requiring all public v1 schema keys and explicit `null` for nullable `arch` and section `virtual_address`. Exact final-head [Windows/Ubuntu PR CI #39369050776](https://github.com/ELITEAYOTO/REL/actions/runs/39369050776) and separate [new-main CI #39369336388](https://github.com/ELITEAYOTO/REL/actions/runs/39369336388) passed on squash [6a7c354](https://github.com/ELITEAYOTO/REL/commit/6a7c354b9fc1fbd703e50538c5bd3a41ac04e010). No schema, runtime, dependency or behavioral change; the Python JSON Schema oracle remains the independent end-to-end validator.
+
+- [PR #106](https://github.com/ELITEAYOTO/REL/pull/106) reconciled the canonical handoff and obsolete hypothetical `rel-diff` wording; [new-main CI #39370011224](https://github.com/ELITEAYOTO/REL/actions/runs/39370011224) succeeded on Windows/Ubuntu.
+- [PR #107](https://github.com/ELITEAYOTO/REL/pull/107) reuses the controlled C source to build a GNU GCC/MinGW-w64 PE32+ x64 static sample on Ubuntu, adding a distinct compiler/linker lineage and an independent `pefile` full section-table oracle. Initial CI surfaced a COFF string-table name representation difference, handled in the **oracle**, not the parser; bounded long-name resolver has malformed-offset regressions on both OS. Exact-head [Windows/Ubuntu PR CI #39371723078](https://github.com/ELITEAYOTO/REL/actions/runs/39371723078) succeeded; squash [a9f8160](https://github.com/ELITEAYOTO/REL/commit/a9f816009dd00388118771c6a1b441be4582e1e1) passed separate [main CI #39371988276](https://github.com/ELITEAYOTO/REL/actions/runs/39371988276). JSON evidence only; redistribution `not-established`, APT/runner versions not immutable, #9 still OPEN.
 
 **Boundaries:** watchdog process-group cleanup is not a cgroup, full
 process-tree kill guarantee or aggregate CPU/RSS/disk quota. Generated PE32

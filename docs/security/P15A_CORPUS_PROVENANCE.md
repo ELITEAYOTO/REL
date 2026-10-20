@@ -2,7 +2,7 @@
 
 **Status (2026-10-20):** The controlled corpus and Windows MSVC/Clang-cl static oracles, resource/relocation probes and x86 PE32 DLL checks are integrated in CI; exact [main CI #39354165057](https://github.com/ELITEAYOTO/REL/actions/runs/39354165057) succeeded on Windows and Ubuntu. Prior scoped historical evidence includes [#39153900290](https://github.com/ELITEAYOTO/REL/actions/runs/39153900290), [#39155346166](https://github.com/ELITEAYOTO/REL/actions/runs/39155346166), [#39156574382](https://github.com/ELITEAYOTO/REL/actions/runs/39156574382) and [#39157915184](https://github.com/ELITEAYOTO/REL/actions/runs/39157915184). This is **not** a licensed or representative external PE corpus; compiled binaries are not committed and their redistribution rights are unverified.
 
-## GNU MinGW-w64 x64 PE test (proposed; validation pending)
+## GNU MinGW-w64 x64 PE test (integrated; scoped CI verified)
 
 A separate **Ubuntu-only CI trial** cross-compiles the existing
 `fixtures/probes/msvc_probe.c` source into a Windows PE32+ EXE with
@@ -13,14 +13,14 @@ representative collection. The existing script
 `scripts/check_windows_msvc_probe.py` is reused to compare REL against
 independent pinned `pefile==2024.8.26`, now including exact section
 name, raw offset, raw size and virtual address for the entire section table,
-including a bounded, independent resolution of COFF long-section names
-(`/4`, `/19`, etc.); as well as the observed GetTickCount64 import, named export,
-PE machine/magic, raw file size and SHA-256.
+using a bounded independent resolution of COFF long-section names
+(`/4`, `/19`, etc.). The oracle also verifies the observed GetTickCount64
+import, named export, PE machine/magic, raw file size and SHA-256.
 
 Separate unit regressions reject malformed COFF string-table lengths, offsets
 and missing terminators on Ubuntu and Windows; they do not establish safety
-for arbitrary hostile COFF files. CI archives only a JSON evidence record, including the exact source and
-generated binary hashes, independently observed section table,
+for arbitrary hostile COFF files. CI archives only a JSON evidence record,
+including the exact source and generated binary hashes, section table,
 compiler/linker version lines, and triggering revision; it does **not**
 upload the generated EXE. The Windows binary is **never run or loaded**.
 The existing C source and generated binary have **unestablished
@@ -31,10 +31,7 @@ versions identify the observed toolchain, not a reproducible byte-for-byte
 build guarantee. Both upstream GNU and REL are exercised only in an
 authorized controlled static-input experiment.
 
-**Validation status:** pending actual exact-PR-head Ubuntu/Windows CI and
-independent new-main CI. If the new compiler output is rejected, diagnose
-the concrete PE layout before changing parser acceptance; keep issue #9
-open for broader sources, redistribution clearance and true CPU/RSS budgets.
+**Validation status:** exact final-head [PR CI #39371723078](https://github.com/ELITEAYOTO/REL/actions/runs/39371723078) and [branch CI #39371719521](https://github.com/ELITEAYOTO/REL/actions/runs/39371719521) passed Windows/Ubuntu; the independent [new-main CI #39371988276](https://github.com/ELITEAYOTO/REL/actions/runs/39371988276) passed on squash [a9f8160](https://github.com/ELITEAYOTO/REL/commit/a9f816009dd00388118771c6a1b441be4582e1e1). Ubuntu uploaded JSON artifact `rel-mingw-x64-oracle-ubuntu` (ID 12241996223), not the binary. Keep #9 open for broader legal sources, redistribution clearance and true CPU/RSS budgets.
 
 ## PE32 x86 DLL regression (integrated; scoped CI verification)
 

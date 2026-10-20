@@ -10,10 +10,66 @@ import hashlib
 import json
 import os
 import subprocess
+import unittest
 from pathlib import Path
 
 import pefile
 
+
+
+def resolve_coff_section_name(
+    field: bytes, raw: bytes, symbol_table_offset: int, symbol_count: int,
+) -> str:
+    """Resolve /decimal section names from COFF's bounded string table.
+
+    pefile exposes the raw 8-byte section field; goblin resolves long names.
+    The independent oracle must compare the same semantic name without
+    trusting the producer's long-name offset or string-table size.
+    """
+    name = field.rstrip(b"\x00")
+    if not (name.startswith(b"/") and name[1:].isdigit()):
+        return name.decode("ascii")
+    if symbol_table_offset <= 0 or symbol_count < 0:
+        raise ValueError("missing COFF symbol table for long section name")
+    table = symbol_table_offset + symbol_count * 18
+    if table + 4 > len(raw):
+        raise ValueError("COFF string table is truncated")
+    length = int.from_bytes(raw[table:table + 4], "little")
+    offset = int(name[1:])
+    if length < 5 or table + length > len(raw) or not 4 <= offset < length:
+        raise ValueError("COFF long section offset or table length is invalid")
+    start = table + offset
+    end = table + length
+    nul = raw.find(b"\x00", start, end)
+    if nul < 0:
+        raise ValueError("COFF long section name has no terminator")
+    return raw[start:nul].decode("ascii")
+
+
+class CoffSectionNameTests(unittest.TestCase):
+    def test_short_and_valid_long_name(self) -> None:
+        name = b".debug_aranges\x00"
+        table = (len(name) + 4).to_bytes(4, "little") + name
+        raw = b"x" * 16 + table
+        self.assertEqual(resolve_coff_section_name(b".text\x00", raw, 0, 0), ".text")
+        self.assertEqual(
+            resolve_coff_section_name(b"/4\x00", raw, 16, 0),
+            ".debug_aranges",
+        )
+
+    def test_rejects_missing_or_malformed_string_table(self) -> None:
+        name = b".debug_aranges\x00"
+        raw = b"x" * 16 + (len(name) + 4).to_bytes(4, "little") + name
+        for bad_field, data, table in (
+            (b"/4", raw, 0),
+            (b"/999", raw, 16),
+            (b"/4", raw[:18], 16),
+            (b"/4", raw[:-1], 16),
+            (b"/4", raw[:16] + b"\xff\xff\xff\xff" + name, 16),
+        ):
+            with self.subTest(field=bad_field, size=len(data), table=table):
+                with self.assertRaises(ValueError):
+                    resolve_coff_section_name(bad_field, data, table, 0)
 
 def check(analyzer: Path, probe: Path, compiler_label: str = "MSVC") -> dict:
     assert probe.is_file(), f"{compiler_label} probe was not built"
@@ -25,21 +81,22 @@ def check(analyzer: Path, probe: Path, compiler_label: str = "MSVC") -> dict:
     assert independent.OPTIONAL_HEADER.Magic == 0x20B, "expected PE32+"
     independent.parse_data_directories()
 
-    section_names = {
-        s.Name.rstrip(b"\x00").decode("ascii", errors="replace")
-        for s in independent.sections
-    }
-    assert ".text" in section_names and ".rdata" in section_names, section_names
-    assert len(section_names) >= 3, section_names
+    symbols_start = int(independent.FILE_HEADER.PointerToSymbolTable)
+    symbol_count = int(independent.FILE_HEADER.NumberOfSymbols)
     reference_sections = [
         {
-            "name": entry.Name.rstrip(b"\x00").decode("ascii", errors="replace"),
+            "name": resolve_coff_section_name(
+                entry.Name, raw, symbols_start, symbol_count
+            ),
             "offset": int(entry.PointerToRawData),
             "size": int(entry.SizeOfRawData),
             "virtual_address": int(entry.VirtualAddress),
         }
         for entry in independent.sections
     ]
+    section_names = {entry["name"] for entry in reference_sections}
+    assert ".text" in section_names and ".rdata" in section_names, section_names
+    assert len(section_names) >= 3, section_names
     assert hasattr(independent, "DIRECTORY_ENTRY_IMPORT"), "probe has no imports"
     imported_symbols = {
         symbol.name.decode("ascii", errors="replace")

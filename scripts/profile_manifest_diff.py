@@ -20,6 +20,8 @@ from _internal.measurement_environment import capture_context
 
 TIMEOUT_SECONDS = 30
 POLL_SECONDS = 0.002
+MAX_REPORT_BYTES = 16 * 1024 * 1024
+MIN_NEAR_REPORT_BYTES = 15 * 1024 * 1024
 
 
 def manifest(
@@ -101,7 +103,12 @@ def profile_once(
                 stderr.seek(0)
                 raise RuntimeError(f"rel-diff failed: {stderr.read(300)!r}")
             stdout.seek(0)
-            report = json.load(stdout)
+            encoded_report = stdout.read()
+            report_bytes = len(encoded_report)
+            if report_bytes > MAX_REPORT_BYTES or not encoded_report.endswith(b"\n"):
+                raise AssertionError("unexpected report size or missing final newline")
+            report_digest = hashlib.sha256(encoded_report).hexdigest()
+            report = json.loads(encoded_report)
             if (report["left_sha256"], report["right_sha256"]) != expected:
                 raise AssertionError("diff report lost the source manifest identities")
             if report["schema_version"] != "0.1.0-experimental":
@@ -121,6 +128,8 @@ def profile_once(
                 raise AssertionError("unexpected removed export count")
     return {
         "wall_ms": round(elapsed, 4),
+        "report_bytes": report_bytes,
+        "report_sha256": report_digest,
         "sampled_peak_rss_bytes": sampled_rss,
         "last_sampled_cpu_ms": round(sampled_cpu, 4) if sampled_cpu is not None else None,
         "rss_observations": observations,
@@ -131,7 +140,13 @@ def summarize(samples: list[dict]) -> dict:
     times = sorted(item["wall_ms"] for item in samples)
     rss = [item["sampled_peak_rss_bytes"] for item in samples]
     observed = [value for value in rss if value is not None]
+    report_sizes = {item["report_bytes"] for item in samples}
+    report_digests = {item["report_sha256"] for item in samples}
+    if len(report_sizes) != 1 or len(report_digests) != 1:
+        raise AssertionError("identical inputs produced different report bytes")
     return {
+        "report_bytes": report_sizes.pop(),
+        "report_sha256": report_digests.pop(),
         "median_wall_ms": round(statistics.median(times), 4),
         "p95_wall_ms": times[max(0, math.ceil(0.95 * len(times)) - 1)],
         "max_sampled_rss_bytes": max(observed) if observed else None,
@@ -151,6 +166,7 @@ def run(binary: Path, samples: int, warmup: int) -> dict:
         "method": "release CLI subprocess; 2ms nominal RSS/CPU sampling; stdout redirected; controlled manifests",
         "limitations": [
             "Synthetic imports, exports and sections are not a real PE layout or authorized compiler build corpus.",
+            "Near-budget case increases profiling cost; run count is still small and not a performance guarantee.",
             "Polled RSS can miss transient process peaks; this is not a memory cap.",
             "Observed runner timings are not cross-platform or cross-run performance guarantees.",
         ],
@@ -170,12 +186,31 @@ def run(binary: Path, samples: int, warmup: int) -> dict:
             a, b, (mixed_count, mixed_count, mixed_count // 2,
                    mixed_count // 2, mixed_count // 2),
         ))
+        # 8192 unique strings per side, chosen to yield >15 MiB and <=16 MiB
+        # of serialized diff output. This is a RESOURCE measurement case,
+        # not a realistic PE import table.
+        near_count = 8192
+        padding = "X" * 950
+        near_a = manifest(
+            "a",
+            [f"KERNEL32.dll!A{index:05d}{padding}" for index in range(near_count)],
+        )
+        near_b = manifest(
+            "b",
+            [f"KERNEL32.dll!B{index:05d}{padding}" for index in range(near_count)],
+        )
+        cases.append((
+            "near-report-budget-8192", near_count, 0, 1,
+            near_a, near_b, (near_count, 0, 0, 0, 0),
+        ))
 
         for name, imports, exports, sections, a, b, counts in cases:
             left = root / "left.json"
             right = root / "right.json"
             payload_left = json.dumps(a).encode("utf-8")
             payload_right = json.dumps(b).encode("utf-8")
+            if max(len(payload_left), len(payload_right)) > 16 * 1024 * 1024:
+                raise AssertionError("synthetic profile input exceeds the CLI's 16 MiB cap")
             left.write_bytes(payload_left)
             right.write_bytes(payload_right)
             expected = (a["binary_sha256"], b["binary_sha256"])
@@ -184,6 +219,11 @@ def run(binary: Path, samples: int, warmup: int) -> dict:
                 value = profile_once(binary, left, right, expected, counts)
                 if i >= warmup:
                     values.append(value)
+            summary = summarize(values)
+            if name == "near-report-budget-8192" and not (
+                MIN_NEAR_REPORT_BYTES < summary["report_bytes"] <= MAX_REPORT_BYTES
+            ):
+                raise AssertionError("near-budget case did not exercise 15–16 MiB output")
             report["scenarios"].append({
                 "name": name,
                 "import_count_each": imports,
@@ -194,7 +234,7 @@ def run(binary: Path, samples: int, warmup: int) -> dict:
                 "right_input_bytes": len(payload_right),
                 "left_json_sha256": hashlib.sha256(payload_left).hexdigest(),
                 "right_json_sha256": hashlib.sha256(payload_right).hexdigest(),
-                **summarize(values),
+                **summary,
             })
     return report
 

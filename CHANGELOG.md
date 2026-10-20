@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — EX-02 near-output-cap resource observations (pending final-head CI)
+
+- Extend the existing measured `rel-diff` resource profile with one deterministic high-cardinality **accepted** report strictly greater than 15 Mio and at most 16 Mio, 8192 distinct synthetic imports on each side, while preserving the 16 Mio per-input limit.
+- Record actual report byte count and SHA-256 for all profile scenarios; reject output byte drift among same-input repetitions, add small deterministic negative unit regressions and run them in existing Windows/Ubuntu CI. This measures an accepted near-cap case rather than duplicating the already tested overflow path.
+- No parser/CLI/schema/fixture changes, no extra dependency, no PE execution, and no general allocation/RSS security claim. Refresh canonical checkpoint through verified #128 and retain experimental EX-02/#68 limitations.
+
 ## [Unreleased] — opt-in empty cgroup child creation feasibility (pending CI)
 
 - Extend the existing cross-platform cgroup-v2 capability probe with an opt-in `--check-empty-child`: attempt an unpredictable `rel-empty-<random>` directory solely beneath the caller's canonical non-root cgroup, inspect its empty `cgroup.procs`, and `rmdir` it. Refuse ambiguous/root membership or noncanonical paths; report permission denial as observed, and fail CI if an owned temporary group cannot be removed.

@@ -1,6 +1,6 @@
 # REL — Current state and next-chat entry
 
-**Checkpoint: 2026-10-20, after PR #127 and exact post-squash main CI.** This is a dated
+**Checkpoint: 2026-10-20, after PR #128 and exact post-squash main CI.** This is a dated
 verification, NOT a live GitHub API. Always fetch current main SHA, open PRs,
 issues and completed CI before acting. The large
 [historical handoff archive](HANDOFF_NEXT_CHAT.md) contains old snapshots;
@@ -27,6 +27,12 @@ the canonical entry point is THIS document.
    Never infer hostile-file safety from green tests.
 
 ## 1. Latest verified integration (dated checkpoint)
+
+### Verified 2026-10-20: #128 empty cgroup child permission gate
+
+- [PR #128](https://github.com/ELITEAYOTO/REL/pull/128) added the optional one-owned-empty-child cgroup create/read/rmdir probe with 15 total preflight tests. Ubuntu CI observed `empty_child_probe=create_denied`, `errno=13` (EACCES) despite a `rw` mount and visible CPU/memory controllers. This is **negative delegation evidence for that runner**, not evidence against cgroup v2 on delegated hosts; there was no successful child creation or enforcement test. Default probe remains read-only.
+- Exact final PR HEAD `41fa3879ed62319f37bb8803f921f48aa9753b59` passed [Windows/Ubuntu CI #39503052617](https://github.com/ELITEAYOTO/REL/actions/runs/39503052617). Squash `cdc6f7641593397befdc2128902b993492dbd074` passed separate [Windows/Ubuntu main CI #39503481985](https://github.com/ELITEAYOTO/REL/actions/runs/39503481985), with 15 established artifacts. See [issue #9 evidence](https://github.com/ELITEAYOTO/REL/issues/9#issuecomment-6302504743). No independent reviewer approval claimed.
+- **Next useful gate:** continue EX-02 resource evidence under [#68](https://github.com/ELITEAYOTO/REL/issues/68): measure accepted near-16-MiB reports' RSS/time, rather than adding an unverified cgroup backend, changing public manifest or repeating capped-output rejection tests.
 
 ### Verified 2026-10-20: #127 read-only cgroup v2 capability gate
 

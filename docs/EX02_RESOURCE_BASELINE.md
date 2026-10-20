@@ -32,3 +32,11 @@ Le fichier JSON source contient le contexte d'environnement, la date exacte de c
 - Surveiller toute régression majeure et, seulement avec des données représentatives, déterminer des budgets pertinents ; ne pas ajouter une contrainte CI aveugle basée sur ces quatre chiffres.
 
 **Statut :** baseline synthétique documentée, aucune performance de production démontrée ; [issue #68](https://github.com/ELITEAYOTO/REL/issues/68) toujours partiellement ouverte.
+
+## Extension du protocole — candidat #129 (CI finale à valider)
+
+Le profileur `scripts/profile_manifest_diff.py` mesure désormais la **taille exacte des octets de sortie JSON** (saut de ligne compris), l'empreinte SHA-256 des octets et l'identité de ces résultats entre répétitions de même entrée. Il conserve les observations de RSS échantillonné, CPU et durée avec la même provenance.
+
+Un quatrième scénario synthétique `near-report-budget-8192` contient 8 192 imports artificiels différents de chaque côté, dotés d'un remplissage déterministe de 950 caractères. La condition d'acceptation vérifie **strictement plus de 15 Mio, au plus 16 Mio** de JSON sérialisé, sans dépasser 16 Mio par manifeste d'entrée. Ce cas vise la croissance mémoire du processus `rel-diff` juste sous son plafond de rapport, plutôt que de répéter le seul test de rejet déjà validé. Aucun de ces imports ne représente une table d'import PE réaliste.
+
+Les sorties et observations individuelles sont disponibles dans les artefacts `rel-diff-resource-profile-ubuntu-latest` et `rel-diff-resource-profile-windows-latest` d'une CI finale réussie ; **aucune valeur de RSS/temps n'est affirmée dans cette note avant leur lecture**. Ces mesures sont fortement dépendantes du runner et de l'échantillonnage et ne créent pas de budget mémoire global. L'issue #68 reste ouverte.

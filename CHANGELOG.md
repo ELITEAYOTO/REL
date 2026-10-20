@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-20 — Windows direct-process resource accounting
+
+- Add owned creation-handle duplication and final native peak working set / CPU
+  to the Python resource profiler, separate from RSS/CPU samples and Linux wait4.
+- Add native Windows lifecycle/failure tests and paired-evidence tamper checks;
+  Windows CI requires complete native readings. No Rust/public contract change.
+- Measurement only; descendants and enforced budgets remain outside this scope.
+
 ## [Unreleased] — Linux direct-child high-water memory/CPU accounting
 
 - Record final `wait4` kernel peak RSS and user/system CPU for the Linux `rel-inspect` child, including executions shorter than the 2 ms polling interval. Keep sampled fields and Windows behavior unchanged; native fields are null where unsupported.

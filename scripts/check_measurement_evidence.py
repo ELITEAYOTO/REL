@@ -68,7 +68,7 @@ def validate_timing(case: dict, samples: int, name: str) -> float:
     return (ordered[-1] - ordered[0]) / statistics.median(ordered)
 
 
-def validate_resources(case: dict, samples: int, name: str) -> tuple[int, int]:
+def validate_resources(case: dict, samples: int, name: str) -> tuple[int, int, int]:
     observations = case.get("observations")
     require(isinstance(observations, list) and len(observations) == samples,
             f"{name}: resource sample count mismatch")
@@ -135,9 +135,37 @@ def validate_resources(case: dict, samples: int, name: str) -> tuple[int, int]:
     return len(rss), len(cpus), len(kernel_rss)
 
 
+def validate_windows_usage(case: dict, name: str) -> int:
+    fields = ("windows_peak_working_set_bytes", "windows_cpu_ms")
+    observations = case["observations"]  # Basic shape already validated.
+    has_fields = any(any(k in o for k in fields) for o in observations)
+    peaks, cpus = [], []
+    if has_fields:
+        for obs in observations:
+            require(all(k in obs for k in fields), f"{name}: missing Windows usage fields")
+            peak, cpu = (obs[k] for k in fields)
+            require((peak is None) == (cpu is None), f"{name}: incomplete Windows usage pair")
+            if peak is not None:
+                require(type(peak) is int and peak > 0, f"{name}: invalid Windows peak")
+                peaks.append(peak)
+                cpus.append(measured(cpu, f"{name}.windows_cpu"))
+        require(case.get("max_windows_peak_working_set_bytes") ==
+                (max(peaks) if peaks else None), f"{name}: inconsistent Windows peak maximum")
+        reported = case.get("max_windows_cpu_ms")
+        if cpus:
+            require(abs(measured(reported, f"{name}.max_windows_cpu") - max(cpus)) <= 0.00011,
+                    f"{name}: inconsistent Windows CPU maximum")
+        else:
+            require(reported is None, f"{name}: Windows CPU maximum without data")
+    else:
+        require(all("max_" + k not in case for k in fields),
+                f"{name}: Windows maximum without per-run evidence")
+    return len(peaks)
+
+
 def build_evidence(
     benchmark: dict, resource: dict, expected_cases: int | None = None, *,
-    require_kernel_usage: bool = False,
+    require_kernel_usage: bool = False, require_windows_usage: bool = False,
 ) -> dict:
     bench_env = benchmark["environment"]
     res_env = resource["environment"]
@@ -203,6 +231,15 @@ def build_evidence(
             require(res_env["os"].startswith("Linux") and
                     kernel_count == resource_samples,
                     f"{name}: missing Linux kernel usage for measured runs")
+        windows_count = validate_windows_usage(rcase, name)
+        if windows_count or require_windows_usage:
+            require(res_env["os"].startswith("Windows") and
+                    res_env.get("windows_usage_method") ==
+                    "windows-retained-handle-PeakWorkingSetSize-GetProcessTimes",
+                    f"{name}: invalid Windows accounting method/platform")
+        if require_windows_usage:
+            require(windows_count == resource_samples,
+                    f"{name}: missing Windows native usage for measured runs")
         paired.append({
             "case_id": name, "sha256": digest,
             "benchmark_relative_wall_spread": round(spread, 6),
@@ -211,6 +248,8 @@ def build_evidence(
             "resource_runs": resource_samples,
             "rss_observation_incomplete": rss_count < resource_samples,
             "cpu_observation_incomplete": cpu_count < resource_samples,
+            "windows_usage_runs": windows_count,
+            "windows_usage_incomplete": windows_count < resource_samples,
             "kernel_usage_runs": kernel_count,
             "kernel_usage_incomplete": kernel_count < resource_samples,
         })
@@ -234,6 +273,7 @@ def main() -> None:
     parser.add_argument("--resources", required=True, type=Path)
     parser.add_argument("--expected-cases", required=True, type=int)
     parser.add_argument("--require-kernel-usage", action="store_true")
+    parser.add_argument("--require-windows-usage", action="store_true")
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
     if not 1 <= args.expected_cases <= 1000:
@@ -244,6 +284,7 @@ def main() -> None:
         result = build_evidence(
             benchmark, resources, args.expected_cases,
             require_kernel_usage=args.require_kernel_usage,
+            require_windows_usage=args.require_windows_usage,
         )
         payload = json.dumps(result, indent=2, allow_nan=False) + "\n"
         with args.output.open("x", encoding="utf-8") as output:

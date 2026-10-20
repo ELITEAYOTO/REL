@@ -29,6 +29,8 @@ commands**:
 
 - `corpus_cases.py`: hash-checked synthetic fixture inventory and provenance
 - `measurement_environment.py`: hardware/runner context for reported metrics
+- `windows_process_usage.py`: retained creation-handle peak working set/final CPU
+  accounting for the direct analyzer process on Windows
 - `windows_job.py`: opt-in Windows Job Object support for the watchdog
 
 The entrypoints import these as `from _internal.<module> import ...`. The

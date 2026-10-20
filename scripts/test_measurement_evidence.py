@@ -214,6 +214,60 @@ class EvidenceGateTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "missing Linux kernel usage"):
             build_evidence(a, b, require_kernel_usage=True)
 
+    def windows_pair(self):
+        a, b = make_pair()
+        for env in (a["environment"], b["environment"]):
+            env["os"] = "Windows-example"
+            env["measurement_context"]["platform"] = env["os"]
+            env["measurement_context_sha256"] = fingerprint(env["measurement_context"])
+        b["environment"]["windows_usage_method"] = (
+            "windows-retained-handle-PeakWorkingSetSize-GetProcessTimes")
+        case = b["scenarios"][0]
+        for obs in case["observations"]:
+            obs["windows_peak_working_set_bytes"] = 8_000_000
+            obs["windows_cpu_ms"] = 3.5
+        case["max_windows_peak_working_set_bytes"] = 8_000_000
+        case["max_windows_cpu_ms"] = 3.5
+        return a, b
+
+    def test_windows_native_usage_independent_of_sampling(self):
+        a, b = self.windows_pair()
+        case = build_evidence(a, b, require_windows_usage=True)["cases"][0]
+        self.assertEqual(case["windows_usage_runs"], 3)
+        self.assertFalse(case["windows_usage_incomplete"])
+        self.assertTrue(case["rss_observation_incomplete"])
+
+    def test_windows_native_evidence_rejects_tampering(self):
+        mutations = (
+            lambda c: c.update(max_windows_peak_working_set_bytes=9),
+            lambda c: c.update(max_windows_cpu_ms=99),
+            lambda c: c["observations"][0].pop("windows_cpu_ms"),
+            lambda c: c["observations"][0].update(windows_cpu_ms=None),
+            lambda c: c["observations"][0].update(windows_cpu_ms=float("nan")),
+            lambda c: c["observations"][0].update(windows_cpu_ms=-1),
+            lambda c: c["observations"][0].update(windows_peak_working_set_bytes=True),
+            lambda c: c["observations"][0].update(windows_peak_working_set_bytes=0),
+        )
+        for mutation in mutations:
+            a, b = self.windows_pair()
+            mutation(b["scenarios"][0])
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                build_evidence(a, b, require_windows_usage=True)
+
+    def test_windows_method_and_required_coverage_fail_closed(self):
+        a, b = self.windows_pair()
+        b["environment"]["windows_usage_method"] = "sampled"
+        with self.assertRaisesRegex(ValueError, "method/platform"):
+            build_evidence(a, b)
+        a, b = self.windows_pair()
+        b["scenarios"][0]["observations"][0].update(
+            windows_peak_working_set_bytes=None, windows_cpu_ms=None)
+        with self.assertRaisesRegex(ValueError, "missing Windows native"):
+            build_evidence(a, b, require_windows_usage=True)
+        a, b = make_pair()
+        with self.assertRaises(ValueError):
+            build_evidence(a, b, require_windows_usage=True)
+
     @unittest.skipUnless(sys.platform == "linux", "Linux wait4 resource accounting only")
     def test_linux_wait4_reaps_short_lived_children_with_kernel_peaks(self) -> None:
         for code, expected in (

@@ -46,6 +46,8 @@ jobs:
         run: python scripts/test_measurement_environment.py
       - name: Paired measurement evidence unit regressions
         run: python scripts/test_measurement_evidence.py
+      - name: Native Windows retained-handle accounting regressions
+        run: python scripts/test_windows_process_usage.py
       - name: Independent measurement campaign comparison regressions
         run: python scripts/test_measurement_campaigns.py
       - name: Pinned JSON Schema validator and dependency versions
@@ -277,7 +279,7 @@ jobs:
         run: python scripts/profile_resources.py --binary target/release/rel-inspect --samples 5 --warmup 1 --linux-mingw-probe compiler-probes/rel-mingw-x64-probe.exe --output rel-resources.json
       - name: Validate paired measurement integrity and sampling coverage (Windows)
         if: runner.os == 'Windows'
-        run: python scripts/check_measurement_evidence.py --benchmark rel-benchmark.json --resources rel-resources.json --expected-cases 11 --output rel-measurement-evidence.json
+        run: python scripts/check_measurement_evidence.py --benchmark rel-benchmark.json --resources rel-resources.json --expected-cases 11 --require-windows-usage --output rel-measurement-evidence.json
       - name: Validate paired measurement integrity and sampling coverage (Linux)
         if: runner.os == 'Linux'
         run: python scripts/check_measurement_evidence.py --benchmark rel-benchmark.json --resources rel-resources.json --expected-cases 7 --require-kernel-usage --output rel-measurement-evidence.json

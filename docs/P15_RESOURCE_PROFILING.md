@@ -93,7 +93,7 @@ python scripts/test_measurement_evidence.py
 python scripts/check_measurement_evidence.py --benchmark rel-benchmark.json --resources rel-resources.json --expected-cases 7 --require-kernel-usage --output rel-measurement-evidence.json
 ```
 
-For Windows use `--expected-cases 11`. Both platforms upload `rel-measurement-evidence.json` as an additional artifact; CI passed [Windows/Linux CI #39158995252](https://github.com/ELITEAYOTO/REL/actions/runs/39158995252) and [CI #39158999274](https://github.com/ELITEAYOTO/REL/actions/runs/39158999274) at the documented PR scope. These early PR-scope runs are historical evidence; the later [main Windows/Ubuntu CI #39354165057](https://github.com/ELITEAYOTO/REL/actions/runs/39354165057) passed with the paired-evidence validator enabled. The `rel-measurement-evidence-v1` contract is **only a Python QA observation artifact**, not a new REL native binary-manifest schema. It includes per-case `benchmark_relative_wall_spread`, RSS/CPU observed run counts and explicit missing-sample flags. Resource sampling missed during short child lifetimes must remain **missing**, never silently become zero.
+For Windows use `--expected-cases 11 --require-windows-usage`. Both platforms upload `rel-measurement-evidence.json` as an additional artifact; CI passed [Windows/Linux CI #39158995252](https://github.com/ELITEAYOTO/REL/actions/runs/39158995252) and [CI #39158999274](https://github.com/ELITEAYOTO/REL/actions/runs/39158999274) at the documented PR scope. These early PR-scope runs are historical evidence; the later [main Windows/Ubuntu CI #39354165057](https://github.com/ELITEAYOTO/REL/actions/runs/39354165057) passed with the paired-evidence validator enabled. The `rel-measurement-evidence-v1` contract is **only a Python QA observation artifact**, not a new REL native binary-manifest schema. It includes per-case `benchmark_relative_wall_spread`, RSS/CPU observed run counts and explicit missing-sample flags. Resource sampling missed during short child lifetimes must remain **missing**, never silently become zero.
 
 Passing these checks only establishes *internal integrity of paired reports from one hosted runner job*. They do **not** calibrate CPU/RAM budgets, quantify true peak RSS, certify final CPU totals, ensure reproducibility across runner images, compare different CPUs fairly or create a sandbox. In particular, spread within five timing samples is descriptive, not a statistically validated performance regression threshold. Fixed-hardware repeated independent runs and licensed structurally diverse PEs remain open.
 
@@ -112,3 +112,41 @@ An exact same-job match improves provenance of **paired** existing data, not com
 A separate offline `scripts/compare_measurement_campaigns.py` consumes **two complete** per-OS benchmark+resource pairs, validates each with the paired-evidence gate, then compares their source and host/toolchain provenance. It excludes only the unique GitHub run ID and attempt from cross-campaign hardware-context equality; those identities must nevertheless be recorded and distinct. It does not compare RSS/CPU maxima, infer repeatability or execute binaries.
 
 For the full CLI, exit-status, limitations and strict abstention cases see [cross-campaign comparison](P15_CROSS_RUN_COMPARISON.md). CI tests synthetic examples only; a future fixed-machine and licensed-corpus study is needed for measured CPU/RAM budgets.
+
+## Windows direct-process native accounting (2026-10-20 increment)
+
+The profiler duplicates CPython Windows `Popen._handle` with `DuplicateHandle`
+(non-inheritable, same access) and owns that duplicate until final accounting.
+It never reopens a PID, so rapid exit or PID reuse cannot select a different
+process. Missing creation handles, duplication/query errors and zero peak
+working set abort the run instead of silently inventing zero measurements.
+The duplicate is closed on success, timeout and query/manifest errors.
+
+After observing termination, `K32GetProcessMemoryInfo` reads the lifetime
+`PeakWorkingSetSize` in bytes, while `GetProcessTimes` adds kernel and user
+FILETIME durations and converts 100 ns ticks to milliseconds. Separate fields
+`windows_peak_working_set_bytes` / `windows_cpu_ms` and their `max_` aggregates
+retain these results; `windows_usage_method` identifies this method. Existing
+sampled fields and Linux `wait4` fields retain their meanings. Linux emits null
+Windows metrics; historical reports without the new fields remain readable.
+
+Windows CI requires `--require-windows-usage` on all eleven cases/five measured
+runs, checking paired fields, finite nonnegative CPU, positive integer working
+set peaks, aggregates, method/platform and completeness. Native tests cover
+allocation/release, immediate exit, success/nonzero exit, original handle
+closure, still-running/closed handles and failed WinAPI calls; the real analyzer
+is also profiled with psutil RSS sampling deliberately denied. Only the trusted
+REL analyzer and controlled Python test interpreter execute; inspected PEs do not.
+
+**Limits:** working set includes shared and private resident pages, not total
+allocated/committed memory, and is not directly interchangeable with Linux
+`ru_maxrss`. This is direct-process accounting only: wrappers and descendants
+are excluded. CPU can round to zero for very short runs; it is not wall time.
+The implementation depends on CPython's private Windows creation-handle member
+and fails closed if unavailable. This is measurement, not a RAM/CPU ceiling,
+process-tree sandbox or completion of issue #9. Local native tests ran on
+Windows 10 build 19045; hosted exact-head Windows/Ubuntu CI is the merge gate.
+
+API references: [GetProcessMemoryInfo](https://learn.microsoft.com/en-us/windows/win32/api/psapi/nf-psapi-getprocessmemoryinfo),
+[GetProcessTimes](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes),
+[DuplicateHandle](https://learn.microsoft.com/en-us/windows/win32/api/handleapi/nf-handleapi-duplicatehandle).

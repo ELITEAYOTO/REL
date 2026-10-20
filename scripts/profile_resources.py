@@ -18,12 +18,15 @@ from pathlib import Path
 import psutil
 from _internal.corpus_cases import ROOT, prepare_cases
 from _internal.measurement_environment import capture_context
+if sys.platform == "win32":
+    from _internal.windows_process_usage import WindowsProcessUsage, METHOD
+
 TIMEOUT_SECONDS = 30
 POLL_SECONDS = 0.002
 
 
 def poll_child_with_usage(process: psutil.Popen) -> tuple[int | None, int | None, float | None]:
-    """Reap Linux direct child with final kernel usage; retain Windows polling."""
+    """Reap Linux direct child with final kernel usage; Windows accounting is separate."""
     if sys.platform != "linux":
         return process.poll(), None, None
     pid, status, usage = os.wait4(process.pid, os.WNOHANG)
@@ -47,6 +50,8 @@ def profile_once(binary: Path, fixture: Path) -> dict:
     kernel_peak_rss: int | None = None
     kernel_cpu_ms: float | None = None
     samples = 0
+    windows_peak = windows_cpu = None
+    native = None
 
     with tempfile.TemporaryFile(mode="w+t", encoding="utf-8") as stdout:
         with tempfile.TemporaryFile(mode="w+t", encoding="utf-8") as stderr:
@@ -56,6 +61,8 @@ def profile_once(binary: Path, fixture: Path) -> dict:
                 stderr=stderr,
             )
             try:
+                if sys.platform == "win32":
+                    native = WindowsProcessUsage(process)
                 while True:
                     if time.perf_counter() - started > TIMEOUT_SECONDS:
                         raise TimeoutError(f"REL CLI exceeded {TIMEOUT_SECONDS}s")
@@ -72,11 +79,16 @@ def profile_once(binary: Path, fixture: Path) -> dict:
                     if status is not None:
                         break
                     time.sleep(POLL_SECONDS)
+                if native is not None:
+                    windows_peak, windows_cpu = native.final()
             except BaseException:
                 if process.poll() is None:
                     process.kill()
                 process.wait()
                 raise
+            finally:
+                if native is not None:
+                    native.close()
             wall_ms = (time.perf_counter() - started) * 1000
             stdout.seek(0)
             stderr.seek(0)
@@ -95,6 +107,8 @@ def profile_once(binary: Path, fixture: Path) -> dict:
         "resource_samples": samples,
         "kernel_peak_rss_bytes": kernel_peak_rss,
         "kernel_cpu_ms": kernel_cpu_ms,
+        "windows_peak_working_set_bytes": windows_peak,
+        "windows_cpu_ms": windows_cpu,
     }
 
 
@@ -114,6 +128,12 @@ def summarize(values: list[dict]) -> dict:
         "max_last_sampled_cpu_ms": max(observed_cpu) if observed_cpu else None,
         "max_kernel_peak_rss_bytes": max(kernel_rss) if kernel_rss else None,
         "max_kernel_cpu_ms": max(kernel_cpu) if kernel_cpu else None,
+        "max_windows_peak_working_set_bytes": max(
+            (v["windows_peak_working_set_bytes"] for v in values
+             if v["windows_peak_working_set_bytes"] is not None), default=None),
+        "max_windows_cpu_ms": max(
+            (v["windows_cpu_ms"] for v in values
+             if v["windows_cpu_ms"] is not None), default=None),
         "observations": values,
     }
 
@@ -143,6 +163,7 @@ def run(
             "linux-wait4-ru_maxrss-and-ru_utime-ru_stime"
             if sys.platform == "linux" else None
         ),
+        "windows_usage_method": METHOD if sys.platform == "win32" else None,
         "poll_interval_ms_nominal": POLL_SECONDS * 1000,
         "timeout_seconds": TIMEOUT_SECONDS,
         "warmup": warmup,

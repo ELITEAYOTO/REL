@@ -121,6 +121,20 @@ jobs:
       - name: Independent structured Clang-cl PE resource/relocation oracle
         if: runner.os == 'Windows'
         run: python scripts/check_windows_structured_probe.py --binary target/release/rel-inspect.exe --probe compiler-probes/rel-clang-structured.exe --compiler-label Clang-cl
+      - name: Build controlled MSVC and Clang-cl x86 DLLs (Windows; never execute)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: call scripts\\build_windows_x86_dll_probes.cmd
+      - name: Independent compiler-built PE32 DLL oracle (Windows)
+        if: runner.os == 'Windows'
+        run: python scripts/check_windows_x86_dll_probes.py --binary target/release/rel-inspect.exe --msvc-dll compiler-probes/rel-msvc-x86-probe.dll --clang-dll compiler-probes/rel-clang-x86-probe.dll --output rel-x86-dll-oracle.json
+      - name: Upload controlled PE32 DLL oracle evidence (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: rel-pe32-dll-oracle-windows
+          path: rel-x86-dll-oracle.json
+          if-no-files-found: error
       - name: Build source-defined EX-02 A/B PE variants (Windows; never execute)
         if: runner.os == 'Windows'
         shell: cmd

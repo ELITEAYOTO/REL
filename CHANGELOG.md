@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased] — 2026-10-20 static PE32 DLL CI regression (candidate)
+
+- Compile two x86 PE32 DLL cases on the Windows runner using MSVC and
+  Clang-cl, from a small tracked C source. Run a separate pinned `pefile`
+  oracle for PE type, I386 machine, imports, exports, sections and comparison
+  against the REL static analyzer's hash and manifest; capture JSON evidence.
+- No binaries added to git, no executable/DLL loaded by CI, no license grant
+  or claim of externally redistributable representative corpus. Issue #9 and
+  source licensing #16 remain open; validate the exact PR SHA before merge.
+
 ## [Unreleased] — 2026-10-20 Linux watchdog descendant cleanup (candidate)
 
 - The optional Linux inspection supervisor now creates a dedicated process session

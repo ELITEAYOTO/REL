@@ -2,6 +2,26 @@
 
 **Status:** MSVC corpus increment integrated with successful post-merge [main CI #39155754738](https://github.com/ELITEAYOTO/REL/actions/runs/39155754738). Clang-cl frontend extension passed [Windows/Linux CI #39156574382](https://github.com/ELITEAYOTO/REL/actions/runs/39156574382) and [CI #39156578707](https://github.com/ELITEAYOTO/REL/actions/runs/39156578707) at the implementation/docs head; post-merge main CI must still be checked. The earlier MSVC PE oracle, case inventory and profilers passed [Windows/Linux CI #39155346166](https://github.com/ELITEAYOTO/REL/actions/runs/39155346166) and [CI #39155351313](https://github.com/ELITEAYOTO/REL/actions/runs/39155351313) on Windows/Linux; post-merge `main` CI must still be checked. Earlier inventory and measurement gates were verified by [Windows/Linux CI #39153900290](https://github.com/ELITEAYOTO/REL/actions/runs/39153900290) and [CI #39153927673](https://github.com/ELITEAYOTO/REL/actions/runs/39153927673); post-merge `main` CI must still be verified. This is a controlled measurement corpus, not a licensed or representative public binary collection. No new third-party executables are committed.
 
+## Candidate PE32 x86 DLL regression (PR under validation, not integrated)
+
+The Windows hosted job builds two PE32 **DLL** samples from the newly tracked
+`fixtures/probes/x86_dll_probe.c` source, once with the x86 MSVC toolchain
+and once with Clang-cl targeting `i686-pc-windows-msvc`. Generated DLLs are
+ignored ephemeral CI build outputs. Neither DLL is loaded or executed.
+The independent pinned `pefile==2024.8.26` oracle checks I386 machine,
+PE32 optional header, DLL bit, nonempty sections, `GetTickCount64` import,
+and the named `rel_dll_probe_transform` export. It compares the analyzer's
+manifest architecture, exact SHA-256, byte length, sections and expected
+imports/exports; the job uploads a JSON record with source and file hashes.
+Compilation and independent oracle outcomes are **pending CI** until a
+matching exact-head Windows run succeeds; Ubuntu skips DLL compilation.
+
+The new tracked source and generated DLLs have **no established redistribution
+rights**. This is useful controlled, local-only bitness/type/compiler coverage,
+not a cleared redistributable PE corpus. MSVC and Clang-cl can share SDK,
+linker and CRT; recorded hashes can vary with hosted toolchain/image changes.
+No source-license decision is made here; issues #9 and #16 remain open.
+
 ## Sources and rights
 
 | Case | Generation / validation | Redistribution |

@@ -1,6 +1,6 @@
 # REL — Current state and next-chat entry
 
-**Checkpoint: 2026-10-20, after PR #92 and exact post-squash main CI.** This is a dated
+**Checkpoint: 2026-10-20, after PR #95 and exact post-squash main CI.** This is a dated
 verification, NOT a live GitHub API. Always fetch current main SHA, open PRs,
 issues and completed CI before acting. The large
 [historical handoff archive](HANDOFF_NEXT_CHAT.md) contains old snapshots;
@@ -30,17 +30,22 @@ the canonical entry point is THIS document.
 
 Repository: [ELITEAYOTO/REL](https://github.com/ELITEAYOTO/REL).
 Main at this dated checkpoint:
-[ce6c4e057bdb07806082169d6b3a49f721a7686e](https://github.com/ELITEAYOTO/REL/commit/ce6c4e057bdb07806082169d6b3a49f721a7686e).
-[Exact post-squash main CI #39353437460](https://github.com/ELITEAYOTO/REL/actions/runs/39353437460)
+[05faa43afd8e6258e192007cdffe9ad9f3913c77](https://github.com/ELITEAYOTO/REL/commit/05faa43afd8e6258e192007cdffe9ad9f3913c77).
+[Exact post-squash main CI #39357415523](https://github.com/ELITEAYOTO/REL/actions/runs/39357415523)
 **completed/success on Windows AND Ubuntu**.
 **Open PR count: 0. Open issue count: 10** at this dated checkpoint.
 
-Two new scoped, integrated partial gates (issue #9 remains OPEN):
+Selected scoped, integrated partial gates (issue #9 remains OPEN):
 
 | Work | Exact-head validation | Squashed main validation |
 | --- | --- | --- |
 | [PR #91](https://github.com/ELITEAYOTO/REL/pull/91): optional Linux watchdog starts a dedicated process group, cleans ordinary descendants on failure/normal exit; two Linux regressions | [PR CI #39351908549](https://github.com/ELITEAYOTO/REL/actions/runs/39351908549) and [branch #39351884313](https://github.com/ELITEAYOTO/REL/actions/runs/39351884313), both Windows/Ubuntu success on d695fe3 | [24ef315](https://github.com/ELITEAYOTO/REL/commit/24ef31545685377a34c179754c726eae2cde82d7), [CI #39352685559](https://github.com/ELITEAYOTO/REL/actions/runs/39352685559) success |
 | [PR #92](https://github.com/ELITEAYOTO/REL/pull/92): two Windows-runner-built x86 PE32 DLL inputs (MSVC/Clang-cl) inspected by pinned independent pefile; evidence JSON uploaded | [PR CI #39353143656](https://github.com/ELITEAYOTO/REL/actions/runs/39353143656) and [branch #39353113893](https://github.com/ELITEAYOTO/REL/actions/runs/39353113893), both Windows/Ubuntu success on eda2468 | [ce6c4e0](https://github.com/ELITEAYOTO/REL/commit/ce6c4e057bdb07806082169d6b3a49f721a7686e), [CI #39353437460](https://github.com/ELITEAYOTO/REL/actions/runs/39353437460) success |
+
+More recent scoped integrations, verified on the exact new main SHA:
+
+- [PR #94](https://github.com/ELITEAYOTO/REL/pull/94): tracked local Markdown path checking in Windows/Ubuntu CI, with negative regressions and current-document status corrections; [post-squash CI #39356181149](https://github.com/ELITEAYOTO/REL/actions/runs/39356181149) passed. This gate does not prove every document is current or discover unreferenced/obsolete source files.
+- [PR #95](https://github.com/ELITEAYOTO/REL/pull/95): Linux opt-in supervisor installs a per-file `RLIMIT_FSIZE` ceiling in its analyzer child before exec. Kernel-limit and burst/EFBIG regressions passed exact-head [CI #39357101394](https://github.com/ELITEAYOTO/REL/actions/runs/39357101394) and post-squash [main CI #39357415523](https://github.com/ELITEAYOTO/REL/actions/runs/39357415523), both Windows/Ubuntu. This is **not** an aggregate disk quota or hostile-process sandbox.
 
 **Boundaries:** watchdog process-group cleanup is not a cgroup, full
 process-tree kill guarantee or aggregate CPU/RSS/disk quota. Generated PE32

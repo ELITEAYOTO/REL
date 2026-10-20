@@ -33,6 +33,19 @@ git diff --exit-code -- fuzz/Cargo.lock
 
 ## CI gate and limitations
 
+The short 30-second smoke now captures the complete libFuzzer console log and
+per-run provenance (actual checkout commit, run/attempt IDs, pinned compiler,
+fuzz flags and SHA-256 seed inventory) in an always-uploaded
+`rel-pe-fuzz-smoke-<run>-<attempt>` artifact, including failing runs.
+The existing failing-input directory is retained alongside the log.
+A failing command stays failing through Bash `pipefail`; uploading evidence
+does not make a failed campaign pass. Changes to the two canonical PE
+fixtures, their expected hashes and shared seed integrity code also trigger
+the smoke on PRs. This improves **triage provenance only**: it does not add
+new seed diversity, coverage guarantees, hard resource limits, or automatic
+crash minimization. Confirm the exact PR-head fuzz workflow result before
+treating this increment as verified.
+
 `.github/workflows/fuzz.yml` runs when the parser or fuzz harness changes and on manual dispatch, with a 20-minute job timeout and approximately 30 seconds of mutation after compilation. On failure, the workflow attempts to upload `fuzz/artifacts`; minimization and classification of crashes are manual follow-up steps. The smoke workflow now checks `cargo metadata --locked` before instrumented compilation and detects post-run `fuzz/Cargo.lock` drift; `cargo-fuzz 0.13.2` does not expose a direct `--locked` subcommand option. A successful run must have an identifiable commit and run ID recorded before this is considered verified.
 
 This is a **bounded smoke fuzz**. Even a green job does not establish an absence of crashes, hangs or exploitable vulnerabilities. A broad multi-hour corpus campaign, coverage tracking, independent oracle and minimized crash registry remain separate acceptance tasks.

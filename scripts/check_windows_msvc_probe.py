@@ -33,7 +33,7 @@ def check(analyzer: Path, probe: Path, compiler_label: str = "MSVC") -> dict:
     assert len(section_names) >= 3, section_names
     reference_sections = [
         {
-            "name": entry.Name.rstrip(b"\\x00").decode("ascii", errors="replace"),
+            "name": entry.Name.rstrip(b"\x00").decode("ascii", errors="replace"),
             "offset": int(entry.PointerToRawData),
             "size": int(entry.SizeOfRawData),
             "virtual_address": int(entry.VirtualAddress),
@@ -118,6 +118,6 @@ if __name__ == "__main__":
         result["runner_commit"] = os.environ.get("GITHUB_SHA")
         args.output.write_text(
             json.dumps({"format": "rel-p15a-ci-built-x64-oracle-v1", "case": result},
-                       indent=2, sort_keys=True) + "\\n",
+                       indent=2, sort_keys=True) + "\n",
             encoding="utf-8",
         )

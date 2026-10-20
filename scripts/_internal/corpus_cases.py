@@ -7,7 +7,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 FIXTURE_NAMES = ("pe32-basic.exe", "pe64-basic.exe")
 OVERLAY_SIZES = (1024 * 1024, 4 * 1024 * 1024)
 REDISTRIBUTION_STATUS = "not-established"

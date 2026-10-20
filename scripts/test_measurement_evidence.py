@@ -8,7 +8,7 @@ import statistics
 import unittest
 
 from check_measurement_evidence import build_evidence
-from measurement_environment import fingerprint
+from _internal.measurement_environment import fingerprint
 
 
 def make_pair() -> tuple[dict, dict]:

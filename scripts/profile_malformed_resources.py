@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import psutil
-from corpus_cases import ROOT, load_verified_seeds
+from _internal.corpus_cases import ROOT, load_verified_seeds
 
 WALL_SECONDS = 20
 POLL_SECONDS = 0.002

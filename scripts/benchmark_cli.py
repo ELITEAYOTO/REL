@@ -16,8 +16,8 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-from corpus_cases import ROOT, prepare_cases
-from measurement_environment import capture_context
+from _internal.corpus_cases import ROOT, prepare_cases
+from _internal.measurement_environment import capture_context
 
 
 def measure(binary: Path, target: Path, count: int, warmup: int) -> dict:

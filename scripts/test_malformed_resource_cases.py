@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from corpus_cases import ROOT, load_verified_seeds
+from _internal.corpus_cases import ROOT, load_verified_seeds
 from profile_malformed_resources import (cases_from_verified_sources,
                                          verified_export_header_offset)
 

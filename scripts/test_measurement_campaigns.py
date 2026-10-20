@@ -8,7 +8,7 @@ import statistics
 import unittest
 
 from compare_measurement_campaigns import compare_campaigns
-from measurement_environment import fingerprint
+from _internal.measurement_environment import fingerprint
 from test_measurement_evidence import make_pair
 
 

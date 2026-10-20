@@ -16,8 +16,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import psutil
-from corpus_cases import ROOT, prepare_cases
-from measurement_environment import capture_context
+from _internal.corpus_cases import ROOT, prepare_cases
+from _internal.measurement_environment import capture_context
 TIMEOUT_SECONDS = 30
 POLL_SECONDS = 0.002
 

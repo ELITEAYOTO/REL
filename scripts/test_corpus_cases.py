@@ -22,6 +22,15 @@ class CorpusCaseTests(unittest.TestCase):
             self.assertEqual(hashlib.sha256(data).hexdigest(), digest)
             self.assertTrue(name.endswith(".exe"))
 
+    def test_fuzzer_seed_copies_match_pinned_synthetic_fixtures(self) -> None:
+        """Fuzz corpus seeds cannot silently drift from the checked originals."""
+        for name, seed, digest in load_verified_seeds(ROOT / "fixtures"):
+            with self.subTest(name=name):
+                fuzzer_copy = ROOT / "fuzz" / "corpus" / "pe_inspect" / name
+                copied = fuzzer_copy.read_bytes()
+                self.assertEqual(copied, seed)
+                self.assertEqual(hashlib.sha256(copied).hexdigest(), digest)
+
     def test_rejects_tampered_reference_seed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             copied = Path(tmp)

@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — fuzz panic visibility and seed identity
+
+- Correct the `pe_inspect` libFuzzer target to treat `PeError::DependencyPanic` as a **fuzzer failure** instead of silently ignoring it. Ordinary `Unsupported` and `Parse` errors remain accepted malformed-input outcomes; the production parser and its controlled-input warning remain unchanged.
+- Verify the two tracked PE32/PE32+ libFuzzer seed copies are byte-identical to SHA-256-checked `fixtures/expected.json` sources, in both fuzz workflows and the ordinary existing corpus unit gate; retain the independently pinned historical F001 crash seed. Tighten the preserved F001 tests to distinguish clean errors from swallowed dependency panics.
+- This is a scoped fuzz-detection improvement, **not** new evidence of a previously undiscovered panic, a complete coverage-guided corpus, a hard RSS/CPU limit or hostile-input safety. Issue #8 and #9 stay OPEN.
+
 ## [Unreleased] — EX-02 mixed-cardinality resource coverage
 
 - Extend the existing black-box `rel-diff` output oracle to accept a controlled report over 15 MiB and independently reject a larger serialized report with **zero stdout** under its established 16 MiB limit; input manifests themselves stay below the 16 MiB reader cap.

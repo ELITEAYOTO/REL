@@ -170,16 +170,16 @@ class WatchdogTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="rel-fsize-") as directory:
             output_file = Path(directory) / "oversized.bin"
             script = (
-                "import errno,sys\\n"
-                f"with open({str(output_file)!r}, 'wb', buffering=0) as handle:\\n"
-                "    try:\\n"
-                "        while True:\\n"
-                "            handle.write(b'x' * 65536)\\n"
-                "    except OSError as error:\\n"
-                "        if error.errno != errno.EFBIG:\\n"
-                "            raise\\n"
-                "        sys.stderr.write('kernel EFBIG')\\n"
-                "        sys.exit(79)\\n"
+                "import errno,sys\n"
+                f"with open({str(output_file)!r}, 'wb', buffering=0) as handle:\n"
+                "    try:\n"
+                "        while True:\n"
+                "            handle.write(b'x' * 65536)\n"
+                "    except OSError as error:\n"
+                "        if error.errno != errno.EFBIG:\n"
+                "            raise\n"
+                "        sys.stderr.write('kernel EFBIG')\n"
+                "        sys.exit(79)\n"
             )
             with self.assertRaisesRegex(WorkerFailed, "status 79: kernel EFBIG"):
                 python_child(

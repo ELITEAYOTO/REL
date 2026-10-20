@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from measurement_environment import (
+from _internal.measurement_environment import (
     binary_sha256, capture_context, collect_context, fingerprint,
 )
 

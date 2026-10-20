@@ -12,7 +12,7 @@ import math
 import re
 import statistics
 
-from measurement_environment import fingerprint
+from _internal.measurement_environment import fingerprint
 from pathlib import Path
 
 CASE_FIELDS = (

@@ -136,7 +136,7 @@ def supervise(
                 **child_options,
             )
             if max_job_memory_bytes is not None:
-                from windows_job import WindowsJob
+                from _internal.windows_job import WindowsJob
 
                 job = WindowsJob(max_job_memory_bytes)
                 child = job.start(command, **child_kwargs)

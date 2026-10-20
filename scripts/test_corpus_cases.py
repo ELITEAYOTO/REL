@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from corpus_cases import (
+from _internal.corpus_cases import (
     FIXTURE_NAMES, OVERLAY_SIZES, REDISTRIBUTION_STATUS, ROOT,
     load_verified_seeds, prepare_cases,
 )

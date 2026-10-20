@@ -55,3 +55,7 @@ Demonstrated bug, security risk, untestable coupling, repeated stable concept, m
   repeated rolling archives and broad cosmetic reorganizations.
 - For moved/deleted paths use scoped PRs with consumer/provenance review and
   negative tests. Unreferenced is not evidence of obsolescence.
+- Keep executable `scripts/*.py` / `.cmd` entrypoints stable for CI and
+  documented invocations; import-only private support modules belong under
+  `scripts/_internal/`. Change imports and active references together, and
+  require both Windows and Ubuntu CI before further related moves.

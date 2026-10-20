@@ -18,16 +18,16 @@ REL previously measured overall CLI wall time on synthetic PE input sizes, not R
 - Performs one warmup and five measured executions per scenario; stores **all measurements**, medians, maximum observed RSS/CPU and environment information.
 - Pins `psutil==7.0.0` **in CI** and uploads `rel-resources.json` as a per-platform artifact. Local use may require installing this version explicitly.
 
-## GNU MinGW-w64 in Ubuntu paired observations (proposed)
+## GNU MinGW-w64 in Ubuntu paired observations (verified scoped CI)
 
 Ubuntu CI builds a controlled GCC/MinGW-w64 x64 PE and checks it through
 the pinned independent `pefile` oracle before adding it as case seven to
 **both existing profilers** via `--linux-mingw-probe`. The paired checker
 validates identical source hashes, compiler/linker versions, sample counts,
 binary SHA-256 and measurement context. Windows remains eleven cases.
-These hosted observations are not a statistical performance baseline,
-true peak RSS, CPU/RSS ceiling or security sandbox; the compiler packages
-and runner image are not immutable. Exact-head CI remains to be verified.
+The exact final-head [PR CI #39373542657](https://github.com/ELITEAYOTO/REL/actions/runs/39373542657) and independent [new-main CI #39373817606](https://github.com/ELITEAYOTO/REL/actions/runs/39373817606) succeeded Windows/Ubuntu. Actual new-main Ubuntu artifacts: `rel-cli-benchmark-ubuntu-latest` (12242536911), `rel-resource-profile-ubuntu-latest` (12242109719), `rel-measurement-evidence-ubuntu-latest` (12242369176).
+
+For the 119,877-byte MinGW input, the **single observed main run** reported CLI benchmark median 0.8897 ms, profile wall median 2.4179 ms, and maximal **sampled** RSS 241,664 bytes across five runs; each had just two RSS/CPU samples. CPU readings rounded to 0.0 ms do **not** mean no CPU usage. The sampled RSS is not a real process high-water mark; these very short-lived children can allocate between polls. Do not use these data to choose a production memory/CPU threshold. The generated binary hash differed between final PR-head and postmerge runs; the runner and APT toolchain are not immutable. These are not statistical performance baselines, CPU/RSS limits, representative corpus proof or a sandbox.
 
 ## Reproduce
 

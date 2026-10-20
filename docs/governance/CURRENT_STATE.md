@@ -1,6 +1,6 @@
 # REL — Current state and next-chat entry
 
-**Checkpoint: 2026-10-20, after PR #107 and exact post-squash main CI.** This is a dated
+**Checkpoint: 2026-10-20, after PR #109 and exact post-squash main CI.** This is a dated
 verification, NOT a live GitHub API. Always fetch current main SHA, open PRs,
 issues and completed CI before acting. The large
 [historical handoff archive](HANDOFF_NEXT_CHAT.md) contains old snapshots;
@@ -30,8 +30,8 @@ the canonical entry point is THIS document.
 
 Repository: [ELITEAYOTO/REL](https://github.com/ELITEAYOTO/REL).
 Main at this dated checkpoint:
-[a9f816009dd00388118771c6a1b441be4582e1e1](https://github.com/ELITEAYOTO/REL/commit/a9f816009dd00388118771c6a1b441be4582e1e1).
-[Exact post-squash main CI #39371988276](https://github.com/ELITEAYOTO/REL/actions/runs/39371988276)
+[addd5adf4ddbfa6f1094694a7efdb5c57805b6c0](https://github.com/ELITEAYOTO/REL/commit/addd5adf4ddbfa6f1094694a7efdb5c57805b6c0).
+[Exact post-squash main CI #39373817606](https://github.com/ELITEAYOTO/REL/actions/runs/39373817606)
 **completed/success on Windows AND Ubuntu**.
 **Open PR count: 0. Open issue count: 9** at this dated checkpoint.
 
@@ -64,6 +64,9 @@ Additional narrowly integrated follow-ups on 2026-10-20:
 
 - [PR #106](https://github.com/ELITEAYOTO/REL/pull/106) reconciled the canonical handoff and obsolete hypothetical `rel-diff` wording; [new-main CI #39370011224](https://github.com/ELITEAYOTO/REL/actions/runs/39370011224) succeeded on Windows/Ubuntu.
 - [PR #107](https://github.com/ELITEAYOTO/REL/pull/107) reuses the controlled C source to build a GNU GCC/MinGW-w64 PE32+ x64 static sample on Ubuntu, adding a distinct compiler/linker lineage and an independent `pefile` full section-table oracle. Initial CI surfaced a COFF string-table name representation difference, handled in the **oracle**, not the parser; bounded long-name resolver has malformed-offset regressions on both OS. Exact-head [Windows/Ubuntu PR CI #39371723078](https://github.com/ELITEAYOTO/REL/actions/runs/39371723078) succeeded; squash [a9f8160](https://github.com/ELITEAYOTO/REL/commit/a9f816009dd00388118771c6a1b441be4582e1e1) passed separate [main CI #39371988276](https://github.com/ELITEAYOTO/REL/actions/runs/39371988276). JSON evidence only; redistribution `not-established`, APT/runner versions not immutable, #9 still OPEN.
+
+- [PR #108](https://github.com/ELITEAYOTO/REL/pull/108) reconciled the last canonical handoff; [post-squash main CI #39372631425](https://github.com/ELITEAYOTO/REL/actions/runs/39372631425) succeeded Windows/Ubuntu.
+- [PR #109](https://github.com/ELITEAYOTO/REL/pull/109) extended the existing paired CLI timing/child RSS+CPU profiling to the GNU MinGW-w64 PE, giving Ubuntu seven cases (Windows stays eleven) with source/toolchain/PE hash checks and negative regressions. Exact final-head [PR CI #39373542657](https://github.com/ELITEAYOTO/REL/actions/runs/39373542657), [fuzz #39373542617](https://github.com/ELITEAYOTO/REL/actions/runs/39373542617) and separate [new-main CI #39373817606](https://github.com/ELITEAYOTO/REL/actions/runs/39373817606) succeeded. Squash [addd5adf](https://github.com/ELITEAYOTO/REL/commit/addd5adf4ddbfa6f1094694a7efdb5c57805b6c0). Source PE never executed; sampled RSS/CPU are **not** actual peaks/ceilings, and cross-run compiled-byte equality is not guaranteed. Issue #9 remains OPEN.
 
 **Boundaries:** watchdog process-group cleanup is not a cgroup, full
 process-tree kill guarantee or aggregate CPU/RSS/disk quota. Generated PE32

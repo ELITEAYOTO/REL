@@ -28,6 +28,7 @@ Every item requires test evidence before the checkbox is marked complete. ADRs g
 - [x] Commit and pin `Cargo.lock`; enforce `--locked` in Linux/Windows CI.
 - [ ] Evaluate dependency MSRV, known advisories and license inventory.
 - [ ] Expand corpus: license-verified redistributable PE samples spanning multiple compilers and unusual edge cases. The internal case inventory and one CI-built MSVC probe **do not fulfill** this external corpus requirement or establish redistribution rights.
+- [ ] **PE32 x86 DLL producer diversity (CI candidate):** locally build MSVC/Clang-cl x86 DLLs from tracked source and check machine/PE32/DLL flags, imports, exports and manifest hash with pinned independent pefile in Windows CI. This does not grant binary redistribution rights or close the external licensed corpus acceptance gate; see [provenance](docs/security/P15A_CORPUS_PROVENANCE.md).
 - [x] Verify native Windows PE self-inspection against independent pinned `pefile` ([PR #6](https://github.com/ELITEAYOTO/REL/pull/6), CI 39098961562).
 - [x] Run deterministic seeded mutation/truncation regressions against synthetic PE32/PE32+ fixtures ([PR #4](https://github.com/ELITEAYOTO/REL/pull/4), CI 39098578436).
 - [x] Validate bounded coverage-guided libFuzzer smoke using the preserved F001 regression and pinned goblin 0.10.7 ([PR #10](https://github.com/ELITEAYOTO/REL/pull/10), fuzz CI 39101228893 and regular CI 39101228912).

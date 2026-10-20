@@ -1,6 +1,6 @@
 # REL — Current state and next-chat entry
 
-**Checkpoint: 2026-10-20, after PR #102 and exact post-squash main CI.** This is a dated
+**Checkpoint: 2026-10-20, after PR #105 and exact post-squash main CI.** This is a dated
 verification, NOT a live GitHub API. Always fetch current main SHA, open PRs,
 issues and completed CI before acting. The large
 [historical handoff archive](HANDOFF_NEXT_CHAT.md) contains old snapshots;
@@ -30,8 +30,8 @@ the canonical entry point is THIS document.
 
 Repository: [ELITEAYOTO/REL](https://github.com/ELITEAYOTO/REL).
 Main at this dated checkpoint:
-[a920c87a1f37171833d2b33d2104cc07515cf8fd](https://github.com/ELITEAYOTO/REL/commit/a920c87a1f37171833d2b33d2104cc07515cf8fd).
-[Exact post-squash main CI #39366427190](https://github.com/ELITEAYOTO/REL/actions/runs/39366427190)
+[6a7c354b9fc1fbd703e50538c5bd3a41ac04e010](https://github.com/ELITEAYOTO/REL/commit/6a7c354b9fc1fbd703e50538c5bd3a41ac04e010).
+[Exact post-squash main CI #39369336388](https://github.com/ELITEAYOTO/REL/actions/runs/39369336388)
 **completed/success on Windows AND Ubuntu**.
 **Open PR count: 0. Open issue count: 9** at this dated checkpoint.
 
@@ -56,6 +56,11 @@ Further verified scoped progress:
 - [PR #100](https://github.com/ELITEAYOTO/REL/pull/100) reconciled the canonical dated handoff after #97–#99. [Exact main CI #39364083241](https://github.com/ELITEAYOTO/REL/actions/runs/39364083241) passed Windows/Ubuntu on 9ab3640. This documentation PR did not alter runtime behavior.
 - [PR #101](https://github.com/ELITEAYOTO/REL/pull/101) expanded EX-02's independent output-budget oracle (accepted report >15 MiB, fail-closed above 16 MiB) and added a controlled mixed import/export/section resource-profile scenario. [Exact main CI #39364978891](https://github.com/ELITEAYOTO/REL/actions/runs/39364978891) passed Windows/Ubuntu on dc2fa60. Host-runner RSS/CPU results are sampled observations, **not** enforced parser resource ceilings; #68 and #15 remain open.
 - [PR #102](https://github.com/ELITEAYOTO/REL/pull/102) made the libFuzzer target fail on `PeError::DependencyPanic` instead of swallowing it, verified byte-identical PE32/PE32+ fuzz seeds and strengthened legacy F001 regressions. Final-head [Windows/Ubuntu CI #39366136881](https://github.com/ELITEAYOTO/REL/actions/runs/39366136881) and [bounded libFuzzer CI #39366136892](https://github.com/ELITEAYOTO/REL/actions/runs/39366136892) passed; [exact post-squash main CI #39366427190](https://github.com/ELITEAYOTO/REL/actions/runs/39366427190) passed Windows/Ubuntu on a920c87. Fuzzer reported 455,715 executions/30 seconds with no crash **in that run**; #8 stays open.
+
+Additional narrowly integrated follow-ups on 2026-10-20:
+
+- [PR #104](https://github.com/ELITEAYOTO/REL/pull/104) now archives the bounded libFuzzer smoke log and exact provenance on success/failure and triggers on canonical seed-verification changes. Its exact final-head [fuzz CI #39368429610](https://github.com/ELITEAYOTO/REL/actions/runs/39368429610) and [Windows/Ubuntu PR CI #39368429622](https://github.com/ELITEAYOTO/REL/actions/runs/39368429622) passed; artifact `rel-pe-fuzz-smoke-39368429610-1` exists. Squash [6298979](https://github.com/ELITEAYOTO/REL/commit/6298979f7da08f6a1835af6b03a2a804e756488a) passed separate [main CI #39368846707](https://github.com/ELITEAYOTO/REL/actions/runs/39368846707). This does **not** expand the fuzz corpus or guarantee resource limits; #8 stays OPEN.
+- [PR #105](https://github.com/ELITEAYOTO/REL/pull/105) adds a Rust serializer regression requiring all public v1 schema keys and explicit `null` for nullable `arch` and section `virtual_address`. Exact final-head [Windows/Ubuntu PR CI #39369050776](https://github.com/ELITEAYOTO/REL/actions/runs/39369050776) and separate [new-main CI #39369336388](https://github.com/ELITEAYOTO/REL/actions/runs/39369336388) passed on squash [6a7c354](https://github.com/ELITEAYOTO/REL/commit/6a7c354b9fc1fbd703e50538c5bd3a41ac04e010). No schema, runtime, dependency or behavioral change; the Python JSON Schema oracle remains the independent end-to-end validator.
 
 **Boundaries:** watchdog process-group cleanup is not a cgroup, full
 process-tree kill guarantee or aggregate CPU/RSS/disk quota. Generated PE32

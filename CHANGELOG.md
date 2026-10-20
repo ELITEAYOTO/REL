@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — EX-02 mixed-cardinality resource coverage
+
+- Extend the existing black-box `rel-diff` output oracle to accept a controlled report over 15 MiB and independently reject a larger serialized report with **zero stdout** under its established 16 MiB limit; input manifests themselves stay below the 16 MiB reader cap.
+- Add one third controlled EX-02 profiling scenario with 2,048 imports, exports and section records per manifest, including shared-name metadata changes. Check exact delta counts for all scenarios and continue reporting observed wall time, sampled RSS/CPU and hashed input/provenance in Windows/Linux CI artifacts.
+- No parser/CLI changes, public schema modifications, new scripts, libraries or runtime resource guarantees. The historical two-scenario measurements remain unchanged; [#68](https://github.com/ELITEAYOTO/REL/issues/68) remains open for representative data and defensible CPU/RSS acceptance criteria.
+
 ## [Unreleased] — script entrypoints versus private helper modules
 
 - Move three **import-only** support modules (`corpus_cases`, `measurement_environment`, `windows_job`) into `scripts/_internal/`. Adjust Python imports and the corpus fixture root, keeping direct CLI/test/CI script paths unchanged. Document purpose, consumer boundaries and historical reference policy in `scripts/README.md`.

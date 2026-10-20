@@ -33,6 +33,22 @@ authorized controlled static-input experiment.
 
 **Validation status:** exact final-head [PR CI #39371723078](https://github.com/ELITEAYOTO/REL/actions/runs/39371723078) and [branch CI #39371719521](https://github.com/ELITEAYOTO/REL/actions/runs/39371719521) passed Windows/Ubuntu; the independent [new-main CI #39371988276](https://github.com/ELITEAYOTO/REL/actions/runs/39371988276) passed on squash [a9f8160](https://github.com/ELITEAYOTO/REL/commit/a9f816009dd00388118771c6a1b441be4582e1e1). Ubuntu uploaded JSON artifact `rel-mingw-x64-oracle-ubuntu` (ID 12241996223), not the binary. Keep #9 open for broader legal sources, redistribution clearance and true CPU/RSS budgets.
 
+## Paired profiling of GNU MinGW-w64 PE (proposed; validation pending)
+
+Ubuntu CI extends the **existing** `prepare_cases` inventory for CLI timing
+and sampled child RSS/CPU profiling. Case seven is the exact same GNU
+MinGW-w64 PE32+ image already checked by independent `pefile`; it is
+**never loaded or executed**. Metadata records GCC/linker versions, the
+tracked C source SHA-256 and actual PE SHA-256. Same-job paired evidence
+requires matching case inventory, provenance and byte hashes; Ubuntu now
+expects seven cases and Windows remains eleven. Missing short-process
+RSS/CPU samples remain null rather than zero.
+
+This extends **measurements**, not an enforced RSS/CPU ceiling, licensed
+corpus or stable cross-run benchmark. Ubuntu runner and APT versions are
+not immutable. Verify exact final PR-head and post-squash main CI before
+calling it integrated; issues #9 and #68 remain OPEN.
+
 ## PE32 x86 DLL regression (integrated; scoped CI verification)
 
 The Windows hosted job builds two PE32 **DLL** samples from the newly tracked

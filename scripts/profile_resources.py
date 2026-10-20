@@ -98,6 +98,7 @@ def run(
     windows_clang_probe: Path | None = None,
     windows_msvc_structured: Path | None = None,
     windows_clang_structured: Path | None = None,
+    linux_mingw_probe: Path | None = None,
 ) -> dict:
     context, context_id = capture_context(binary)
     meta = {
@@ -127,6 +128,7 @@ def run(
             windows_clang_probe=windows_clang_probe,
             windows_msvc_structured=windows_msvc_structured,
             windows_clang_structured=windows_clang_structured,
+            linux_mingw_probe=linux_mingw_probe,
         )
         for case in cases:
             for _ in range(warmup):
@@ -151,6 +153,7 @@ def main() -> None:
     parser.add_argument("--windows-clang-probe", type=Path)
     parser.add_argument("--windows-msvc-structured", type=Path)
     parser.add_argument("--windows-clang-structured", type=Path)
+    parser.add_argument("--linux-mingw-probe", type=Path)
     args = parser.parse_args()
     if os.name != "nt":
         if args.windows_msvc_probe is not None:
@@ -161,6 +164,8 @@ def main() -> None:
             parser.error("structured compiler probes are Windows only")
     if not 2 <= args.samples <= 100:
         parser.error("--samples must be between 2 and 100")
+    if os.name == "nt" and args.linux_mingw_probe is not None:
+        parser.error("--linux-mingw-probe is Linux only")
     if not 0 <= args.warmup <= 20:
         parser.error("--warmup must be between 0 and 20")
     report = run(
@@ -180,6 +185,10 @@ def main() -> None:
         windows_clang_structured=(
             args.windows_clang_structured.resolve(strict=True)
             if args.windows_clang_structured is not None else None
+        ),
+        linux_mingw_probe=(
+            args.linux_mingw_probe.resolve(strict=True)
+            if args.linux_mingw_probe is not None else None
         ),
     )
     document = json.dumps(report, indent=2) + "\n"

@@ -18,6 +18,17 @@ REL previously measured overall CLI wall time on synthetic PE input sizes, not R
 - Performs one warmup and five measured executions per scenario; stores **all measurements**, medians, maximum observed RSS/CPU and environment information.
 - Pins `psutil==7.0.0` **in CI** and uploads `rel-resources.json` as a per-platform artifact. Local use may require installing this version explicitly.
 
+## GNU MinGW-w64 in Ubuntu paired observations (proposed)
+
+Ubuntu CI builds a controlled GCC/MinGW-w64 x64 PE and checks it through
+the pinned independent `pefile` oracle before adding it as case seven to
+**both existing profilers** via `--linux-mingw-probe`. The paired checker
+validates identical source hashes, compiler/linker versions, sample counts,
+binary SHA-256 and measurement context. Windows remains eleven cases.
+These hosted observations are not a statistical performance baseline,
+true peak RSS, CPU/RSS ceiling or security sandbox; the compiler packages
+and runner image are not immutable. Exact-head CI remains to be verified.
+
 ## Reproduce
 
 ```bash

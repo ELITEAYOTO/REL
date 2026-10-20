@@ -218,6 +218,63 @@ class CorpusCaseTests(unittest.TestCase):
             self.assertEqual(cases[-1].case_id, "clang-cl-x64-structured")
             self.assertEqual(cases[-1].toolchain_version, "clang version 20.0.1 (test)")
 
+    def test_mingw_probe_checks_provenance_before_creating_overlays(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            probe = folder / "rel-mingw-x64-probe.exe"
+            with self.assertRaises(FileNotFoundError):
+                prepare_cases(
+                    ROOT / "fixtures", folder, folder / "unused",
+                    include_windows_executable=False, linux_mingw_probe=probe,
+                )
+            self.assertEqual(list(folder.iterdir()), [])
+            probe.write_bytes(b"placeholder-compiled-pe")
+            with self.assertRaises(FileNotFoundError):
+                prepare_cases(
+                    ROOT / "fixtures", folder, folder / "unused",
+                    include_windows_executable=False, linux_mingw_probe=probe,
+                )
+            version = folder / "mingw-toolchain-version.txt"
+            version.write_text("compiler unknown\nGNU ld synthetic\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "MinGW compiler/linker provenance"):
+                prepare_cases(
+                    ROOT / "fixtures", folder, folder / "unused",
+                    include_windows_executable=False, linux_mingw_probe=probe,
+                )
+            self.assertFalse(any(folder.glob("*overlay*.exe")))
+
+    def test_mingw_probe_is_a_distinct_source_verified_linux_case(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            probe = folder / "rel-mingw-x64-probe.exe"
+            probe.write_bytes(b"placeholder-compiled-pe")
+            (folder / "mingw-toolchain-version.txt").write_text(
+                "x86_64-w64-mingw32-gcc (GCC) 13 test\n"
+                "GNU ld (GNU Binutils) 2.42 test\n", encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "Linux corpus mode"):
+                prepare_cases(
+                    ROOT / "fixtures", folder, folder / "unused",
+                    include_windows_executable=True, linux_mingw_probe=probe,
+                )
+            cases = prepare_cases(
+                ROOT / "fixtures", folder, folder / "unused",
+                include_windows_executable=False, linux_mingw_probe=probe,
+            )
+            self.assertEqual(len(cases), 7)
+            self.assertEqual(len({case.case_id for case in cases}), 7)
+            self.assertEqual(cases[-1].path, probe)
+            meta = cases[-1].report_fields()
+            self.assertEqual(meta["case_id"], "mingw-w64-x64-local-build")
+            self.assertEqual(meta["redistribution_status"], "not-established")
+            self.assertIn("GNU ld", meta["toolchain_version"])
+            self.assertIn("gcc", meta["toolchain_version"])
+            self.assertEqual(meta["source_fixture"], "fixtures/probes/msvc_probe.c")
+            self.assertEqual(
+                meta["source_sha256"],
+                hashlib.sha256((ROOT / meta["source_fixture"]).read_bytes()).hexdigest(),
+            )
+
     def test_native_build_case_does_not_claim_redistribution(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             folder = Path(tmp)

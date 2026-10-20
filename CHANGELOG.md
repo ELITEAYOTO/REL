@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — paired MinGW-w64 resource observations
+
+- Include the existing Ubuntu-built GNU MinGW-w64 x64 PE in **both** CLI timing and sampled RSS/CPU inventories, extending Ubuntu's paired gate from 6 to 7 cases without introducing or executing a new PE fixture. Record GCC/linker versions and tracked C source hash.
+- Add missing/invalid compiler provenance and inconsistent toolchain-version regressions. RSS/CPU remain sampled observations, not enforced ceilings. No new dependencies or public manifest changes; #9/#68 and the licensing decision remain open.
+
+
 ## [Unreleased] — distinct GNU MinGW-w64 PE producer coverage
 
 - Reuse the existing controlled Windows C probe and independent Python pefile oracle for an Ubuntu-built GCC/MinGW-w64 x64 PE32+ executable, extending structural comparison to every section's name (including resolved GNU COFF long-name references), offset, size and virtual address, with negative string-table tests on both OS runners.

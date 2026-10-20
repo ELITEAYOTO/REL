@@ -1,6 +1,6 @@
 # REL — Handoff for next ChatGPT / contributor
 
-## Fresh resume checkpoint — 2026-10-20 after PR #107
+## Fresh resume checkpoint — 2026-10-20 after PR #109
 
 The canonical current-oriented source is [CURRENT_STATE.md](CURRENT_STATE.md).
 This header is a **dated handoff**, not live GitHub state. On resumption,
@@ -8,9 +8,9 @@ read [AGENTS.md](../../AGENTS.md), architecture, roadmap, frozen decisions,
 quality gates and [ADR-0013](../adr/ADR-0013-vision-evidence-evolution.md);
 then **query GitHub live** before making changes.
 
-**Last exact-main verification:** `a9f816009dd00388118771c6a1b441be4582e1e1`
-([commit](https://github.com/ELITEAYOTO/REL/commit/a9f816009dd00388118771c6a1b441be4582e1e1)),
-[CI #39371988276](https://github.com/ELITEAYOTO/REL/actions/runs/39371988276)
+**Last exact-main verification:** `addd5adf4ddbfa6f1094694a7efdb5c57805b6c0`
+([commit](https://github.com/ELITEAYOTO/REL/commit/addd5adf4ddbfa6f1094694a7efdb5c57805b6c0)),
+[CI #39373817606](https://github.com/ELITEAYOTO/REL/actions/runs/39373817606)
 **completed/success on Windows + Ubuntu**. At the checkpoint: **0 open PRs,
 9 open issues** (#72, #69, #68, #44, #16, #15, #14, #9, #8).
 
@@ -42,6 +42,9 @@ Recent integrations, each separately verified on its squashed `main`:
 
 - [#106](https://github.com/ELITEAYOTO/REL/pull/106): canonical docs/architecture reconciliation; exact new-main [CI #39370011224](https://github.com/ELITEAYOTO/REL/actions/runs/39370011224) passed Windows/Ubuntu.
 - [#107](https://github.com/ELITEAYOTO/REL/pull/107): GNU MinGW-w64 static PE32+ x64 independent-oracle corpus gate, using the existing C source. Full section-table correspondence required independent, bounds-checked COFF long-name decoding and malformed table regression tests; no parser changes. Exact final-head [PR CI #39371723078](https://github.com/ELITEAYOTO/REL/actions/runs/39371723078), squash [a9f8160](https://github.com/ELITEAYOTO/REL/commit/a9f816009dd00388118771c6a1b441be4582e1e1), [main CI #39371988276](https://github.com/ELITEAYOTO/REL/actions/runs/39371988276), all Windows/Ubuntu success. No sample PE executed or uploaded; source/binary redistribution unapproved, runner/APT toolchain unpinned. #9 remains OPEN.
+
+- [#108](https://github.com/ELITEAYOTO/REL/pull/108): short documentary reconciliation, [new-main CI #39372631425](https://github.com/ELITEAYOTO/REL/actions/runs/39372631425) successful.
+- [#109](https://github.com/ELITEAYOTO/REL/pull/109): reuse GNU MinGW-w64 PE as seventh Linux timing/RSS/CPU case, the same sample independently validated with `pefile`; negative source/compiler provenance checks and existing paired-evidence integrity. Exact final PR-head [CI #39373542657](https://github.com/ELITEAYOTO/REL/actions/runs/39373542657) plus [fuzz #39373542617](https://github.com/ELITEAYOTO/REL/actions/runs/39373542617) succeeded. Squash [addd5adf](https://github.com/ELITEAYOTO/REL/commit/addd5adf4ddbfa6f1094694a7efdb5c57805b6c0) separately passed [new-main CI #39373817606](https://github.com/ELITEAYOTO/REL/actions/runs/39373817606) on Windows/Ubuntu. Archived resource and benchmark observations are **sampled only**, neither hardened resource limits nor a licensed corpus. #9 remains OPEN.
 
 **Next technical priorities:** #9 — authorized license-cleared PE/DLL
 corpus, independent oracles, enforceable resource limits; #8 —

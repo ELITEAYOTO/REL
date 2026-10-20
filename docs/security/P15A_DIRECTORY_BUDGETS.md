@@ -91,8 +91,7 @@ directory is semantically correct. It neither adds a TLS preflight limit
 nor establishes coverage-guided fuzz depth, CPU/RSS budgets or sandbox
 safety. Issues #8 and #9 remain open.
 
-
-## Internal import/export pointer mutation gate (candidate, 2026-10-20)
+## Internal import/export pointer mutation regression (2026-10-20)
 
 The existing in-memory regression suite separately mutates six **internal**
 directory pointers, not the top-level data-directory RVA/size fields:

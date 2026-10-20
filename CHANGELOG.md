@@ -3,7 +3,7 @@
 ## [Unreleased] — internal PE import/export pointer regressions
 
 - Exercise 96 in-memory boundary mutations of export function/name/ordinal pointers and import descriptor thunk/name pointers on both unchanged, SHA-verified PE32/PE32+ fixtures. Require rejection of an unmappable import DLL-name RVA rather than a clean, incomplete manifest.
-- No runtime parser change, dependency, public manifest schema or fixture binary addition unless a failing test demonstrates an actual defect. This does not replace representative corpus validation or worker CPU/RSS ceilings.
+- Test-only validation: no runtime parser change, dependency, public manifest schema or fixture binary addition. This does not replace representative corpus validation or worker CPU/RSS ceilings.
 
 ## [Unreleased] — targeted PE data-directory mutation regressions
 

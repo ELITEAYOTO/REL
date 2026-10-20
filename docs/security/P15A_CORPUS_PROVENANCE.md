@@ -13,10 +13,13 @@ representative collection. The existing script
 `scripts/check_windows_msvc_probe.py` is reused to compare REL against
 independent pinned `pefile==2024.8.26`, now including exact section
 name, raw offset, raw size and virtual address for the entire section table,
-as well as the observed GetTickCount64 import, named export,
+including a bounded, independent resolution of COFF long-section names
+(`/4`, `/19`, etc.); as well as the observed GetTickCount64 import, named export,
 PE machine/magic, raw file size and SHA-256.
 
-CI archives only a JSON evidence record, including the exact source and
+Separate unit regressions reject malformed COFF string-table lengths, offsets
+and missing terminators on Ubuntu and Windows; they do not establish safety
+for arbitrary hostile COFF files. CI archives only a JSON evidence record, including the exact source and
 generated binary hashes, independently observed section table,
 compiler/linker version lines, and triggering revision; it does **not**
 upload the generated EXE. The Windows binary is **never run or loaded**.

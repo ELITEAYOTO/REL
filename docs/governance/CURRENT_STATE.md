@@ -1,6 +1,6 @@
 # REL — Current state and next-chat entry
 
-**Checkpoint: 2026-10-20, after PR #118 and exact post-squash main CI.** This is a dated
+**Checkpoint: 2026-10-20, after PR #119 and exact post-squash main CI.** This is a dated
 verification, NOT a live GitHub API. Always fetch current main SHA, open PRs,
 issues and completed CI before acting. The large
 [historical handoff archive](HANDOFF_NEXT_CHAT.md) contains old snapshots;
@@ -30,10 +30,10 @@ the canonical entry point is THIS document.
 
 Repository: [ELITEAYOTO/REL](https://github.com/ELITEAYOTO/REL).
 As checked on **2026-10-20**, `main` was
-[`dcc87a225c6e52519c364caa1e991e12111e917e`](https://github.com/ELITEAYOTO/REL/commit/dcc87a225c6e52519c364caa1e991e12111e917e).
+[`9e871093c089a463f5311831d549eab2fb517bc2`](https://github.com/ELITEAYOTO/REL/commit/9e871093c089a463f5311831d549eab2fb517bc2).
 The **separate exact-new-main**
-[CI #39388373089](https://github.com/ELITEAYOTO/REL/actions/runs/39388373089)
-finished successfully on **Windows (170 s) and Ubuntu (82 s)**.
+[CI #39390113274](https://github.com/ELITEAYOTO/REL/actions/runs/39390113274)
+finished successfully on **Windows (163 s) and Ubuntu (77 s)**.
 There were **zero open PRs and nine open issues** at this checkpoint.
 This information is historical by design: query GitHub again before merging
 or claiming a newer state.
@@ -64,15 +64,51 @@ Since the older #113 checkpoint, these scoped changes were integrated:
   [Windows/Ubuntu PR CI #39387949449](https://github.com/ELITEAYOTO/REL/actions/runs/39387949449)
   and a bounded [libFuzzer run #39387949435](https://github.com/ELITEAYOTO/REL/actions/runs/39387949435):
   555,662 executions over 31 s with no crash reported during that run.
-  Squash `dcc87a22` passed the separate exact-main CI noted above.
+  Squash `dcc87a22` passed separate exact-main
+  [CI #39388373089](https://github.com/ELITEAYOTO/REL/actions/runs/39388373089)
+  on Windows (170 s) and Ubuntu (82 s).
+
+- [#119](https://github.com/ELITEAYOTO/REL/pull/119) strengthened the
+  historical F001 TLS test oracle for 1,104 strict truncations and 1,104
+  one-byte XOR mutations: neither outward unwinds nor internally caught
+  `PeError::DependencyPanic` can pass. Mutants may otherwise parse or
+  reject normally. This closes an **oracle gap**, not a newly demonstrated
+  runtime parser bug. Exact PR HEAD `fcf980c068fc4b7e20cb5d9e50e5d5ff6efc6a92`
+  passed [branch CI #39389338986](https://github.com/ELITEAYOTO/REL/actions/runs/39389338986)
+  and [PR CI #39389673948](https://github.com/ELITEAYOTO/REL/actions/runs/39389673948)
+  on Windows/Ubuntu. The [bounded fuzz run #39389673981](https://github.com/ELITEAYOTO/REL/actions/runs/39389673981)
+  passed with 338,651 executions over 31 s, 512 MiB tool-reported peak
+  RSS, no crash reported in this run; evidence artifact
+  `rel-pe-fuzz-smoke-39389673981-1` (ID 12248678672).
+  Squash `9e871093` passed the separate exact-main CI noted above.
 
 **Remaining limits:** No new production parser correction was demonstrated
-in #115–#118, and no PE submitted for inspection was executed. These
+in #115–#119, and no PE submitted for inspection was executed. These
 checks do not establish hostile-file security, full process-tree CPU/RSS
 ceilings, complete TLS callback/import semantics or a legally cleared
 representative PE corpus. No independent review approvals are claimed.
 `binary-manifest v1.0.0` remains unchanged. #8, #9, #14, #15, #68
 and licensing #16 remain open. Prior evidence and decisions continue below.
+
+### Next concrete investigation (NOT started)
+
+Reverify GitHub live, then audit existing TLS F001, data-directory, mutation,
+independent oracle and corpus provenance tests before extending them. A
+candidate scoped addition for issues #8/#9 is a **source-defined, static
+TLS-internal/callback-table reference fixture** with a legally cleared
+producer, exact SHA-256, independent structural oracle and evidence of
+coverage missing from existing tests. The two checked-in PE32/PE32+ golden
+fixtures have zero TLS directory RVA; their top-level TLS RVA/size mutations
+are NOT evidence of valid callback-table coverage. Do not add new binaries
+or parser code without a demonstrated need. Alternatively, target one
+reproducible, OS-specific CPU/RSS enforcement gap.
+
+Keep #8/#9/#14/#15/#68/#69/#72 open until their acceptance criteria are
+proved; license choice #16 requires the owner's decision. Never execute
+inspected PE/DLL, assume a green fuzz smoke proves hostile-input safety,
+alter public binary-manifest v1.0.0, or conflate local tests, exact-PR CI,
+independent review and post-squash new-main CI. If this checkpoint is updated
+in a docs-only PR, the new main SHA must be independently rechecked.
 
 ## 1a. Historical baseline before PR #114
 

@@ -107,4 +107,53 @@ mod tests {
         assert!(writer.write_all(b"e").is_err());
         assert_eq!(writer.bytes, b"abcd");
     }
+
+    #[test]
+    fn nullable_manifest_fields_preserve_required_v1_schema_shape() {
+        use rel_contracts::{BinarySection, MANIFEST_SCHEMA};
+        use std::collections::BTreeSet;
+
+        let mut manifest = fixture_manifest();
+        manifest.schema_version = MANIFEST_SCHEMA.to_owned();
+        manifest.arch = None;
+        manifest.sections.push(BinarySection {
+            name: ".bss".to_owned(),
+            offset: 0,
+            size: 0,
+            virtual_address: None,
+        });
+
+        let bytes = serialize_manifest(&manifest, MAX_REPORT_BYTES).unwrap();
+        let report: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        let schema: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../contracts/schemas/binary-manifest.schema.json"
+        ))
+        .unwrap();
+
+        // The public v1 object/section keys are all required, including
+        // nullable arch and virtual_address. Do not silently omit them.
+        let check_keys = |data: &serde_json::Value, definition: &serde_json::Value| {
+            let actual: BTreeSet<_> = data.as_object().unwrap().keys().map(String::as_str).collect();
+            let required: BTreeSet<_> = definition["required"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| value.as_str().unwrap())
+                .collect();
+            let declared: BTreeSet<_> = definition["properties"]
+                .as_object()
+                .unwrap()
+                .keys()
+                .map(String::as_str)
+                .collect();
+            assert_eq!(actual, required);
+            assert_eq!(actual, declared);
+        };
+        check_keys(&report, &schema);
+        assert_eq!(report["schema_version"], schema["properties"]["schema_version"]["const"]);
+        assert!(report["arch"].is_null());
+        let section = &report["sections"][0];
+        check_keys(section, &schema["properties"]["sections"]["items"]);
+        assert!(section["virtual_address"].is_null());
+    }
 }

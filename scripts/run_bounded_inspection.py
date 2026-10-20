@@ -67,6 +67,7 @@ def supervise(
     max_address_space_bytes: int | None = None,
     max_cpu_seconds: int | None = None,
     max_job_memory_bytes: int | None = None,
+    max_job_cpu_seconds: int | None = None,
     poll_seconds: float = POLL_SECONDS,
     max_stdout_bytes: int = MAX_STDOUT_BYTES,
     max_stderr_bytes: int = MAX_STDERR_BYTES,
@@ -82,6 +83,11 @@ def supervise(
             raise ValueError("job memory budget must be positive")
         if os.name != "nt":
             raise ValueError("Windows Job Object budget requires Windows")
+    if max_job_cpu_seconds is not None:
+        if not 1 <= max_job_cpu_seconds <= 300:
+            raise ValueError("job CPU-time budget must be between 1 and 300 seconds")
+        if os.name != "nt":
+            raise ValueError("Windows Job CPU-time limit requires Windows")
 
     # A dedicated session makes ordinary descendants terminate with the analyzer
     # even if they outlive their parent. No process-group isolation on Windows.
@@ -135,10 +141,10 @@ def supervise(
                 stdin=subprocess.DEVNULL, stdout=stdout, stderr=stderr,
                 **child_options,
             )
-            if max_job_memory_bytes is not None:
+            if max_job_memory_bytes is not None or max_job_cpu_seconds is not None:
                 from _internal.windows_job import WindowsJob
 
-                job = WindowsJob(max_job_memory_bytes)
+                job = WindowsJob(max_job_memory_bytes, max_job_cpu_seconds)
                 child = job.start(command, **child_kwargs)
             else:
                 child = psutil.Popen(list(command), **child_kwargs)
@@ -214,6 +220,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--max-cpu-seconds", type=int,
         help="Linux only: optional per-process kernel RLIMIT_CPU budget (seconds)",
     )
+    parser.add_argument(
+        "--max-job-cpu-seconds", type=int,
+        help="Windows only: optional Job Object aggregate user-mode CPU-time cap (seconds)",
+    )
     args = parser.parse_args(argv)
     if not 0 < args.wall_seconds <= 600:
         parser.error("--wall-seconds must be > 0 and <= 600")
@@ -235,6 +245,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             parser.error("--max-job-memory-mib is supported only on Windows")
         if not 128 <= args.max_job_memory_mib <= 8192:
             parser.error("--max-job-memory-mib must be between 128 and 8192")
+    if args.max_job_cpu_seconds is not None:
+        if os.name != "nt":
+            parser.error("--max-job-cpu-seconds is supported only on Windows")
+        if not 1 <= args.max_job_cpu_seconds <= 300:
+            parser.error("--max-job-cpu-seconds must be between 1 and 300")
 
     try:
         # The PE is data passed to REL, never executed as a program.
@@ -251,6 +266,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 if args.max_job_memory_mib is not None else None
             ),
             max_cpu_seconds=args.max_cpu_seconds,
+            max_job_cpu_seconds=args.max_job_cpu_seconds,
         )
     except LimitExceeded as error:
         print(f"rel-watchdog: {error}", file=sys.stderr)

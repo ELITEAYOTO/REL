@@ -1,6 +1,6 @@
 # REL — Handoff for next ChatGPT / contributor
 
-## Fresh resume checkpoint — 2026-10-20 after PR #102
+## Fresh resume checkpoint — 2026-10-20 after PR #105
 
 The canonical current-oriented source is [CURRENT_STATE.md](CURRENT_STATE.md).
 This header is a **dated handoff**, not live GitHub state. On resumption,
@@ -8,9 +8,9 @@ read [AGENTS.md](../../AGENTS.md), architecture, roadmap, frozen decisions,
 quality gates and [ADR-0013](../adr/ADR-0013-vision-evidence-evolution.md);
 then **query GitHub live** before making changes.
 
-**Last exact-main verification:** `a920c87a1f37171833d2b33d2104cc07515cf8fd`
-([commit](https://github.com/ELITEAYOTO/REL/commit/a920c87a1f37171833d2b33d2104cc07515cf8fd)),
-[CI #39366427190](https://github.com/ELITEAYOTO/REL/actions/runs/39366427190)
+**Last exact-main verification:** `6a7c354b9fc1fbd703e50538c5bd3a41ac04e010`
+([commit](https://github.com/ELITEAYOTO/REL/commit/6a7c354b9fc1fbd703e50538c5bd3a41ac04e010)),
+[CI #39369336388](https://github.com/ELITEAYOTO/REL/actions/runs/39369336388)
 **completed/success on Windows + Ubuntu**. At the checkpoint: **0 open PRs,
 9 open issues** (#72, #69, #68, #44, #16, #15, #14, #9, #8).
 
@@ -36,6 +36,9 @@ Recent integrations, each separately verified on its squashed `main`:
   and [Windows/Ubuntu CI #39366136881](https://github.com/ELITEAYOTO/REL/actions/runs/39366136881)
   succeeded; the separate [new-main CI #39366427190](https://github.com/ELITEAYOTO/REL/actions/runs/39366427190)
   succeeded. Issue #8 remains open.
+
+- [#104](https://github.com/ELITEAYOTO/REL/pull/104): bounded libFuzzer smoke log/provenance archived on success/failure, seed-source-change trigger. Exact PR-head [fuzz #39368429610](https://github.com/ELITEAYOTO/REL/actions/runs/39368429610) and [Windows/Ubuntu #39368429622](https://github.com/ELITEAYOTO/REL/actions/runs/39368429622) succeeded; squash [6298979](https://github.com/ELITEAYOTO/REL/commit/6298979f7da08f6a1835af6b03a2a804e756488a), [new-main CI #39368846707](https://github.com/ELITEAYOTO/REL/actions/runs/39368846707) succeeded. Evidence hygiene only; #8 stays OPEN.
+- [#105](https://github.com/ELITEAYOTO/REL/pull/105): direct Rust v1 JSON shape/null regression using the current schema's required keys. Exact PR-head [Windows/Ubuntu #39369050776](https://github.com/ELITEAYOTO/REL/actions/runs/39369050776) succeeded; squash [6a7c354](https://github.com/ELITEAYOTO/REL/commit/6a7c354b9fc1fbd703e50538c5bd3a41ac04e010), [new-main CI #39369336388](https://github.com/ELITEAYOTO/REL/actions/runs/39369336388) succeeded. No schema/runtime change; independent Python oracle remains.
 
 **Next technical priorities:** #9 — authorized license-cleared PE/DLL
 corpus, independent oracles, enforceable resource limits; #8 —

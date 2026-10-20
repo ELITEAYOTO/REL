@@ -4,7 +4,7 @@ A **modular, reproducible, offline-first reverse-engineering platform** for auth
 
 **Strategic decision:** [RFC-0001](docs/rfc/RFC-0001-EVIDENCE-EVOLUTION.md), accepted with [ADR-0013](docs/adr/ADR-0013-vision-evidence-evolution.md). [Milestone gates](docs/governance/STRATEGY_AND_GATES.md).
 
-**Current status (2026-10-19): P1 alpha and P1.5 selected hardening verified on controlled fixtures; EX-01 contract and one narrow real DOS-magic producer verified on Windows/Linux. Full EX-01 and P1.5-A remain open; not production-hardened.** The original [CI run](https://github.com/ELITEAYOTO/REL/actions/runs/39096882395) passed on Ubuntu and Windows. P1.5 evidence is recorded in [CHANGELOG](CHANGELOG.md). See [P1 evidence](docs/P1_VALIDATION.md).
+**Current status (2026-10-20 checkpoint): P1 alpha, selected P1.5 hardening, limited EX-01 producers, and experimental EX-02 metadata-only pilot are merged. A 13-case malformed-PE resource campaign passed [main CI #39345880829](https://github.com/ELITEAYOTO/REL/actions/runs/39345880829) on Windows/Linux. The full P1.5, EX-01 and EX-02 gates remain OPEN; not production-hardened.** The original [CI run](https://github.com/ELITEAYOTO/REL/actions/runs/39096882395) passed on Ubuntu and Windows. P1.5 evidence is recorded in [CHANGELOG](CHANGELOG.md). See [P1 evidence](docs/P1_VALIDATION.md).
 
 ## Experimental EX-01 observation contract (prototype only)
 
@@ -130,7 +130,7 @@ The PE alpha preflight also checks declared import/export directory sizes (each 
 ## Project maturity / risks
 
 - Two synthetic fixtures are insufficient to infer quality on complex modern Windows binaries.
-- Stable Rust dependencies are pinned in `Cargo.lock` and a bounded libFuzzer run has succeeded; extended fuzzing, representative corpus, CPU/RAM budgets, fuzz-specific toolchain pinning and process isolation remain unfinished P1.5 work.
+- Stable Rust dependencies and the separate dated fuzz-nightly/lock are pinned; one 300-second campaign completed without observed crash and the controlled malformed-PE resource campaign is green. Additional diverse fuzzing, representative licensed PE corpus and hard CPU/RAM/disk/process-tree containment remain unfinished P1.5 work ([#8](https://github.com/ELITEAYOTO/REL/issues/8), [#9](https://github.com/ELITEAYOTO/REL/issues/9)).
 - `goblin` is a provisional parser adapter, not a permanent lock-in; switching requires measured reasons and an ADR.
 - No source license selected: do not assume redistribution rights for third-party code/binaries.
 

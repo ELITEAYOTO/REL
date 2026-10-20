@@ -1,5 +1,17 @@
 # Changelog
 
+## [Unreleased] — 2026-10-20 documentation handoff
+
+- Update the canonical current state, next-chat historical handoff preface,
+  AGENTS, ROADMAP and README after [PR #89](https://github.com/ELITEAYOTO/REL/pull/89)
+  squash c9d092c and exact [postmerge Windows/Ubuntu CI #39345880829](https://github.com/ELITEAYOTO/REL/actions/runs/39345880829).
+  Preserve the 13 controlled negative PE cases / 39 rejections per OS
+  and explicit nonrepresentative sampled-resource limitations.
+- Correct old claims that EX-02 #62 is still draft, or that fuzz #12 and
+  historical TLS F001 #11 remain unresolved. Broader #8/#9/#14/#15
+  acceptance gates still OPEN. This is documentation-only, not a new
+  parser/security feature.
+
 ## [Unreleased] — 2026-10-19
 
 ### P1.5 — Controlled malformed PE failure-path resource evidence (issue #9 partial)

@@ -56,6 +56,12 @@ class CoffSectionNameTests(unittest.TestCase):
             resolve_coff_section_name(b"/4\x00", raw, 16, 0),
             ".debug_aranges",
         )
+        # The string table starts AFTER the declared 18-byte COFF symbols.
+        with_symbols = b"x" * 16 + b"s" * 36 + table
+        self.assertEqual(
+            resolve_coff_section_name(b"/4\x00", with_symbols, 16, 2),
+            ".debug_aranges",
+        )
 
     def test_rejects_missing_or_malformed_string_table(self) -> None:
         name = b".debug_aranges\x00"

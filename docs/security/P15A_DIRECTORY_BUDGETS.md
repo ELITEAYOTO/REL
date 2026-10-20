@@ -67,3 +67,26 @@ capacity, the exact capacity boundary, both golden PE formats and the public
 advertise more records than they contain; this is an explicit conservative
 alpha policy. **It does not cap import thunk traversal or parser CPU/RSS,
 prove PE validity, or safely isolate hostile input.** [PR #47](https://github.com/ELITEAYOTO/REL/pull/47) merged with [final Windows/Linux PR CI #39173751519](https://github.com/ELITEAYOTO/REL/actions/runs/39173751519), [bounded PE fuzz CI #39173751518](https://github.com/ELITEAYOTO/REL/actions/runs/39173751518) and [post-merge main CI #39173973900](https://github.com/ELITEAYOTO/REL/actions/runs/39173973900) all successful. These checks verify only the stated cases, not parser RSS/CPU or security against arbitrary hostile PE inputs.
+
+## Deterministic directory-field regression extension (2026-10-20)
+
+The existing `crates/rel-pe/tests/mutation_regression.rs` exercises 96
+**single-field mutations** across tracked synthetic PE32 and PE32+ seeds:
+the RVA and size of export, import and TLS data-directory slots, each at
+0, 1, 39, 40, 0x2100, 1 MiB, 1 MiB + 1 and `u32::MAX`. The same test
+suite already performs fixed-seed truncations and pseudo-random byte flips.
+It now explicitly treats `PeError::DependencyPanic` as a failure even when
+`rel_pe::inspect` catches the underlying panic and returns an error value,
+matching the existing libFuzzer harness's detection policy.
+
+The source fixtures are **unchanged** and verified by the existing
+`python scripts/test_corpus_cases.py` gate and
+`fixtures/expected.json`: PE32 SHA-256
+`86a3634db5fbdd88527a8d7316a7133d2ec27edd05be1dcaa81bf574bfbe765b`,
+PE32+ SHA-256
+`cc752bedec1980049513e259964adb8ae0a9b6dbd83070cd887d435fd2b3b5f9`.
+Mutants live in memory only; no new PE files are committed, loaded or
+executed. The test detects backend panics, not whether every mutated
+directory is semantically correct. It neither adds a TLS preflight limit
+nor establishes coverage-guided fuzz depth, CPU/RSS budgets or sandbox
+safety. Issues #8 and #9 remain open.

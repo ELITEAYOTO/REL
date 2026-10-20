@@ -1,6 +1,6 @@
 # REL — Current state and next-chat entry
 
-**Checkpoint: 2026-10-20, after PR #126 and exact post-squash main CI.** This is a dated
+**Checkpoint: 2026-10-20, after PR #127 and exact post-squash main CI.** This is a dated
 verification, NOT a live GitHub API. Always fetch current main SHA, open PRs,
 issues and completed CI before acting. The large
 [historical handoff archive](HANDOFF_NEXT_CHAT.md) contains old snapshots;
@@ -27,6 +27,12 @@ the canonical entry point is THIS document.
    Never infer hostile-file safety from green tests.
 
 ## 1. Latest verified integration (dated checkpoint)
+
+### Verified 2026-10-20: #127 read-only cgroup v2 capability gate
+
+- [PR #127](https://github.com/ELITEAYOTO/REL/pull/127) added a no-write cgroup v2 mount/controller/membership probe, with seven cross-platform regressions. Final PR HEAD `6c0958d80dbe81f2b59750caaec9adb87cc3a5dc` passed [CI #39500700591](https://github.com/ELITEAYOTO/REL/actions/runs/39500700591), Windows/Ubuntu. Squash `703c3f2dfdc9e7637a56de1df199ebf13ca1ed46` passed separate exact-main [CI #39501125786](https://github.com/ELITEAYOTO/REL/actions/runs/39501125786), Windows/Ubuntu, with all 15 artifact names retained. Evidence is in [issue #9](https://github.com/ELITEAYOTO/REL/issues/9#issuecomment-6302044354).
+- The hosted Ubuntu runner showed cgroup v2 mounted at `/sys/fs/cgroup`, mount option `rw`, `cpu`/`memory` controllers visible and enabled for children; **active delegation was not verified**. A mount's write option is not a grant to create a subgroup, migrate a process or set native limits.
+- **Next scoped gate:** attempt only an unpredictable disposable *empty* child under the caller's own **non-root** current cgroup when permissions allow, immediately remove it and never write `cgroup.procs`/`cpu.max`/`memory.max` or alter parent controller flags. Failure/denial must be reported as evidence rather than treated as a CI failure, unless cleanup itself fails. Even success verifies empty-child creation, not process isolation.
 
 ### Verified 2026-10-20: #126 Linux RSS-tree observation failures
 

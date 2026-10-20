@@ -1,26 +1,29 @@
 # REL — Handoff for next ChatGPT / contributor
 
-## Fresh resume checkpoint — 2026-10-20 after PR #92
+## Fresh resume checkpoint — 2026-10-20 after PR #95
 
-**Start from [CURRENT_STATE.md](CURRENT_STATE.md); query live GitHub again.**
-At this recorded checkpoint `main` was
-[ce6c4e0](https://github.com/ELITEAYOTO/REL/commit/ce6c4e057bdb07806082169d6b3a49f721a7686e),
-exact [post-squash Windows/Ubuntu CI #39353437460](https://github.com/ELITEAYOTO/REL/actions/runs/39353437460)
-**completed/success**, with 0 open PRs and 10 open issues.
-[#91](https://github.com/ELITEAYOTO/REL/pull/91) integrated scoped Linux
-watchdog group cleanup after passing Windows/Linux final-head and postmerge
-CI; this is NOT a general sandbox or cgroup.
-[#92](https://github.com/ELITEAYOTO/REL/pull/92) integrated two ephemeral
-Windows MSVC/Clang-cl PE32 DLL fixtures with pinned pefile oracle and per-case
-hash JSON evidence, also passing both CI platforms at final-head and main.
-These binaries are not committed, executable under tests, or licensed for
-redistribution; issue [#9](https://github.com/ELITEAYOTO/REL/issues/9)
-remains open. [#16](https://github.com/ELITEAYOTO/REL/issues/16) still requires
-owner decision for source licensing. See the canonical current-state report
-for exact links and remaining gate details.
+**Use [CURRENT_STATE.md](CURRENT_STATE.md) as the canonical dated checkpoint,
+and always query GitHub again.** At this checkpoint `main` was
+[05faa43](https://github.com/ELITEAYOTO/REL/commit/05faa43afd8e6258e192007cdffe9ad9f3913c77);
+[post-squash main CI #39357415523](https://github.com/ELITEAYOTO/REL/actions/runs/39357415523)
+**completed/success Windows and Ubuntu**, with **zero open PRs and ten open issues**.
 
-The historical archive below contains older snapshots, including the former
-after-PR-89 status; do not read them as current truth.
+Recently merged:
+- [PR #94](https://github.com/ELITEAYOTO/REL/pull/94) introduced a small
+  tracked-local-Markdown-link hygiene gate and corrected dated security notes.
+- [PR #95](https://github.com/ELITEAYOTO/REL/pull/95) installed a Linux
+  **per-file** `RLIMIT_FSIZE` in the optional supervised analyzer before exec.
+  CI checks native limit and fast oversized writes. This is **not** a
+  filesystem disk quota, CPU/RSS isolation or generic hostile-input sandbox.
+- Earlier [PR #91](https://github.com/ELITEAYOTO/REL/pull/91) process-group
+  cleanup and [PR #92](https://github.com/ELITEAYOTO/REL/pull/92) controlled
+  MSVC/Clang-cl x86 DLL oracles remain integrated and narrowly verified.
+
+**Still open:** [#9](https://github.com/ELITEAYOTO/REL/issues/9) licensed
+representative PE corpus, robust resource/isolation budgets and
+[#16](https://github.com/ELITEAYOTO/REL/issues/16) owner-led source-license
+decision. Imported binaries must not be executed. Do not treat this dated
+snapshot or the archived checkpoints below as live GitHub status.
 
 ---
 

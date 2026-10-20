@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased] — strict F001 TLS mutation regression oracle
+
+- Strengthen the existing 1,104 F001 truncation and 1,104 single-byte XOR mutation checks to reject both unwinds escaping `rel-pe` and `PeError::DependencyPanic` returned after a caught Goblin panic. Mutation validity may change, so ordinary parse errors or valid parses remain acceptable.
+- Reconcile the dated `CURRENT_STATE.md` handoff through #118. This changes no parser code, retained fixture bytes, dependency, public schema or resource limit; it is not a hostile-input safety guarantee.
+
 ## [Unreleased] — internal PE import/export pointer regressions
 
 - Exercise 96 in-memory boundary mutations of export function/name/ordinal pointers and import descriptor thunk/name pointers on both unchanged, SHA-verified PE32/PE32+ fixtures. Require rejection of an unmappable import DLL-name RVA rather than a clean, incomplete manifest.

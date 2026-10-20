@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased] — repository hygiene guard and stale-status reconciliation
+
+- Add a stdlib-only CI gate for tracked local Markdown file/directory links
+  and explicit negative regressions (missing, escaped, case-mismatched paths);
+  does not check external sites, anchor semantics or auto-delete anything.
+- Update quality guidance on consumers, historical archives and dated live
+  checkpoints; correct documented pending-CI claims in current profiling and
+  security notes using verified main Windows/Ubuntu run #39354165057.
+- No runtime, public manifest schema, third-party dependency or binary change.
+
 ## [Unreleased] — 2026-10-20 static PE32 DLL CI regression (scoped integrated)
 
 - Compile two x86 PE32 DLL cases on the Windows runner using MSVC and

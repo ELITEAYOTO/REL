@@ -135,13 +135,16 @@ class WatchdogTests(unittest.TestCase):
                 "time.sleep(10)"
             )
             parent = (
-                "import pathlib,subprocess,sys,time;"
-                f"subprocess.Popen([sys.executable,'-c',{descendant!r}]);"
-                f"ready=pathlib.Path({str(ready)!r});"
-                "end=time.monotonic()+4;"
-                "while not ready.exists() and time.monotonic()<end: time.sleep(0.01);"
-                "if not ready.exists(): sys.exit(71);"
-                "time.sleep(0.4);print('parent completed')"
+                "import pathlib,subprocess,sys,time\n"
+                f"subprocess.Popen([sys.executable,'-c',{descendant!r}])\n"
+                f"ready=pathlib.Path({str(ready)!r})\n"
+                "end=time.monotonic()+4\n"
+                "while not ready.exists() and time.monotonic()<end:\n"
+                "    time.sleep(0.01)\n"
+                "if not ready.exists():\n"
+                "    sys.exit(71)\n"
+                "time.sleep(0.4)\n"
+                "print('parent completed')\n"
             )
             command = [CONTROLLED_PYTHON, "-c", parent]
             direct_only = supervise(

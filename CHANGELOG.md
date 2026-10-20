@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased] — P1.5 Linux per-file native spool ceiling
+
+- Add Linux `RLIMIT_FSIZE` to the opt-in supervised analyzer, before exec, using the larger existing spool budget plus one byte and respecting any smaller inherited hard limit. Add Linux-only tests for installed kernel limits and an oversized regular-file write attempted between polling intervals.
+- Existing sampled stdout/stderr checks and Windows behavior remain; there is **no aggregate disk quota**, universal process isolation, binary schema change or new dependency. Issue #9 remains OPEN.
+
 ## [Unreleased] — repository hygiene guard and stale-status reconciliation
 
 - Add a stdlib-only CI gate for tracked local Markdown file/directory links

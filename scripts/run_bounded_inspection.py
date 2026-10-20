@@ -2,9 +2,9 @@
 """Opt-in REL CLI watchdog; this runs the analyzer, never the inspected PE.
 
 It kills the direct child after a wall-time breach and checks sampled RSS.
-On Linux, optional RLIMIT_AS and RLIMIT_CPU constrain virtual address space
-and per-process CPU time before exec. These are not resident-memory or
-process-tree limits, nor a sandbox.
+On Linux, RLIMIT_FSIZE limits individual output files, while optional RLIMIT_AS
+and RLIMIT_CPU constrain virtual address space and per-process CPU time.
+These are not aggregate disk/RSS/process-tree limits, nor a sandbox.
 """
 from __future__ import annotations
 
@@ -95,11 +95,24 @@ def supervise(
             raise ValueError("address-space limit must be positive")
         if max_cpu_seconds is not None and not 1 <= max_cpu_seconds <= 300:
             raise ValueError("CPU-time limit must be between 1 and 300 seconds")
+
+    if sys.platform.startswith("linux"):
         import resource
 
-        # Set both kernel limits on the direct child BEFORE exec. preexec_fn
-        # is used only in this intentionally single-threaded CLI wrapper.
+        # RLIMIT_FSIZE is per file, NOT an aggregate disk quota. Allow one
+        # overflow byte for the post-exit spool check to identify violations.
+        # Restrict the inherited hard limit too: children cannot raise it.
+        spool_file_ceiling = max(max_stdout_bytes, max_stderr_bytes) + 1
+
+        # preexec_fn is used only in this single-threaded CLI wrapper.
+        # Apply native limits to the analyzer before exec, even when the
+        # caller did not opt into the CPU/address-space limits.
         def apply_linux_limits() -> None:
+            _, inherited_hard = resource.getrlimit(resource.RLIMIT_FSIZE)
+            cap = spool_file_ceiling
+            if inherited_hard != resource.RLIM_INFINITY:
+                cap = min(cap, inherited_hard)
+            resource.setrlimit(resource.RLIMIT_FSIZE, (cap, cap))
             if max_address_space_bytes is not None:
                 resource.setrlimit(
                     resource.RLIMIT_AS,

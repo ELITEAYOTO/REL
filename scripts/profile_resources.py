@@ -22,12 +22,30 @@ TIMEOUT_SECONDS = 30
 POLL_SECONDS = 0.002
 
 
+def poll_child_with_usage(process: psutil.Popen) -> tuple[int | None, int | None, float | None]:
+    """Reap Linux direct child with final kernel usage; retain Windows polling."""
+    if sys.platform != "linux":
+        return process.poll(), None, None
+    pid, status, usage = os.wait4(process.pid, os.WNOHANG)
+    if pid == 0:
+        return None, None, None
+    # No earlier poll()/wait(): either would consume wait4's rusage.
+    process.returncode = os.waitstatus_to_exitcode(status)
+    return (
+        process.returncode,
+        int(usage.ru_maxrss) * 1024,  # Linux ru_maxrss is in KiB.
+        round((usage.ru_utime + usage.ru_stime) * 1000, 4),
+    )
+
+
 def profile_once(binary: Path, fixture: Path) -> dict:
     """Use file redirection to avoid child stdout/stderr pipe deadlocks."""
     expected_hash = hashlib.sha256(fixture.read_bytes()).hexdigest()
     started = time.perf_counter()
     peak_sampled_rss: int | None = None
     cpu_ms: float | None = None
+    kernel_peak_rss: int | None = None
+    kernel_cpu_ms: float | None = None
     samples = 0
 
     with tempfile.TemporaryFile(mode="w+t", encoding="utf-8") as stdout:
@@ -50,10 +68,10 @@ def profile_once(binary: Path, fixture: Path) -> dict:
                         peak_sampled_rss = max(peak_sampled_rss or 0, info.rss)
                         cpu_ms = (times.user + times.system) * 1000
                         samples += 1
-                    if process.poll() is not None:
+                    status, kernel_peak_rss, kernel_cpu_ms = poll_child_with_usage(process)
+                    if status is not None:
                         break
                     time.sleep(POLL_SECONDS)
-                status = process.wait()
             except BaseException:
                 if process.poll() is None:
                     process.kill()
@@ -75,6 +93,8 @@ def profile_once(binary: Path, fixture: Path) -> dict:
         "sampled_peak_rss_bytes": peak_sampled_rss,
         "last_sampled_cpu_ms": round(cpu_ms, 4) if cpu_ms is not None else None,
         "resource_samples": samples,
+        "kernel_peak_rss_bytes": kernel_peak_rss,
+        "kernel_cpu_ms": kernel_cpu_ms,
     }
 
 
@@ -84,10 +104,16 @@ def summarize(values: list[dict]) -> dict:
     cpu = [sample["last_sampled_cpu_ms"] for sample in values]
     observed_rss = [value for value in rss if value is not None]
     observed_cpu = [value for value in cpu if value is not None]
+    kernel_rss = [v["kernel_peak_rss_bytes"] for v in values
+                  if v["kernel_peak_rss_bytes"] is not None]
+    kernel_cpu = [v["kernel_cpu_ms"] for v in values
+                  if v["kernel_cpu_ms"] is not None]
     return {
         "wall_median_ms": round(statistics.median(wall), 4),
         "max_sampled_rss_bytes": max(observed_rss) if observed_rss else None,
         "max_last_sampled_cpu_ms": max(observed_cpu) if observed_cpu else None,
+        "max_kernel_peak_rss_bytes": max(kernel_rss) if kernel_rss else None,
+        "max_kernel_cpu_ms": max(kernel_cpu) if kernel_cpu else None,
         "observations": values,
     }
 
@@ -113,6 +139,10 @@ def run(
         "git_sha": os.environ.get("GITHUB_SHA"),
         "analyzer": binary.name,
         "method": "observed child-process RSS/CPU sampling, CLI wall-time",
+        "kernel_usage_method": (
+            "linux-wait4-ru_maxrss-and-ru_utime-ru_stime"
+            if sys.platform == "linux" else None
+        ),
         "poll_interval_ms_nominal": POLL_SECONDS * 1000,
         "timeout_seconds": TIMEOUT_SECONDS,
         "warmup": warmup,

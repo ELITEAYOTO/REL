@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased] — direct-interpreter watchdog test workloads
+
+- Launch controlled Python resource/Job Object test children through the base interpreter, avoiding Windows venv redirectors. Require the reported interpreter PID to equal the created process PID; keep CLI integration in the caller's Python environment.
+- Document the reproduced Windows 10/Python 3.11 venv test failures and the direct-process scope. No production supervisor, parser, public schema or resource-budget change.
+
 ## 2026-10-20 — Windows direct-process resource accounting
 
 - Add owned creation-handle duplication and final native peak working set / CPU

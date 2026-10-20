@@ -90,3 +90,23 @@ The opt-in watchdog now requests `start_new_session=True` on Linux when spawning
 The opt-in Linux watchdog now applies `resource.RLIMIT_FSIZE` in its single-threaded pre-exec child hook even when optional `RLIMIT_AS` and `RLIMIT_CPU` are disabled. The soft and hard ceiling is one byte over the *larger* configured stdout/stderr limit, never exceeding any smaller inherited hard limit. Both temporary streams are regular files and inherit this per-file restriction; direct-child writes to **other regular files** are affected too. Oversized writes can terminate the analyzer by SIGXFSZ or fail with EFBIG, reported as a generic worker failure, never as proof of aggregate disk exhaustion. Existing post-exit checks still suppress partial JSON, and the 1 MiB stderr budget remains enforced by polling/post-exit checks because the kernel ceiling must permit up to the larger 16 MiB stdout budget. Windows is unchanged. The Linux regressions inspect the native limit before execution and force a fast oversized file write while the polling interval is deliberately long.
 
 This is **not** a cgroup, quota for a filesystem, cap across many output files, a descendant-process sandbox or a guarantee against all hostile inputs. No additional third-party dependency or binary-manifest format change.
+
+## Controlled Python tests and Windows virtual environments
+
+The watchdog regression suite launches its controlled Python workloads with
+`sys._base_executable` when available, falling back to `sys.executable`.
+A Windows venv executable may be a redirector: the PID returned by process
+creation belongs to that launcher, while a second process performs the Python
+allocation or creates descendants. A regression requires the controlled
+interpreter's reported PID to equal the created process PID before treating
+the resource tests as direct-process evidence. CLI integration still launches
+the watchdog with `sys.executable`, preserving the caller's Python environment,
+and the supervised analyzer is the native `rel-inspect` executable.
+
+On Windows 10 build 19045 with Python 3.11.9 from the Microsoft Store, the prior
+venv-controlled tests failed the sampled RSS, job memory and descendant-cleanup
+assertions; the same suite passed with the base interpreter. This change fixes
+the test workload selection, not the production supervisor. Sampled RSS still
+observes only the direct child, and this evidence does not establish containment
+for arbitrary launchers, brokered processes or hostile workloads. The PE inputs
+remain static data and are never executed.

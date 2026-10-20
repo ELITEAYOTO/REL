@@ -18,11 +18,15 @@ from run_bounded_inspection import LimitExceeded, WorkerFailed, supervise
 
 ROOT = Path(__file__).resolve().parents[1]
 BINARY: Path | None = None
+# A Windows venv executable can be a redirector whose child runs Python.
+# Resource/Job Object tests need the interpreter itself as the direct child.
+# CLI integration below deliberately keeps sys.executable and its environment.
+CONTROLLED_PYTHON = getattr(sys, "_base_executable", sys.executable)
 
 
 def python_child(source: str, **kwargs: object) -> bytes:
     return supervise(
-        [sys.executable, "-c", source],
+        [CONTROLLED_PYTHON, "-c", source],
         wall_seconds=5,
         max_sampled_rss_bytes=256 * 1024 * 1024,
         **kwargs,
@@ -30,6 +34,22 @@ def python_child(source: str, **kwargs: object) -> bytes:
 
 
 class WatchdogTests(unittest.TestCase):
+    def test_controlled_interpreter_runs_in_the_created_process(self) -> None:
+        # A redirector could otherwise make RSS/job tests observe the launcher
+        # while allocations and descendant creation happen in another process.
+        child = subprocess.Popen(
+            [CONTROLLED_PYTHON, "-c", "import os; print(os.getpid())"],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        )
+        try:
+            stdout, stderr = child.communicate(timeout=10)
+            self.assertEqual(child.returncode, 0, stderr.decode(errors="replace"))
+            self.assertEqual(int(stdout.strip()), child.pid)
+        finally:
+            if child.poll() is None:
+                child.kill()
+                child.wait(timeout=5)
+
     def test_returns_byte_exact_stdout_only_after_success(self) -> None:
         result = python_child("import sys;sys.stdout.buffer.write(b'abc\\x00xyz')")
         self.assertEqual(result, b"abc\x00xyz")
@@ -45,7 +65,7 @@ class WatchdogTests(unittest.TestCase):
         started = time.monotonic()
         with self.assertRaises(LimitExceeded) as raised:
             supervise(
-                [sys.executable, "-c", "import time;time.sleep(10)"],
+                [CONTROLLED_PYTHON, "-c", "import time;time.sleep(10)"],
                 wall_seconds=0.2,
                 max_sampled_rss_bytes=256 * 1024 * 1024,
             )
@@ -70,7 +90,7 @@ class WatchdogTests(unittest.TestCase):
             )
             with self.assertRaises(LimitExceeded) as raised:
                 supervise(
-                    [sys.executable, "-c", parent],
+                    [CONTROLLED_PYTHON, "-c", parent],
                     wall_seconds=1.0,
                     max_sampled_rss_bytes=256 * 1024 * 1024,
                 )
@@ -94,7 +114,7 @@ class WatchdogTests(unittest.TestCase):
                 "time.sleep(0.15);print('parent succeeded')"
             )
             output = supervise(
-                [sys.executable, "-c", parent],
+                [CONTROLLED_PYTHON, "-c", parent],
                 wall_seconds=5,
                 max_sampled_rss_bytes=256 * 1024 * 1024,
             )
@@ -106,7 +126,7 @@ class WatchdogTests(unittest.TestCase):
         with self.assertRaises(LimitExceeded) as raised:
             supervise(
                 [
-                    sys.executable, "-c",
+                    CONTROLLED_PYTHON, "-c",
                     "import time;x=bytearray(80*1024*1024);time.sleep(2)",
                 ],
                 wall_seconds=5,
@@ -195,7 +215,7 @@ class WatchdogTests(unittest.TestCase):
         limit = 128 * 1024 * 1024
         output = supervise(
             [
-                sys.executable, "-c",
+                CONTROLLED_PYTHON, "-c",
                 "import resource;print(resource.getrlimit(resource.RLIMIT_AS))",
             ],
             wall_seconds=5,
@@ -216,7 +236,7 @@ class WatchdogTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(WorkerFailed, "status 73"):
             supervise(
-                [sys.executable, "-c", script],
+                [CONTROLLED_PYTHON, "-c", script],
                 wall_seconds=5,
                 max_sampled_rss_bytes=512 * 1024 * 1024,
                 max_address_space_bytes=128 * 1024 * 1024,
@@ -266,7 +286,7 @@ class WatchdogTests(unittest.TestCase):
     def test_linux_cpu_budget_installed_before_exec_with_address_limit(self) -> None:
         output = supervise(
             [
-                sys.executable, "-c",
+                CONTROLLED_PYTHON, "-c",
                 "import resource;"
                 "print(resource.getrlimit(resource.RLIMIT_CPU));"
                 "print(resource.getrlimit(resource.RLIMIT_AS))",
@@ -287,7 +307,7 @@ class WatchdogTests(unittest.TestCase):
             WorkerFailed, f"status {-signal.SIGXCPU}"
         ):
             supervise(
-                [sys.executable, "-c", "while True: pass"],
+                [CONTROLLED_PYTHON, "-c", "while True: pass"],
                 wall_seconds=15,
                 max_sampled_rss_bytes=256 * 1024 * 1024,
                 max_cpu_seconds=1,
@@ -332,7 +352,7 @@ class WatchdogTests(unittest.TestCase):
     @unittest.skipUnless(os.name == "nt", "Windows Job Objects only")
     def test_windows_job_runs_assigned_child(self) -> None:
         result = supervise(
-            [sys.executable, "-c", "print('assigned before run')"],
+            [CONTROLLED_PYTHON, "-c", "print('assigned before run')"],
             wall_seconds=5,
             max_sampled_rss_bytes=512 * 1024 * 1024,
             max_job_memory_bytes=256 * 1024 * 1024,
@@ -353,7 +373,7 @@ class WatchdogTests(unittest.TestCase):
         # would violate the native job-commit policy.
         with self.assertRaises(WorkerFailed):
             supervise(
-                [sys.executable, "-c", script],
+                [CONTROLLED_PYTHON, "-c", script],
                 wall_seconds=5,
                 max_sampled_rss_bytes=1024 * 1024 * 1024,
                 max_job_memory_bytes=128 * 1024 * 1024,
@@ -377,7 +397,7 @@ class WatchdogTests(unittest.TestCase):
             )
             with self.assertRaises(LimitExceeded) as limit:
                 supervise(
-                    [sys.executable, "-c", parent],
+                    [CONTROLLED_PYTHON, "-c", parent],
                     wall_seconds=2.0,
                     max_sampled_rss_bytes=512 * 1024 * 1024,
                     max_job_memory_bytes=256 * 1024 * 1024,

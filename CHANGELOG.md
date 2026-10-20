@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased] — nullable manifest v1 contract regression
+
+- Add a Rust unit regression for `binary-manifest v1.0.0` JSON serialization, comparing top-level and section field names against the existing schema's required/declared properties. Explicit `null` for required `arch` and `virtual_address` must survive serialization. The pre-existing independent Python JSON Schema CLI oracle remains the full schema validation gate; no runtime behavior, schema or dependency changes.
+
 ## [Unreleased] — bounded fuzz smoke evidence and seed-change triggers
 
 - Retain the bounded PE libFuzzer smoke log, actual run/attempt and commit provenance, compiler version, flags and hashes on successful **and** failed executions; preserve crash artifacts. Shell `pipefail` retains failure semantics.

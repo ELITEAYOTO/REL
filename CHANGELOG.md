@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — opt-in Linux sampled descendant-tree RSS observation (pending exact CI)
+
+- Expose `--max-sampled-tree-rss-mib` (Linux only, disabled by default) in the existing opt-in watchdog. Sum the direct supervised analyzer and currently discovered descendant RSS snapshots; reject the observed limit and use existing cleanup. Preserve direct-child sampling, kernel per-process RLIMIT and Windows Job Object policies.
+- Regression demonstrates the previous direct-child-only blind spot with a 96 MiB controlled child behind a small parent, then verifies opt-in rejection and the real PE64 static-inspection smoke. Windows rejects the Linux-only flag before launch.
+- This is best-effort memory **sampling**, not kernel-enforced process-tree RAM isolation. No dependencies, PE fixtures, Rust parser, CLI manifest, or public binary-manifest v1.0.0 changes. No #9 closure or hostile-input safety claim.
+
 ## [Unreleased] — opt-in Windows job-wide user CPU-time limit (pending exact-head CI)
 
 - Extend the existing suspended-start Windows Job Object supervisor with an optional `--max-job-cpu-seconds 1..300` switch; allow CPU-only and combined CPU+job-memory limits, retaining existing default behavior. This is native cumulative **user-mode** CPU time for associated job processes, not Linux RLIMIT_CPU, wall time, or all-kernel CPU accounting.

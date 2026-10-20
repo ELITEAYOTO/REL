@@ -122,6 +122,65 @@ class WatchdogTests(unittest.TestCase):
             time.sleep(1.3)
             self.assertFalse(escaped.exists(), "descendant survived parent exit")
 
+    @unittest.skipUnless(sys.platform.startswith("linux"), "Linux RSS-tree only")
+    def test_linux_opt_in_tree_rss_rejects_memory_hungry_descendant(self) -> None:
+        # Reproduce the direct-child-only gap first: the parent stays small,
+        # while its controlled child holds >= 96 MiB resident.
+        with tempfile.TemporaryDirectory(prefix="rel-tree-rss-") as folder:
+            ready = Path(folder) / "allocated"
+            descendant = (
+                "import pathlib,time;"
+                "payload=bytearray(b'x'*(96*1024*1024));"
+                f"pathlib.Path({str(ready)!r}).write_text('ready');"
+                "time.sleep(10)"
+            )
+            parent = (
+                "import pathlib,subprocess,sys,time;"
+                f"subprocess.Popen([sys.executable,'-c',{descendant!r}]);"
+                f"ready=pathlib.Path({str(ready)!r});"
+                "end=time.monotonic()+4;"
+                "while not ready.exists() and time.monotonic()<end: time.sleep(0.01);"
+                "if not ready.exists(): sys.exit(71);"
+                "time.sleep(0.4);print('parent completed')"
+            )
+            command = [CONTROLLED_PYTHON, "-c", parent]
+            direct_only = supervise(
+                command, wall_seconds=6,
+                max_sampled_rss_bytes=48 * 1024 * 1024,
+            )
+            self.assertEqual(direct_only.strip(), b"parent completed")
+            ready.unlink()
+            with self.assertRaises(LimitExceeded) as raised:
+                supervise(
+                    command, wall_seconds=6,
+                    max_sampled_rss_bytes=256 * 1024 * 1024,
+                    max_sampled_tree_rss_bytes=48 * 1024 * 1024,
+                )
+            self.assertEqual(raised.exception.kind, "rss")
+            self.assertIn("descendant-tree", str(raised.exception))
+
+    def test_sampled_tree_budget_rejected_on_unsupported_platform(self) -> None:
+        if sys.platform.startswith("linux"):
+            with self.assertRaisesRegex(ValueError, "positive"):
+                python_child("print('not launched')", max_sampled_tree_rss_bytes=0)
+        else:
+            with self.assertRaisesRegex(ValueError, "requires Linux"):
+                python_child("print('not launched')", max_sampled_tree_rss_bytes=1024)
+
+    @unittest.skipIf(sys.platform.startswith("linux"), "Linux supports this flag")
+    def test_nonlinux_cli_rejects_sampled_tree_flag(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable, str(ROOT / "scripts/run_bounded_inspection.py"),
+                "--binary", str(BINARY), "--input", str(ROOT / "fixtures/pe64-basic.exe"),
+                "--max-sampled-tree-rss-mib", "128",
+            ],
+            capture_output=True, check=False, timeout=10,
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn(b"supported only on Linux", result.stderr)
+        self.assertEqual(result.stdout, b"")
+
     def test_stops_observed_rss_above_budget(self) -> None:
         with self.assertRaises(LimitExceeded) as raised:
             supervise(
@@ -492,7 +551,11 @@ class WatchdogTests(unittest.TestCase):
             "--wall-seconds", "30", "--max-sampled-rss-mib", "512",
         ]
         if sys.platform.startswith("linux"):
-            command.extend(["--max-address-space-mib", "2048", "--max-cpu-seconds", "10"])
+            command.extend([
+                "--max-address-space-mib", "2048",
+                "--max-cpu-seconds", "10",
+                "--max-sampled-tree-rss-mib", "512",
+            ])
         if os.name == "nt":
             command.extend([
                 "--max-job-memory-mib", "512",

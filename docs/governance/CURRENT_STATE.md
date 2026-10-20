@@ -1,6 +1,6 @@
 # REL — Current state and next-chat entry
 
-**Checkpoint: 2026-10-20, after PR #123 and exact post-squash main CI.** This is a dated
+**Checkpoint: 2026-10-20, after PR #124 and exact post-squash main CI.** This is a dated
 verification, NOT a live GitHub API. Always fetch current main SHA, open PRs,
 issues and completed CI before acting. The large
 [historical handoff archive](HANDOFF_NEXT_CHAT.md) contains old snapshots;
@@ -27,6 +27,12 @@ the canonical entry point is THIS document.
    Never infer hostile-file safety from green tests.
 
 ## 1. Latest verified integration (dated checkpoint)
+
+### Verified 2026-10-20: #124 Windows native job-wide user CPU budget
+
+- [PR #124](https://github.com/ELITEAYOTO/REL/pull/124) extended the existing opt-in Windows Job Object to accept `--max-job-cpu-seconds 1..300`, CPU-only or combined with committed-memory budget. Only the sum of **user-mode** CPU time for assigned processes is periodically enforced, not kernel CPU or wall time. No change to regular REL CLI or public manifest.
+- Final PR HEAD `5c32b06dc3ee353ff1024356684fda64f943bf53` passed [Windows/Ubuntu CI #39398858402](https://github.com/ELITEAYOTO/REL/actions/runs/39398858402), including controlled native CPU-bound termination and valid PE64 smoke. Squash `5c1f54b7a25bdb9eba2f8c25f4fe3b771e7e08ad` passed separate [exact-main Windows/Ubuntu CI #39399280904](https://github.com/ELITEAYOTO/REL/actions/runs/39399280904). Proof and limits are in [#9 issue comment](https://github.com/ELITEAYOTO/REL/issues/9#issuecomment-6287702962). No formal independent reviewer approval was recorded.
+- **Next gap worth testing:** Linux's default sampled RSS covers only the direct analyzer, while a controlled child can allocate much more. Test whether opt-in descendant-tree RSS sampling catches this, without calling it a native cgroup budget. The rights-cleared PE corpus and true hard process-tree limits remain open.
 
 ### Verified 2026-10-20: #123 (CI action pinning) and live main
 

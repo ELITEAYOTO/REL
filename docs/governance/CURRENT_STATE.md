@@ -1,6 +1,6 @@
 # REL — Current state and next-chat entry
 
-**Checkpoint: 2026-10-20, after PR #121 and exact post-squash main CI.** This is a dated
+**Checkpoint: 2026-10-20, after PR #122 and exact post-squash main CI.** This is a dated
 verification, NOT a live GitHub API. Always fetch current main SHA, open PRs,
 issues and completed CI before acting. The large
 [historical handoff archive](HANDOFF_NEXT_CHAT.md) contains old snapshots;
@@ -27,6 +27,14 @@ the canonical entry point is THIS document.
    Never infer hostile-file safety from green tests.
 
 ## 1. Latest verified integration (dated checkpoint)
+
+### Verified 2026-10-20: #122 after #121
+
+`main` was independently verified at `72fcbc4bfa211bad6398d1f7fc3b646a745c3e23` after squash-merged [PR #122](https://github.com/ELITEAYOTO/REL/pull/122). Exact PR HEAD `65234cb05fa36dac6b50ade9311f9df654477076` passed [Windows/Ubuntu PR CI #39395365157](https://github.com/ELITEAYOTO/REL/actions/runs/39395365157), and [bounded libFuzzer CI #39395365353](https://github.com/ELITEAYOTO/REL/actions/runs/39395365353). The separate exact-new-main [Windows/Ubuntu CI #39395744005](https://github.com/ELITEAYOTO/REL/actions/runs/39395744005) succeeded. All source/generated TLS SHA-256 pairs and constructor provenance are tracked by the verified code and [#8 issue comment](https://github.com/ELITEAYOTO/REL/issues/8#issuecomment-6287155284).
+
+The scoped 31 s fuzz run completed **477,559 executions**, `cov:2142`, `ft:4531`, tool-reported peak RSS **584 MiB**, no crash in THAT run. Artifact ID **12251757001**. The 2 generated TLS seeds supplement 3 unchanged tracked original seeds; fuzzer internally reduced its initial corpus to 4. These counters are not evidence of cross-run coverage improvement or hostile-input safety. No parse or schema change was made. Issues #8 and #9 remain OPEN.
+
+**Next investigation at this checkpoint:** address the documented [#72](https://github.com/ELITEAYOTO/REL/issues/72) Node.js 20 compatibility warnings by evaluating vendor-verified Node.js 24 GitHub Actions and pinned SHAs. Do not rewrite historical PR #73 evidence. The CI_ACTION_PINS policy and the actual live workflow are authoritative for a proposed upgrade; no pending future CI is presented as passing.
 
 Repository: [ELITEAYOTO/REL](https://github.com/ELITEAYOTO/REL).
 ### Newest exact-main checkpoint after #120 and #121 (2026-10-20)

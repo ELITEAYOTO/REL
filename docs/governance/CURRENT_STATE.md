@@ -1,6 +1,6 @@
 # REL — Current state and next-chat entry
 
-**Checkpoint: 2026-10-20, after PR #124 and exact post-squash main CI.** This is a dated
+**Checkpoint: 2026-10-20, after PR #125 and exact post-squash main CI.** This is a dated
 verification, NOT a live GitHub API. Always fetch current main SHA, open PRs,
 issues and completed CI before acting. The large
 [historical handoff archive](HANDOFF_NEXT_CHAT.md) contains old snapshots;
@@ -27,6 +27,12 @@ the canonical entry point is THIS document.
    Never infer hostile-file safety from green tests.
 
 ## 1. Latest verified integration (dated checkpoint)
+
+### Verified 2026-10-20: #125 Linux sampled descendant-tree RSS gate
+
+- [PR #125](https://github.com/ELITEAYOTO/REL/pull/125) introduced Linux-only optional `--max-sampled-tree-rss-mib`. The controlled test demonstrated that 96 MiB in a child could escape direct-parent-only RSS sampling, while opt-in descendant sum produced a controlled `LimitExceeded(kind="rss")`. This is sampled and may double-count shared pages or miss exited/reparented children, **not cgroup enforcement**.
+- An initial branch-only Ubuntu check [#39486111240](https://github.com/ELITEAYOTO/REL/actions/runs/39486111240) failed due to invalid syntax in the new Python test fixture, corrected before PR final HEAD `47bbe97e62bb6b48394beb64517669f07a6abd2b`. Exact-head [CI #39486281958](https://github.com/ELITEAYOTO/REL/actions/runs/39486281958) passed Windows and Ubuntu; squash `0e56fd5f2954e365249c5c9b9214c843b2f70ad7` passed separate [exact-main CI #39486727738](https://github.com/ELITEAYOTO/REL/actions/runs/39486727738) on both. All 15 existing CI artifacts were published, no changes to parser, PE fixtures or public manifest. See [#9 proof](https://github.com/ELITEAYOTO/REL/issues/9#issuecomment-6300081410).
+- **Next scoped reliability gap:** `sampled_linux_tree_rss()` catches disappeared descendants but propagates `psutil.AccessDenied` and enumeration errors without controlled `WorkerFailed` conversion. In opt-in mode this produces raw exception/traceback instead of a bounded diagnostic, although the cleanup handler still runs. Add deterministic negative regressions before treating it as fixed; no claim that this closes #9.
 
 ### Verified 2026-10-20: #124 Windows native job-wide user CPU budget
 

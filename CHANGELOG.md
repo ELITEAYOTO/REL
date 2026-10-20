@@ -1,6 +1,12 @@
 # Changelog
 
-## [Unreleased] — opt-in Linux sampled descendant-tree RSS observation (pending exact CI)
+## [Unreleased] — controlled errors for Linux descendant RSS sampling (pending CI)
+
+- Fail explicitly as `WorkerFailed` on inaccessible/vanished tree enumeration or inaccessible descendant RSS rather than letting raw psutil exceptions bypass the watchdog's documented error path; still skip a descendant that vanishes after successful enumeration.
+- Add deterministic negative psutil mocks and a controlled Linux worker with injected observation refusal, checking clean failure and existing cleanup. Reconcile canonical CURRENT_STATE through verified #125; the public parser, original binary fixtures, manifest v1.0.0, Windows Job Objects, and native Linux limits do not change.
+- This does **not** improve the sampled RSS bound into a cgroup or hostile-process security boundary, and the umbrella P1.5 issue #9 remains open.
+
+## [Unreleased] — opt-in Linux sampled descendant-tree RSS observation (verified #125)
 
 - Expose `--max-sampled-tree-rss-mib` (Linux only, disabled by default) in the existing opt-in watchdog. Sum the direct supervised analyzer and currently discovered descendant RSS snapshots; reject the observed limit and use existing cleanup. Preserve direct-child sampling, kernel per-process RLIMIT and Windows Job Object policies.
 - Regression demonstrates the previous direct-child-only blind spot with a 96 MiB controlled child behind a small parent, then verifies opt-in rejection and the real PE64 static-inspection smoke. Windows rejects the Linux-only flag before launch.

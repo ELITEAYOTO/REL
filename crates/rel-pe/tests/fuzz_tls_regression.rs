@@ -1,5 +1,5 @@
 //! Preserved finding F001: malformed TLS directory triggered goblin 0.9.3 panic.
-use rel_pe::inspect;
+use rel_pe::{inspect, PeError};
 
 const MALFORMED_TLS: &[u8] =
     include_bytes!("../../../fixtures/regressions/goblin-0.9.3-tls-oob.bin");
@@ -8,9 +8,11 @@ const MALFORMED_TLS: &[u8] =
 fn malformed_tls_directory_is_rejected_without_unwinding() {
     let attempt = std::panic::catch_unwind(|| inspect(MALFORMED_TLS));
     assert!(attempt.is_ok(), "REL exposed the dependency panic");
+    let outcome = attempt.unwrap();
+    assert!(outcome.is_err(), "invalid TLS directory was accepted");
     assert!(
-        attempt.unwrap().is_err(),
-        "invalid TLS directory was accepted"
+        !matches!(outcome, Err(PeError::DependencyPanic)),
+        "the historical TLS seed still panics inside the parser"
     );
 }
 
@@ -48,8 +50,10 @@ fn minimized_legacy_tls_panic_input_is_rejected_without_unwinding() {
     assert_eq!(MINIMIZED_TLS.len(), 1048);
     let attempt = std::panic::catch_unwind(|| inspect(MINIMIZED_TLS));
     assert!(attempt.is_ok(), "REL exposed the legacy TLS panic");
+    let outcome = attempt.unwrap();
+    assert!(outcome.is_err(), "malformed minimized F001 input was accepted");
     assert!(
-        attempt.unwrap().is_err(),
-        "malformed minimized F001 input was accepted"
+        !matches!(outcome, Err(PeError::DependencyPanic)),
+        "the minimized historical TLS seed still panics inside the parser"
     );
 }

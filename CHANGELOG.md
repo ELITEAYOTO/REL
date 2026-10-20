@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased] — script entrypoints versus private helper modules
+
+- Move three **import-only** support modules (`corpus_cases`, `measurement_environment`, `windows_job`) into `scripts/_internal/`. Adjust Python imports and the corpus fixture root, keeping direct CLI/test/CI script paths unchanged. Document purpose, consumer boundaries and historical reference policy in `scripts/README.md`.
+- Deliberately defer a broader `scripts/` layout migration until a demonstrated benefit justifies changes to CI invocation paths. No binary, public schema, parser logic, Python dependency or test behavior changes intended.
+
 ## [Unreleased] — P1.5 controlled malformed export-declaration campaign
 
 - Extend the existing generated-only PE rejection/profile campaign from 13 to 21 cases with unmapped/zero export RVAs and over-budget function/name counts on both PE32 and PE32+; verify mutation bytes and source RVA mapping independently of Rust preflight.

@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import struct
 from pathlib import Path
 import subprocess
 import tempfile

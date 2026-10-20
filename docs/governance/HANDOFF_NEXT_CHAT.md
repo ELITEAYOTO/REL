@@ -1,6 +1,6 @@
 # REL — Handoff for next ChatGPT / contributor
 
-## Fresh resume checkpoint — 2026-10-20 after PR #109
+## Fresh resume checkpoint — 2026-10-20 after PR #111
 
 The canonical current-oriented source is [CURRENT_STATE.md](CURRENT_STATE.md).
 This header is a **dated handoff**, not live GitHub state. On resumption,
@@ -8,9 +8,9 @@ read [AGENTS.md](../../AGENTS.md), architecture, roadmap, frozen decisions,
 quality gates and [ADR-0013](../adr/ADR-0013-vision-evidence-evolution.md);
 then **query GitHub live** before making changes.
 
-**Last exact-main verification:** `addd5adf4ddbfa6f1094694a7efdb5c57805b6c0`
-([commit](https://github.com/ELITEAYOTO/REL/commit/addd5adf4ddbfa6f1094694a7efdb5c57805b6c0)),
-[CI #39373817606](https://github.com/ELITEAYOTO/REL/actions/runs/39373817606)
+**Last exact-main verification:** `7107a874921a5db4efd8c9b70359efed2986dae6`
+([commit](https://github.com/ELITEAYOTO/REL/commit/7107a874921a5db4efd8c9b70359efed2986dae6)),
+[CI #39376290685](https://github.com/ELITEAYOTO/REL/actions/runs/39376290685)
 **completed/success on Windows + Ubuntu**. At the checkpoint: **0 open PRs,
 9 open issues** (#72, #69, #68, #44, #16, #15, #14, #9, #8).
 
@@ -45,6 +45,9 @@ Recent integrations, each separately verified on its squashed `main`:
 
 - [#108](https://github.com/ELITEAYOTO/REL/pull/108): short documentary reconciliation, [new-main CI #39372631425](https://github.com/ELITEAYOTO/REL/actions/runs/39372631425) successful.
 - [#109](https://github.com/ELITEAYOTO/REL/pull/109): reuse GNU MinGW-w64 PE as seventh Linux timing/RSS/CPU case, the same sample independently validated with `pefile`; negative source/compiler provenance checks and existing paired-evidence integrity. Exact final PR-head [CI #39373542657](https://github.com/ELITEAYOTO/REL/actions/runs/39373542657) plus [fuzz #39373542617](https://github.com/ELITEAYOTO/REL/actions/runs/39373542617) succeeded. Squash [addd5adf](https://github.com/ELITEAYOTO/REL/commit/addd5adf4ddbfa6f1094694a7efdb5c57805b6c0) separately passed [new-main CI #39373817606](https://github.com/ELITEAYOTO/REL/actions/runs/39373817606) on Windows/Ubuntu. Archived resource and benchmark observations are **sampled only**, neither hardened resource limits nor a licensed corpus. #9 remains OPEN.
+
+- [#110](https://github.com/ELITEAYOTO/REL/pull/110): documented the seven-case Ubuntu measurement; [post-squash main CI #39374595036](https://github.com/ELITEAYOTO/REL/actions/runs/39374595036) success Windows/Ubuntu.
+- [#111](https://github.com/ELITEAYOTO/REL/pull/111): Linux `wait4` returns direct analyzer child's kernel RSS high-water and final CPU despite short lifetimes; old 2 ms RSS/CPU polls retained for both OS, no Windows kernel peak claim. Exact final-head [CI #39375982940](https://github.com/ELITEAYOTO/REL/actions/runs/39375982940) and [branch #39375978891](https://github.com/ELITEAYOTO/REL/actions/runs/39375978891) succeeded Windows/Ubuntu; squash [7107a874](https://github.com/ELITEAYOTO/REL/commit/7107a874921a5db4efd8c9b70359efed2986dae6), [main CI #39376290685](https://github.com/ELITEAYOTO/REL/actions/runs/39376290685) succeeded. Linux paired gate requires native fields for all seven cases; no whole-tree accounting, enforced limits, or arbitrary hostile-file safety.
 
 **Next technical priorities:** #9 — authorized license-cleared PE/DLL
 corpus, independent oracles, enforceable resource limits; #8 —

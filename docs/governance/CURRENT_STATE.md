@@ -1,6 +1,6 @@
 # REL — Current state and next-chat entry
 
-**Checkpoint: 2026-10-20, after PR #109 and exact post-squash main CI.** This is a dated
+**Checkpoint: 2026-10-20, after PR #111 and exact post-squash main CI.** This is a dated
 verification, NOT a live GitHub API. Always fetch current main SHA, open PRs,
 issues and completed CI before acting. The large
 [historical handoff archive](HANDOFF_NEXT_CHAT.md) contains old snapshots;
@@ -30,8 +30,8 @@ the canonical entry point is THIS document.
 
 Repository: [ELITEAYOTO/REL](https://github.com/ELITEAYOTO/REL).
 Main at this dated checkpoint:
-[addd5adf4ddbfa6f1094694a7efdb5c57805b6c0](https://github.com/ELITEAYOTO/REL/commit/addd5adf4ddbfa6f1094694a7efdb5c57805b6c0).
-[Exact post-squash main CI #39373817606](https://github.com/ELITEAYOTO/REL/actions/runs/39373817606)
+[7107a874921a5db4efd8c9b70359efed2986dae6](https://github.com/ELITEAYOTO/REL/commit/7107a874921a5db4efd8c9b70359efed2986dae6).
+[Exact post-squash main CI #39376290685](https://github.com/ELITEAYOTO/REL/actions/runs/39376290685)
 **completed/success on Windows AND Ubuntu**.
 **Open PR count: 0. Open issue count: 9** at this dated checkpoint.
 
@@ -67,6 +67,9 @@ Additional narrowly integrated follow-ups on 2026-10-20:
 
 - [PR #108](https://github.com/ELITEAYOTO/REL/pull/108) reconciled the last canonical handoff; [post-squash main CI #39372631425](https://github.com/ELITEAYOTO/REL/actions/runs/39372631425) succeeded Windows/Ubuntu.
 - [PR #109](https://github.com/ELITEAYOTO/REL/pull/109) extended the existing paired CLI timing/child RSS+CPU profiling to the GNU MinGW-w64 PE, giving Ubuntu seven cases (Windows stays eleven) with source/toolchain/PE hash checks and negative regressions. Exact final-head [PR CI #39373542657](https://github.com/ELITEAYOTO/REL/actions/runs/39373542657), [fuzz #39373542617](https://github.com/ELITEAYOTO/REL/actions/runs/39373542617) and separate [new-main CI #39373817606](https://github.com/ELITEAYOTO/REL/actions/runs/39373817606) succeeded. Squash [addd5adf](https://github.com/ELITEAYOTO/REL/commit/addd5adf4ddbfa6f1094694a7efdb5c57805b6c0). Source PE never executed; sampled RSS/CPU are **not** actual peaks/ceilings, and cross-run compiled-byte equality is not guaranteed. Issue #9 remains OPEN.
+
+- [PR #110](https://github.com/ELITEAYOTO/REL/pull/110) reconciled the resource and handoff docs; exact [new-main CI #39374595036](https://github.com/ELITEAYOTO/REL/actions/runs/39374595036) passed on Ubuntu/Windows.
+- [PR #111](https://github.com/ELITEAYOTO/REL/pull/111) adds *Linux direct-child* `wait4` kernel high-water RSS and final CPU accounting to the existing resource profiler without replacing 2 ms samples, changing Windows or executing any inspected PE. After fixing a test which incorrectly re-waited a reaped child, exact final-head [branch CI #39375978891](https://github.com/ELITEAYOTO/REL/actions/runs/39375978891) and [PR CI #39375982940](https://github.com/ELITEAYOTO/REL/actions/runs/39375982940) passed Windows/Ubuntu; squash [7107a87](https://github.com/ELITEAYOTO/REL/commit/7107a874921a5db4efd8c9b70359efed2986dae6) passed separate [main CI #39376290685](https://github.com/ELITEAYOTO/REL/actions/runs/39376290685). Linux now requires complete kernel usage for seven cases in the paired-evidence gate; historic reports remain readable. No enforceable process-tree RAM/CPU budgets or licensed corpus; #9 OPEN.
 
 **Boundaries:** watchdog process-group cleanup is not a cgroup, full
 process-tree kill guarantee or aggregate CPU/RSS/disk quota. Generated PE32

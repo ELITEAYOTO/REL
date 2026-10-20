@@ -76,7 +76,10 @@ fn exercise_directory_boundaries(fixture: &[u8], family: &str) {
             .try_into()
             .unwrap(),
     );
-    assert!(count >= 10, "{family}: golden fixture must declare TLS slot");
+    assert!(
+        count >= 10,
+        "{family}: golden fixture must declare TLS slot"
+    );
 
     for (index, name) in [(0, "export"), (1, "import"), (9, "TLS")] {
         for (field_offset, field) in [(0, "RVA"), (4, "size")] {

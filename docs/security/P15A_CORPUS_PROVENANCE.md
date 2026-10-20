@@ -2,7 +2,7 @@
 
 **Status:** MSVC corpus increment integrated with successful post-merge [main CI #39155754738](https://github.com/ELITEAYOTO/REL/actions/runs/39155754738). Clang-cl frontend extension passed [Windows/Linux CI #39156574382](https://github.com/ELITEAYOTO/REL/actions/runs/39156574382) and [CI #39156578707](https://github.com/ELITEAYOTO/REL/actions/runs/39156578707) at the implementation/docs head; post-merge main CI must still be checked. The earlier MSVC PE oracle, case inventory and profilers passed [Windows/Linux CI #39155346166](https://github.com/ELITEAYOTO/REL/actions/runs/39155346166) and [CI #39155351313](https://github.com/ELITEAYOTO/REL/actions/runs/39155351313) on Windows/Linux; post-merge `main` CI must still be checked. Earlier inventory and measurement gates were verified by [Windows/Linux CI #39153900290](https://github.com/ELITEAYOTO/REL/actions/runs/39153900290) and [CI #39153927673](https://github.com/ELITEAYOTO/REL/actions/runs/39153927673); post-merge `main` CI must still be verified. This is a controlled measurement corpus, not a licensed or representative public binary collection. No new third-party executables are committed.
 
-## Candidate PE32 x86 DLL regression (PR under validation, not integrated)
+## PE32 x86 DLL regression (integrated; scoped CI verification)
 
 The Windows hosted job builds two PE32 **DLL** samples from the newly tracked
 `fixtures/probes/x86_dll_probe.c` source, once with the x86 MSVC toolchain
@@ -13,8 +13,7 @@ PE32 optional header, DLL bit, nonempty sections, `GetTickCount64` import,
 and the named `rel_dll_probe_transform` export. It compares the analyzer's
 manifest architecture, exact SHA-256, byte length, sections and expected
 imports/exports; the job uploads a JSON record with source and file hashes.
-Compilation and independent oracle outcomes are **pending CI** until a
-matching exact-head Windows run succeeds; Ubuntu skips DLL compilation.
+Compilation and the independent oracle passed on the exact [PR #92](https://github.com/ELITEAYOTO/REL/pull/92) head in [Windows/Ubuntu CI #39353143656](https://github.com/ELITEAYOTO/REL/actions/runs/39353143656). The separate [post-squash main CI #39353437460](https://github.com/ELITEAYOTO/REL/actions/runs/39353437460) passed both OS jobs on ce6c4e0; Ubuntu skips DLL compilation and independently tests the non-Windows workspace. The Windows `rel-pe32-dll-oracle-windows` JSON artifact captures source and output hashes, not redistribution rights.
 
 The new tracked source and generated DLLs have **no established redistribution
 rights**. This is useful controlled, local-only bitness/type/compiler coverage,

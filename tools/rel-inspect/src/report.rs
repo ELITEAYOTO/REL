@@ -133,7 +133,12 @@ mod tests {
         // The public v1 object/section keys are all required, including
         // nullable arch and virtual_address. Do not silently omit them.
         let check_keys = |data: &serde_json::Value, definition: &serde_json::Value| {
-            let actual: BTreeSet<_> = data.as_object().unwrap().keys().map(String::as_str).collect();
+            let actual: BTreeSet<_> = data
+                .as_object()
+                .unwrap()
+                .keys()
+                .map(String::as_str)
+                .collect();
             let required: BTreeSet<_> = definition["required"]
                 .as_array()
                 .unwrap()
@@ -150,7 +155,10 @@ mod tests {
             assert_eq!(actual, declared);
         };
         check_keys(&report, &schema);
-        assert_eq!(report["schema_version"], schema["properties"]["schema_version"]["const"]);
+        assert_eq!(
+            report["schema_version"],
+            schema["properties"]["schema_version"]["const"]
+        );
         assert!(report["arch"].is_null());
         let section = &report["sections"][0];
         check_keys(section, &schema["properties"]["sections"]["items"]);

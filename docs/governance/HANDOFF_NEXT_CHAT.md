@@ -1,6 +1,30 @@
 # REL — Handoff for next ChatGPT / contributor
 
-## Fresh resume checkpoint — 2026-10-20 after PR #89
+## Fresh resume checkpoint — 2026-10-20 after PR #92
+
+**Start from [CURRENT_STATE.md](CURRENT_STATE.md); query live GitHub again.**
+At this recorded checkpoint `main` was
+[ce6c4e0](https://github.com/ELITEAYOTO/REL/commit/ce6c4e057bdb07806082169d6b3a49f721a7686e),
+exact [post-squash Windows/Ubuntu CI #39353437460](https://github.com/ELITEAYOTO/REL/actions/runs/39353437460)
+**completed/success**, with 0 open PRs and 10 open issues.
+[#91](https://github.com/ELITEAYOTO/REL/pull/91) integrated scoped Linux
+watchdog group cleanup after passing Windows/Linux final-head and postmerge
+CI; this is NOT a general sandbox or cgroup.
+[#92](https://github.com/ELITEAYOTO/REL/pull/92) integrated two ephemeral
+Windows MSVC/Clang-cl PE32 DLL fixtures with pinned pefile oracle and per-case
+hash JSON evidence, also passing both CI platforms at final-head and main.
+These binaries are not committed, executable under tests, or licensed for
+redistribution; issue [#9](https://github.com/ELITEAYOTO/REL/issues/9)
+remains open. [#16](https://github.com/ELITEAYOTO/REL/issues/16) still requires
+owner decision for source licensing. See the canonical current-state report
+for exact links and remaining gate details.
+
+The historical archive below contains older snapshots, including the former
+after-PR-89 status; do not read them as current truth.
+
+---
+
+## Historical checkpoint — 2026-10-20 after PR #89
 
 **READ [CURRENT_STATE.md](CURRENT_STATE.md) first.** This file is a
 historical multi-session archive whose older status statements are

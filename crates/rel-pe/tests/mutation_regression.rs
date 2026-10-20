@@ -114,11 +114,27 @@ fn exercise_internal_table_rvas(fixture: &[u8], family: &str) {
         0x20b => 112,
         other => panic!("unexpected golden PE magic: {other:#x}"),
     };
-    assert_eq!(read(optional + directory_start), 0x2100, "{family}: export RVA drift");
-    assert_eq!(read(optional + directory_start + 8), 0x2000, "{family}: import RVA drift");
-    assert_eq!(read(0x500 + 20), 1, "{family}: expected one export function");
+    assert_eq!(
+        read(optional + directory_start),
+        0x2100,
+        "{family}: export RVA drift"
+    );
+    assert_eq!(
+        read(optional + directory_start + 8),
+        0x2000,
+        "{family}: import RVA drift"
+    );
+    assert_eq!(
+        read(0x500 + 20),
+        1,
+        "{family}: expected one export function"
+    );
     assert_eq!(read(0x500 + 24), 1, "{family}: expected one export name");
-    assert_eq!(read(0x400 + 12), 0x20a0, "{family}: import DLL name RVA drift");
+    assert_eq!(
+        read(0x400 + 12),
+        0x20a0,
+        "{family}: import DLL name RVA drift"
+    );
 
     // Three export table pointers and three import descriptor pointers.
     for (directory, base, fields) in [
@@ -126,7 +142,16 @@ fn exercise_internal_table_rvas(fixture: &[u8], family: &str) {
         ("import", 0x400_usize, [0_usize, 12, 16]),
     ] {
         for field in fields {
-            for value in [0_u32, 1, 0x1fff, 0x2000, 0x23ff, 0x2400, 0xffff_fffc, u32::MAX] {
+            for value in [
+                0_u32,
+                1,
+                0x1fff,
+                0x2000,
+                0x23ff,
+                0x2400,
+                0xffff_fffc,
+                u32::MAX,
+            ] {
                 let mut bytes = fixture.to_vec();
                 bytes[base + field..base + field + 4].copy_from_slice(&value.to_le_bytes());
                 let scenario = format!("{family} {directory} +{field} RVA={value:#x}");

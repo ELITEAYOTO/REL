@@ -290,10 +290,27 @@ def verify(binary, inspector):
             binary, directory, input_validator, output_validator, a,
         )
 
-        # Both manifest inputs fit under 16 MiB, but their independent
-        # additions/removals would exceed the 16 MiB serialized report cap.
+        # End-to-end output budget: both controlled inputs stay below the
+        # 16 MiB input cap, but their disjoint differences combine in stdout.
+        # The accepted case sits 512 KiB below the 16 MiB report budget;
+        # the rejected case crosses it without publishing partial stdout.
+        near_length = (MAX_INPUT // 2) - (MAX_INPUT // 64)
+        near_left = manifest("a", ["A" * near_length], [], [])
+        near_right = manifest("b", ["B" * near_length], [], [])
+        input_validator.validate(near_left)
+        input_validator.validate(near_right)
+        near_result, near_bytes = accepted(
+            binary, directory, output_validator, near_left, near_right
+        )
+        assert 15 * 1024 * 1024 < len(near_bytes) < MAX_INPUT
+        assert near_result["imports"]["added"] == near_right["imports"]
+        assert near_result["imports"]["removed"] == near_left["imports"]
+        del near_result, near_bytes, near_left, near_right
+
         large_left = manifest("a", ["A" * (8 * 1024 * 1024)], [], [])
         large_right = manifest("b", ["B" * (8 * 1024 * 1024)], [], [])
+        assert len(json.dumps(large_left).encode()) < MAX_INPUT
+        assert len(json.dumps(large_right).encode()) < MAX_INPUT
         too_much_output = execute(binary, directory, large_left, large_right)
         assert too_much_output.returncode != 0
         assert not too_much_output.stdout, "overflow published a partial report"

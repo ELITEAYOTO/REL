@@ -170,7 +170,8 @@ class WatchdogTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="rel-fsize-") as directory:
             output_file = Path(directory) / "oversized.bin"
             script = (
-                "import errno,sys\n"
+                "import errno,signal,sys\n"
+                "signal.signal(signal.SIGXFSZ, signal.SIG_IGN)\n"
                 f"with open({str(output_file)!r}, 'wb', buffering=0) as handle:\n"
                 "    try:\n"
                 "        while True:\n"

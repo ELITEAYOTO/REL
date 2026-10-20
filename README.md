@@ -4,7 +4,7 @@ A **modular, reproducible, offline-first reverse-engineering platform** for auth
 
 **Strategic decision:** [RFC-0001](docs/rfc/RFC-0001-EVIDENCE-EVOLUTION.md), accepted with [ADR-0013](docs/adr/ADR-0013-vision-evidence-evolution.md). [Milestone gates](docs/governance/STRATEGY_AND_GATES.md).
 
-**Current status (2026-10-20 checkpoint): P1 alpha, selected P1.5 hardening, limited EX-01 producers, and experimental EX-02 metadata-only pilot are merged. A 13-case malformed-PE resource campaign passed [main CI #39345880829](https://github.com/ELITEAYOTO/REL/actions/runs/39345880829) on Windows/Linux. The full P1.5, EX-01 and EX-02 gates remain OPEN; not production-hardened.** The original [CI run](https://github.com/ELITEAYOTO/REL/actions/runs/39096882395) passed on Ubuntu and Windows. P1.5 evidence is recorded in [CHANGELOG](CHANGELOG.md). See [P1 evidence](docs/P1_VALIDATION.md).
+**Current status (2026-10-20 dated checkpoint): P1 alpha, selected P1.5 hardening, limited EX-01 producers, and the experimental EX-02 metadata-only pilot are merged. The 21-case generated malformed-PE campaign passed [main CI #39361179574](https://github.com/ELITEAYOTO/REL/actions/runs/39361179574); the scoped libFuzzer panic-visibility correction passed [main Windows/Ubuntu CI #39366427190](https://github.com/ELITEAYOTO/REL/actions/runs/39366427190). Full P1.5, EX-01 and EX-02 gates remain OPEN; not production-hardened. Consult [CURRENT_STATE.md](docs/governance/CURRENT_STATE.md) and verify live GitHub.** The original [CI run](https://github.com/ELITEAYOTO/REL/actions/runs/39096882395) passed on Ubuntu and Windows. P1.5 evidence is recorded in [CHANGELOG](CHANGELOG.md). See [P1 evidence](docs/P1_VALIDATION.md).
 
 ## Experimental EX-01 observation contract (prototype only)
 

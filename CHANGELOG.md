@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — Linux direct-child high-water memory/CPU accounting
+
+- Record final `wait4` kernel peak RSS and user/system CPU for the Linux `rel-inspect` child, including executions shorter than the 2 ms polling interval. Keep sampled fields and Windows behavior unchanged; native fields are null where unsupported.
+- Validate observed per-run kernel fields and aggregates in the existing paired-evidence gate, requiring complete Linux native data in current CI while permitting historical report interpretation without that opt-in. Add short-lived success/nonzero-exit wait4 regressions and negative integrity tests. **No** enforced memory/CPU budget, process-tree sandbox, PE execution, external dependency, or public manifest change.
+
+
 ## [Unreleased] — paired MinGW-w64 resource observations
 
 - Include the existing Ubuntu-built GNU MinGW-w64 x64 PE in **both** CLI timing and sampled RSS/CPU inventories, extending Ubuntu's paired gate from 6 to 7 cases without introducing or executing a new PE fixture. Record GCC/linker versions and tracked C source hash.

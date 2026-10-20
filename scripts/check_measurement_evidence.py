@@ -75,6 +75,11 @@ def validate_resources(case: dict, samples: int, name: str) -> tuple[int, int]:
     walls: list[float] = []
     rss: list[int] = []
     cpus: list[float] = []
+    kernel_rss: list[int] = []
+    kernel_cpu: list[float] = []
+    native_fields = ("kernel_peak_rss_bytes", "kernel_cpu_ms")
+    has_native_fields = any(any(k in o for k in native_fields)
+                            for o in observations if isinstance(o, dict))
     for observation in observations:
         require(isinstance(observation, dict), f"{name}: invalid observation")
         walls.append(measured(observation.get("wall_ms"), f"{name}.wall", positive=True))
@@ -89,6 +94,17 @@ def validate_resources(case: dict, samples: int, name: str) -> tuple[int, int]:
         if cpu is not None:
             cpus.append(measured(cpu, f"{name}.cpu"))
             require(count > 0, f"{name}: CPU recorded without sampling")
+        if has_native_fields:
+            require(all(k in observation for k in native_fields),
+                    f"{name}: missing per-run kernel usage fields")
+            k_rss, k_cpu = (observation[k] for k in native_fields)
+            require((k_rss is None) == (k_cpu is None),
+                    f"{name}: incomplete kernel usage pair")
+            if k_rss is not None:
+                require(type(k_rss) is int and k_rss >= 0,
+                        f"{name}: invalid kernel peak RSS")
+                kernel_rss.append(k_rss)
+                kernel_cpu.append(measured(k_cpu, f"{name}.kernel_cpu"))
     expected_wall = statistics.median(walls)
     require(abs(measured(case.get("wall_median_ms"), f"{name}.wall_median") -
                 expected_wall) <= 0.00011, f"{name}: inconsistent wall median")
@@ -100,10 +116,29 @@ def validate_resources(case: dict, samples: int, name: str) -> tuple[int, int]:
                 f"{name}: inconsistent last-sampled CPU maximum")
     else:
         require(reported_cpu is None, f"{name}: CPU maximum without samples")
-    return len(rss), len(cpus)
+    if has_native_fields:
+        require(case.get("max_kernel_peak_rss_bytes") ==
+                (max(kernel_rss) if kernel_rss else None),
+                f"{name}: inconsistent kernel peak RSS maximum")
+        reported_kernel_cpu = case.get("max_kernel_cpu_ms")
+        if kernel_cpu:
+            require(abs(measured(reported_kernel_cpu, f"{name}.max_kernel_cpu") -
+                        max(kernel_cpu)) <= 0.00011,
+                    f"{name}: inconsistent kernel CPU maximum")
+        else:
+            require(reported_kernel_cpu is None,
+                    f"{name}: kernel CPU maximum without data")
+    else:
+        require("max_kernel_peak_rss_bytes" not in case and
+                "max_kernel_cpu_ms" not in case,
+                f"{name}: kernel maximum without per-run evidence")
+    return len(rss), len(cpus), len(kernel_rss)
 
 
-def build_evidence(benchmark: dict, resource: dict, expected_cases: int | None = None) -> dict:
+def build_evidence(
+    benchmark: dict, resource: dict, expected_cases: int | None = None, *,
+    require_kernel_usage: bool = False,
+) -> dict:
     bench_env = benchmark["environment"]
     res_env = resource["environment"]
     require(bench_env["kind"] == "rel-cli-benchmark-v1", "wrong benchmark format")
@@ -161,7 +196,13 @@ def build_evidence(benchmark: dict, resource: dict, expected_cases: int | None =
         require(type(bcase["size_bytes"]) is int and bcase["size_bytes"] > 0,
                 f"{name}: invalid input size")
         spread = validate_timing(bcase, bench_samples, name)
-        rss_count, cpu_count = validate_resources(rcase, resource_samples, name)
+        rss_count, cpu_count, kernel_count = validate_resources(
+            rcase, resource_samples, name
+        )
+        if require_kernel_usage:
+            require(res_env["os"].startswith("Linux") and
+                    kernel_count == resource_samples,
+                    f"{name}: missing Linux kernel usage for measured runs")
         paired.append({
             "case_id": name, "sha256": digest,
             "benchmark_relative_wall_spread": round(spread, 6),
@@ -170,6 +211,8 @@ def build_evidence(benchmark: dict, resource: dict, expected_cases: int | None =
             "resource_runs": resource_samples,
             "rss_observation_incomplete": rss_count < resource_samples,
             "cpu_observation_incomplete": cpu_count < resource_samples,
+            "kernel_usage_runs": kernel_count,
+            "kernel_usage_incomplete": kernel_count < resource_samples,
         })
     return {
         "schema": "rel-measurement-evidence-v1",
@@ -190,6 +233,7 @@ def main() -> None:
     parser.add_argument("--benchmark", required=True, type=Path)
     parser.add_argument("--resources", required=True, type=Path)
     parser.add_argument("--expected-cases", required=True, type=int)
+    parser.add_argument("--require-kernel-usage", action="store_true")
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
     if not 1 <= args.expected_cases <= 1000:
@@ -197,7 +241,10 @@ def main() -> None:
     try:
         benchmark = json.loads(args.benchmark.read_text(encoding="utf-8"))
         resources = json.loads(args.resources.read_text(encoding="utf-8"))
-        result = build_evidence(benchmark, resources, args.expected_cases)
+        result = build_evidence(
+            benchmark, resources, args.expected_cases,
+            require_kernel_usage=args.require_kernel_usage,
+        )
         payload = json.dumps(result, indent=2, allow_nan=False) + "\n"
         with args.output.open("x", encoding="utf-8") as output:
             output.write(payload)

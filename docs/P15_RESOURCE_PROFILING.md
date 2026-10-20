@@ -1,6 +1,6 @@
 # P1.5-A — First cross-platform RSS/CPU observations
 
-**Status:** sampling harness verified on Windows/Ubuntu in [PR #19](https://github.com/ELITEAYOTO/REL/pull/19) and [CI #39104870706](https://github.com/ELITEAYOTO/REL/actions/runs/39104870706). This is a **measurement only**, not a resource limit or sandbox. This is a **measurement only**, not a resource limit or a sandbox.
+**Status:** sampling harness verified on Windows/Ubuntu in [PR #19](https://github.com/ELITEAYOTO/REL/pull/19) and [CI #39104870706](https://github.com/ELITEAYOTO/REL/actions/runs/39104870706). All profiling is **measurement only**, not a resource limit or sandbox.
 
 ## Why this step
 
@@ -28,6 +28,26 @@ binary SHA-256 and measurement context. Windows remains eleven cases.
 The exact final-head [PR CI #39373542657](https://github.com/ELITEAYOTO/REL/actions/runs/39373542657) and independent [new-main CI #39373817606](https://github.com/ELITEAYOTO/REL/actions/runs/39373817606) succeeded Windows/Ubuntu. Actual new-main Ubuntu artifacts: `rel-cli-benchmark-ubuntu-latest` (12242536911), `rel-resource-profile-ubuntu-latest` (12242109719), `rel-measurement-evidence-ubuntu-latest` (12242369176).
 
 For the 119,877-byte MinGW input, the **single observed main run** reported CLI benchmark median 0.8897 ms, profile wall median 2.4179 ms, and maximal **sampled** RSS 241,664 bytes across five runs; each had just two RSS/CPU samples. CPU readings rounded to 0.0 ms do **not** mean no CPU usage. The sampled RSS is not a real process high-water mark; these very short-lived children can allocate between polls. Do not use these data to choose a production memory/CPU threshold. The generated binary hash differed between final PR-head and postmerge runs; the runner and APT toolchain are not immutable. These are not statistical performance baselines, CPU/RSS limits, representative corpus proof or a sandbox.
+
+## Linux direct-child kernel accounting (proposed; CI pending)
+
+The resource profiler now proposes to obtain **final per-child** Linux
+`wait4` usage after `rel-inspect` exits (without an earlier `poll` or
+`wait` reaping it). New optional report fields are
+`kernel_peak_rss_bytes` (Linux `ru_maxrss` in KiB converted to bytes)
+and `kernel_cpu_ms` (final child user + system CPU). Per-case maxima
+are checked independently against the individual runs. Existing 2 ms
+sampled fields are retained. The Linux CI paired evidence gate requires
+these native fields for all measured runs; old reports without them
+remain readable when this stricter opt-in gate is not requested.
+
+This corrects a real measurement limitation for very short direct child
+processes. It does **not** count arbitrary descendants, enforce a kernel
+memory/CPU ceiling, or make hosted-runner results cross-machine comparable.
+The Windows profiler still reports only samples, with null native fields.
+The input PE continues to be passed as data and is **never executed**.
+Actual exact-head Windows+Ubuntu tests and new-main CI must pass before
+this increment can be considered integrated.
 
 ## Reproduce
 
@@ -59,9 +79,9 @@ Windows binary: `target/release/rel-inspect.exe`. Output-file creation refuses s
 
 See [ROADMAP](../ROADMAP.md), [alpha threats](security/THREAT_MODEL_ALPHA.md), [prior wall-clock benchmarks](P15_BENCHMARKS.md) and [issue #9](https://github.com/ELITEAYOTO/REL/issues/9).
 
-## Structured Windows PE resource/relocation cases (candidate)
+## Structured Windows PE resource/relocation cases (integrated controlled inputs)
 
-When the CI provides the two new source-built Windows PE paths, this profiler includes 11 Windows scenarios rather than 9; Linux remains at 6. The source-built `.rsrc` and `.reloc` inputs are independently checked by pefile and then passed to REL **only as data**. Sampled RSS and CPU are observations, not hard ceilings or a claim that REL semantically decodes resources or relocations. Corpus licensing is unresolved. See [source and rights policy](security/P15A_CORPUS_PROVENANCE.md).
+When the CI provides the two new source-built Windows PE paths, this profiler includes 11 Windows scenarios rather than 9; Linux now includes 7 cases after PR #109, including one compiled GNU MinGW-w64 x64 reference. The source-built `.rsrc` and `.reloc` inputs are independently checked by pefile and then passed to REL **only as data**. Sampled RSS and CPU are observations, not hard ceilings or a claim that REL semantically decodes resources or relocations. Corpus licensing is unresolved. See [source and rights policy](security/P15A_CORPUS_PROVENANCE.md).
 
 ## Paired measurement evidence gate (PR CI verified)
 
@@ -71,7 +91,7 @@ Run on the reports generated in the same job:
 
 ```bash
 python scripts/test_measurement_evidence.py
-python scripts/check_measurement_evidence.py --benchmark rel-benchmark.json --resources rel-resources.json --expected-cases 6 --output rel-measurement-evidence.json
+python scripts/check_measurement_evidence.py --benchmark rel-benchmark.json --resources rel-resources.json --expected-cases 7 --require-kernel-usage --output rel-measurement-evidence.json
 ```
 
 For Windows use `--expected-cases 11`. Both platforms upload `rel-measurement-evidence.json` as an additional artifact; CI passed [Windows/Linux CI #39158995252](https://github.com/ELITEAYOTO/REL/actions/runs/39158995252) and [CI #39158999274](https://github.com/ELITEAYOTO/REL/actions/runs/39158999274) at the documented PR scope. These early PR-scope runs are historical evidence; the later [main Windows/Ubuntu CI #39354165057](https://github.com/ELITEAYOTO/REL/actions/runs/39354165057) passed with the paired-evidence validator enabled. The `rel-measurement-evidence-v1` contract is **only a Python QA observation artifact**, not a new REL native binary-manifest schema. It includes per-case `benchmark_relative_wall_spread`, RSS/CPU observed run counts and explicit missing-sample flags. Resource sampling missed during short child lifetimes must remain **missing**, never silently become zero.
@@ -86,7 +106,7 @@ The `measurement_context_sha256` field is a SHA-256 of the **canonical sorted JS
 
 `host_ram_bytes_reported` is **host RAM reported by psutil**, **not** necessarily the RAM limit visible to a process in a container/VM. Likewise CPU counts/models/affinity are descriptive; do not infer dedicated scheduler cores or available CPU quotas from them. `ImageVersion` is runner-supplied when available, and `null` means unavailable, not zero. Rust/hosted CI versions are captured but **not pinned**. A changed runner identifier is deliberately treated as a different measurement context, even if CPU details appear identical.
 
-An exact same-job match improves provenance of **paired** existing data, not comparability of independently collected CI runs, reproducibility of binary bytes, statistical confidence, true RSS peaks, total CPU accounting or a production safe resource limit. Retain the current 11 Windows / 6 Linux controlled scenarios and missing RSS/CPU flags; calibrating budgets still requires repeated fixed-hardware tests.
+An exact same-job match improves provenance of **paired** existing data, not comparability of independently collected CI runs, reproducibility of binary bytes, statistical confidence, true RSS peaks, total CPU accounting or a production safe resource limit. Retain the current 11 Windows / 7 Linux controlled scenarios and missing RSS/CPU flags; calibrating budgets still requires repeated fixed-hardware tests.
 
 ## Independent campaign comparison (PR CI verified)
 

@@ -5,7 +5,12 @@ from __future__ import annotations
 import copy
 import hashlib
 import statistics
+import sys
+import time
 import unittest
+
+import psutil
+from profile_resources import poll_child_with_usage
 
 from check_measurement_evidence import build_evidence
 from _internal.measurement_environment import fingerprint
@@ -168,6 +173,74 @@ class EvidenceGateTests(unittest.TestCase):
         b["scenarios"][0]["toolchain_version"] = "GCC 14 | GNU ld 2.42"
         with self.assertRaisesRegex(ValueError, "input/provenance mismatch on toolchain_version"):
             build_evidence(a, b)
+
+    def test_kernel_usage_valid_even_without_polling_samples(self) -> None:
+        a, b = make_pair()
+        case = b["scenarios"][0]
+        for i, reading in enumerate(case["observations"]):
+            reading["kernel_peak_rss_bytes"] = 3_000_000 + i * 4096
+            reading["kernel_cpu_ms"] = float(i + 1)
+        case["max_kernel_peak_rss_bytes"] = 3_008_192
+        case["max_kernel_cpu_ms"] = 3.0
+        case["observations"][1]["resource_samples"] = 0
+        self.assertEqual(
+            build_evidence(a, b, require_kernel_usage=True)["cases"][0]["kernel_usage_runs"], 3
+        )
+        case["max_kernel_peak_rss_bytes"] += 4096
+        with self.assertRaisesRegex(ValueError, "inconsistent kernel peak RSS"):
+            build_evidence(a, b)
+
+    def test_rejects_incomplete_or_invalid_kernel_metrics(self) -> None:
+        a, b = make_pair()
+        case = b["scenarios"][0]
+        for obs in case["observations"]:
+            obs["kernel_peak_rss_bytes"] = 300_000
+            obs["kernel_cpu_ms"] = 1.0
+        case["max_kernel_peak_rss_bytes"] = 300_000
+        case["max_kernel_cpu_ms"] = 1.0
+        case["observations"][1].pop("kernel_cpu_ms")
+        with self.assertRaisesRegex(ValueError, "missing per-run kernel usage"):
+            build_evidence(a, b)
+        case["observations"][1]["kernel_cpu_ms"] = -1.0
+        with self.assertRaisesRegex(ValueError, "negative/zero"):
+            build_evidence(a, b)
+        case["observations"][1]["kernel_cpu_ms"] = 1.0
+        case["observations"][1]["kernel_peak_rss_bytes"] = None
+        with self.assertRaisesRegex(ValueError, "incomplete kernel usage pair"):
+            build_evidence(a, b)
+
+    def test_required_native_evidence_fails_closed_on_legacy_report(self) -> None:
+        a, b = make_pair()
+        with self.assertRaisesRegex(ValueError, "missing Linux kernel usage"):
+            build_evidence(a, b, require_kernel_usage=True)
+
+    @unittest.skipUnless(sys.platform == "linux", "Linux wait4 resource accounting only")
+    def test_linux_wait4_reaps_short_lived_children_with_kernel_peaks(self) -> None:
+        for code, expected in (
+            ("data = bytearray(8000000); print(len(data))", 0),
+            ("import sys; sys.exit(7)", 7),
+        ):
+            with self.subTest(expected_exit=expected):
+                proc = psutil.Popen([sys.executable, "-c", code])
+                deadline = time.monotonic() + 10
+                try:
+                    while True:
+                        status, rss, cpu_ms = poll_child_with_usage(proc)
+                        if status is not None:
+                            break
+                        if time.monotonic() > deadline:
+                            self.fail("wait4 short-lived child timeout")
+                        time.sleep(0.001)
+                    self.assertEqual(status, expected)
+                    self.assertGreater(rss, 0)
+                    self.assertGreaterEqual(cpu_ms, 0)
+                    # wait4 already reaped the child. A second psutil wait()
+                    # may return None, so retain the exact status from wait4.
+                    self.assertEqual(proc.returncode, expected)
+                finally:
+                    if proc.returncode is None:
+                        proc.kill()
+                        proc.wait()
 
     def test_rejects_optional_source_hash_drift(self) -> None:
         a, b = make_pair()

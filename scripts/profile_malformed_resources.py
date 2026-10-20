@@ -49,7 +49,7 @@ def verified_export_header_offset(seed: bytes, coff: int, optional: int) -> int:
     optional_size = int.from_bytes(seed[coff + 16:coff + 18], "little")
     table = optional + optional_size
     count = int.from_bytes(seed[coff + 2:coff + 4], "little")
-    directory = optional + (96 if seed[optional:optional + 2] == b"\\x0b\\x01" else 112)
+    directory = optional + (96 if int.from_bytes(seed[optional:optional + 2], "little") == 0x10b else 112)
     rva = int.from_bytes(seed[directory:directory + 4], "little")
     for index in range(count):
         section = table + 40 * index

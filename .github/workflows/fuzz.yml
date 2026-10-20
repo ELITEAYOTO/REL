@@ -5,6 +5,11 @@ on:
     paths:
       - 'crates/rel-pe/**'
       - 'fuzz/**'
+      - 'fixtures/pe32-basic.exe'
+      - 'fixtures/pe64-basic.exe'
+      - 'fixtures/expected.json'
+      - 'scripts/test_corpus_cases.py'
+      - 'scripts/_internal/corpus_cases.py'
       - '.github/workflows/fuzz.yml'
   workflow_dispatch:
 
@@ -35,18 +40,35 @@ jobs:
         run: python scripts/test_corpus_cases.py
       - name: Install pinned cargo-fuzz
         run: cargo +"$FUZZ_TOOLCHAIN" install cargo-fuzz --version "$CARGO_FUZZ_VERSION" --locked
+      - name: Record bounded fuzz campaign provenance
+        run: |
+          {
+            echo "run_id=${GITHUB_RUN_ID}"
+            echo "run_attempt=${GITHUB_RUN_ATTEMPT}"
+            echo "commit=${GITHUB_SHA}"
+            echo "target=pe_inspect"
+            echo "time_budget_seconds=30;timeout_per_input_seconds=4;rss_limit_mb=1500;max_len=65536;seed=20261018"
+            rustc +"$FUZZ_TOOLCHAIN" --version --verbose
+            cargo +"$FUZZ_TOOLCHAIN" fuzz --version
+            sha256sum fuzz/corpus/pe_inspect/*
+          } > rel-fuzz-smoke-metadata.txt
       - name: Build instrumented PE fuzz target
         run: cargo +"$FUZZ_TOOLCHAIN" fuzz build pe_inspect
       - name: Fuzz seeded PE parser for bounded time
+        shell: bash
         run: |
+          set -o pipefail
           mkdir -p fuzz/artifacts/pe_inspect
-          cargo +"$FUZZ_TOOLCHAIN" fuzz run pe_inspect -- -max_total_time=30 -timeout=4 -rss_limit_mb=1500 -max_len=65536 -seed=20261018 -print_final_stats=1
+          cargo +"$FUZZ_TOOLCHAIN" fuzz run pe_inspect -- -max_total_time=30 -timeout=4 -rss_limit_mb=1500 -max_len=65536 -seed=20261018 -print_final_stats=1 2>&1 | tee rel-fuzz-smoke.log
       - name: Assert fuzz dependency lock remains unchanged
         run: git diff --exit-code -- fuzz/Cargo.lock
-      - name: Preserve any failing input for investigation
-        if: failure()
+      - name: Preserve bounded fuzz logs, provenance and crashing inputs
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: rel-pe-fuzz-artifacts-${{ github.sha }}
-          path: fuzz/artifacts/
-          if-no-files-found: ignore
+          name: rel-pe-fuzz-smoke-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            rel-fuzz-smoke-metadata.txt
+            rel-fuzz-smoke.log
+            fuzz/artifacts/pe_inspect/
+          if-no-files-found: warn

@@ -35,3 +35,23 @@ Demonstrated bug, security risk, untestable coupling, repeated stable concept, m
 - Exceptions to hard limits must document path, owner, technical reason, compensating tests and expiry/review date.
 
 `Cargo.lock` is tracked and CI enforces `--locked`. P1.5 deterministic mutation tests are verified, but coverage-guided fuzzing, memory benchmarking and a broader corpus are not yet complete.
+
+## Repository hygiene / preventing stale-file debt
+
+- The live source of truth is GitHub `main` with exact-head CI. `CURRENT_STATE.md`
+  is a **dated snapshot**, while `HANDOFF_NEXT_CHAT.md`, past audits and ADRs
+  retain **historical evidence**, not an automatically current task list.
+- A tracked source file should have an identified consumer (crate, CLI, test,
+  workflow step, or explicitly retained finding). Before deleting or relocating
+  it, search callers, workflow steps, docs, fixture references and provenance.
+  Never automatically delete a regression witness, fixture, ADR or audit.
+- Run `python scripts/test_repo_hygiene.py` and
+  `python scripts/check_repo_hygiene.py`. The stdlib-only CI gate checks local
+  tracked Markdown file and directory paths on Windows/Linux, NOT external
+  URLs, anchor fragments, semantic accuracy, code references or freshness.
+- When current documentation is superseded, update its state or link to the
+  canonical replacement. Preserve historical snapshots as dated evidence
+  rather than silently rewriting history. Avoid redundant status indexes,
+  repeated rolling archives and broad cosmetic reorganizations.
+- For moved/deleted paths use scoped PRs with consumer/provenance review and
+  negative tests. Unreferenced is not evidence of obsolescence.

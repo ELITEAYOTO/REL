@@ -2,7 +2,7 @@
 
 ## [Unreleased] — distinct GNU MinGW-w64 PE producer coverage
 
-- Reuse the existing controlled Windows C probe and independent Python pefile oracle for an Ubuntu-built GCC/MinGW-w64 x64 PE32+ executable, extending structural comparison to every section's name, offset, size and virtual address.
+- Reuse the existing controlled Windows C probe and independent Python pefile oracle for an Ubuntu-built GCC/MinGW-w64 x64 PE32+ executable, extending structural comparison to every section's name (including resolved GNU COFF long-name references), offset, size and virtual address, with negative string-table tests on both OS runners.
 - Archive static-only MinGW compiler/linker versions, C source and compiled PE SHA-256, and verified metadata as JSON; never execute, load, commit or distribute the generated EXE. This is a cross-toolchain controlled trial, not a cleared representative corpus, deterministic package lock, or a parser CPU/RSS guarantee. Issue #9 and licensing #16 remain open.
 
 ## [Unreleased] — nullable manifest v1 contract regression

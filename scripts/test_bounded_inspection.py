@@ -149,6 +149,46 @@ class WatchdogTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             python_child("print('never launched')", max_stderr_bytes=0)
 
+    @unittest.skipUnless(sys.platform.startswith("linux"), "Linux RLIMIT_FSIZE only")
+    def test_linux_kernel_file_size_ceiling_is_installed_before_exec(self) -> None:
+        import resource
+
+        # The wrapper must respect a pre-existing smaller hard ceiling.
+        _, inherited_hard = resource.getrlimit(resource.RLIMIT_FSIZE)
+        budget = max(4096, 1024) + 1
+        if inherited_hard != resource.RLIM_INFINITY:
+            budget = min(budget, inherited_hard)
+        output = python_child(
+            "import resource;print(resource.getrlimit(resource.RLIMIT_FSIZE))",
+            max_stdout_bytes=4096,
+            max_stderr_bytes=1024,
+        )
+        self.assertEqual(output.strip(), f"({budget}, {budget})".encode())
+
+    @unittest.skipUnless(sys.platform.startswith("linux"), "Linux RLIMIT_FSIZE only")
+    def test_linux_kernel_stops_fast_large_file_write_between_polls(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="rel-fsize-") as directory:
+            output_file = Path(directory) / "oversized.bin"
+            script = (
+                "import errno,sys\\n"
+                f"with open({str(output_file)!r}, 'wb', buffering=0) as handle:\\n"
+                "    try:\\n"
+                "        while True:\\n"
+                "            handle.write(b'x' * 65536)\\n"
+                "    except OSError as error:\\n"
+                "        if error.errno != errno.EFBIG:\\n"
+                "            raise\\n"
+                "        sys.stderr.write('kernel EFBIG')\\n"
+                "        sys.exit(79)\\n"
+            )
+            with self.assertRaisesRegex(WorkerFailed, "status 79: kernel EFBIG"):
+                python_child(
+                    script, max_stdout_bytes=4096, max_stderr_bytes=1024,
+                    poll_seconds=1,
+                )
+            self.assertGreater(output_file.stat().st_size, 0)
+            self.assertLessEqual(output_file.stat().st_size, 4097)
+
     @unittest.skipUnless(sys.platform.startswith("linux"), "Linux RLIMIT_AS only")
     def test_linux_kernel_address_space_limit_is_installed_before_exec(self) -> None:
         limit = 128 * 1024 * 1024

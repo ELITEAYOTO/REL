@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased] — bounded fuzz smoke evidence and seed-change triggers
+
+- Retain the bounded PE libFuzzer smoke log, actual run/attempt and commit provenance, compiler version, flags and hashes on successful **and** failed executions; preserve crash artifacts. Shell `pipefail` retains failure semantics.
+- Trigger the same fuzz smoke when canonical PE32/PE32+ fixture data, expected digests or shared hash validation change. This is evidence hygiene, not a new fuzz campaign, corpus diversity, automated minimization or a hostile-input guarantee. Issue #8 remains open.
+
 ## [Unreleased] — fuzz panic visibility and seed identity
 
 - Correct the `pe_inspect` libFuzzer target to treat `PeError::DependencyPanic` as a **fuzzer failure** instead of silently ignoring it. Ordinary `Unsupported` and `Parse` errors remain accepted malformed-input outcomes; the production parser and its controlled-input warning remain unchanged.

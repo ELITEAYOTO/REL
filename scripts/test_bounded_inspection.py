@@ -52,6 +52,56 @@ class WatchdogTests(unittest.TestCase):
         self.assertEqual(raised.exception.kind, "wall")
         self.assertLess(time.monotonic() - started, 5)
 
+    @unittest.skipUnless(sys.platform.startswith("linux"), "Linux groups only")
+    def test_linux_wall_timeout_terminates_descendant_in_same_group(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="rel-linux-group-") as folder:
+            ready = Path(folder) / "ready"
+            escaped = Path(folder) / "escaped"
+            descendant = (
+                "import pathlib,time;"
+                "time.sleep(2.3);"
+                f"pathlib.Path({str(escaped)!r}).write_text('survived')"
+            )
+            parent = (
+                "import pathlib,subprocess,sys,time;"
+                f"subprocess.Popen([sys.executable,'-c',{descendant!r}]);"
+                f"pathlib.Path({str(ready)!r}).write_text('spawned');"
+                "time.sleep(10)"
+            )
+            with self.assertRaises(LimitExceeded) as raised:
+                supervise(
+                    [sys.executable, "-c", parent],
+                    wall_seconds=1.0,
+                    max_sampled_rss_bytes=256 * 1024 * 1024,
+                )
+            self.assertEqual(raised.exception.kind, "wall")
+            self.assertTrue(ready.exists(), "descendant was never spawned")
+            time.sleep(2.4)
+            self.assertFalse(escaped.exists(), "descendant survived wall timeout")
+
+    @unittest.skipUnless(sys.platform.startswith("linux"), "Linux groups only")
+    def test_linux_success_cleans_up_remaining_group_descendant(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="rel-linux-group-") as folder:
+            escaped = Path(folder) / "escaped"
+            descendant = (
+                "import pathlib,time;"
+                "time.sleep(1.1);"
+                f"pathlib.Path({str(escaped)!r}).write_text('survived')"
+            )
+            parent = (
+                "import subprocess,sys,time;"
+                f"subprocess.Popen([sys.executable,'-c',{descendant!r}]);"
+                "time.sleep(0.15);print('parent succeeded')"
+            )
+            output = supervise(
+                [sys.executable, "-c", parent],
+                wall_seconds=5,
+                max_sampled_rss_bytes=256 * 1024 * 1024,
+            )
+            self.assertEqual(output.strip(), b"parent succeeded")
+            time.sleep(1.3)
+            self.assertFalse(escaped.exists(), "descendant survived parent exit")
+
     def test_stops_observed_rss_above_budget(self) -> None:
         with self.assertRaises(LimitExceeded) as raised:
             supervise(

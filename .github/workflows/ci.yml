@@ -104,10 +104,40 @@ jobs:
       - name: End-to-end CLI test (Linux)
         if: runner.os == 'Linux'
         run: python scripts/smoke_cli.py --binary target/release/rel-inspect
+      - name: Install GNU MinGW-w64 compiler (Ubuntu static reference only)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends gcc-mingw-w64-x86-64-win32
+          dpkg-query -W gcc-mingw-w64-x86-64-win32 binutils-mingw-w64-x86-64
+      - name: Build controlled MinGW-w64 PE32+ (Ubuntu; never execute)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p compiler-probes
+          x86_64-w64-mingw32-gcc -std=c11 -O2 -Wall -Wextra -Werror -Wno-unknown-pragmas -o compiler-probes/rel-mingw-x64-probe.exe fixtures/probes/msvc_probe.c -lkernel32
+          x86_64-w64-mingw32-gcc --version | sed -n '1p' > compiler-probes/mingw-toolchain-version.txt
+          x86_64-w64-mingw32-ld --version | sed -n '1p' >> compiler-probes/mingw-toolchain-version.txt
+          sha256sum fixtures/probes/msvc_probe.c compiler-probes/rel-mingw-x64-probe.exe
+      - name: Independent MinGW-w64 PE32+ oracle (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          python -m pip install pefile==2024.8.26
+          python -m unittest scripts.check_windows_msvc_probe -v
+          python scripts/check_windows_msvc_probe.py --binary target/release/rel-inspect --probe compiler-probes/rel-mingw-x64-probe.exe --compiler-label MinGW-w64 --toolchain-version-file compiler-probes/mingw-toolchain-version.txt --output rel-mingw-x64-oracle.json
+      - name: Upload static MinGW-w64 oracle metadata (Ubuntu only)
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: rel-mingw-x64-oracle-ubuntu
+          path: rel-mingw-x64-oracle.json
+          if-no-files-found: error
       - name: Independent Windows PE oracle
         if: runner.os == 'Windows'
         run: |
           python -m pip install pefile==2024.8.26
+          python -m unittest scripts.check_windows_msvc_probe -v
           python scripts/check_windows_pe_oracle.py --binary target/release/rel-inspect.exe
       - name: Build controlled MSVC and Clang-cl x64 PE references (Windows; do not execute)
         if: runner.os == 'Windows'

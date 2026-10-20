@@ -1,6 +1,6 @@
 # REL — Current state and next-chat entry
 
-**Checkpoint: 2026-10-20, after PR #95 and exact post-squash main CI.** This is a dated
+**Checkpoint: 2026-10-20, after PR #99 and exact post-squash main CI.** This is a dated
 verification, NOT a live GitHub API. Always fetch current main SHA, open PRs,
 issues and completed CI before acting. The large
 [historical handoff archive](HANDOFF_NEXT_CHAT.md) contains old snapshots;
@@ -30,10 +30,10 @@ the canonical entry point is THIS document.
 
 Repository: [ELITEAYOTO/REL](https://github.com/ELITEAYOTO/REL).
 Main at this dated checkpoint:
-[05faa43afd8e6258e192007cdffe9ad9f3913c77](https://github.com/ELITEAYOTO/REL/commit/05faa43afd8e6258e192007cdffe9ad9f3913c77).
-[Exact post-squash main CI #39357415523](https://github.com/ELITEAYOTO/REL/actions/runs/39357415523)
+[5f412de9573d806cfa43e02ed426da04331d8769](https://github.com/ELITEAYOTO/REL/commit/5f412de9573d806cfa43e02ed426da04331d8769).
+[Exact post-squash main CI #39362984158](https://github.com/ELITEAYOTO/REL/actions/runs/39362984158)
 **completed/success on Windows AND Ubuntu**.
-**Open PR count: 0. Open issue count: 10** at this dated checkpoint.
+**Open PR count: 0. Open issue count: 9** at this dated checkpoint.
 
 Selected scoped, integrated partial gates (issue #9 remains OPEN):
 
@@ -46,6 +46,12 @@ More recent scoped integrations, verified on the exact new main SHA:
 
 - [PR #94](https://github.com/ELITEAYOTO/REL/pull/94): tracked local Markdown path checking in Windows/Ubuntu CI, with negative regressions and current-document status corrections; [post-squash CI #39356181149](https://github.com/ELITEAYOTO/REL/actions/runs/39356181149) passed. This gate does not prove every document is current or discover unreferenced/obsolete source files.
 - [PR #95](https://github.com/ELITEAYOTO/REL/pull/95): Linux opt-in supervisor installs a per-file `RLIMIT_FSIZE` ceiling in its analyzer child before exec. Kernel-limit and burst/EFBIG regressions passed exact-head [CI #39357101394](https://github.com/ELITEAYOTO/REL/actions/runs/39357101394) and post-squash [main CI #39357415523](https://github.com/ELITEAYOTO/REL/actions/runs/39357415523), both Windows/Ubuntu. This is **not** an aggregate disk quota or hostile-process sandbox.
+
+Further verified scoped progress:
+
+- [PR #97](https://github.com/ELITEAYOTO/REL/pull/97) documented and regression-tested the four JSON/`u64` compatibility fields of the EX-02 metadata-only pilot. [Exact main CI #39359445896](https://github.com/ELITEAYOTO/REL/actions/runs/39359445896) passed Windows/Ubuntu; the scoped consumer-boundary audit [#67](https://github.com/ELITEAYOTO/REL/issues/67) closed, **without** extending the public schema or completing EX-02 #15.
+- [PR #98](https://github.com/ELITEAYOTO/REL/pull/98) expanded the controlled temporary malformed PE rejection corpus from 13 to 21 cases (export RVA/count variants), with 3 trials per OS. [Exact main CI #39361179574](https://github.com/ELITEAYOTO/REL/actions/runs/39361179574) passed Windows/Ubuntu; representative licensed samples and full resource limits remain open under #9.
+- [PR #99](https://github.com/ELITEAYOTO/REL/pull/99) moved only three import-only Python modules to `scripts/_internal/`; all CI/CLI entrypoint paths remain unchanged. [Exact main CI #39362984158](https://github.com/ELITEAYOTO/REL/actions/runs/39362984158) passed Windows/Ubuntu. No mass rewrite; [scripts layout](../../scripts/README.md) records what belongs where.
 
 **Boundaries:** watchdog process-group cleanup is not a cgroup, full
 process-tree kill guarantee or aggregate CPU/RSS/disk quota. Generated PE32
@@ -121,7 +127,7 @@ is OPEN.
 
 ## 4. Open issues and next concrete work
 
-At this snapshot the **10** open issues are:
+At this snapshot the **9** open issues are:
 [#8](https://github.com/ELITEAYOTO/REL/issues/8) fuzz diversity,
 [#9](https://github.com/ELITEAYOTO/REL/issues/9) representative licensed
 PE corpus and enforced resource limits,
@@ -129,7 +135,6 @@ PE corpus and enforced resource limits,
 [#15](https://github.com/ELITEAYOTO/REL/issues/15) full EX-02,
 [#16](https://github.com/ELITEAYOTO/REL/issues/16) owner source-license choice,
 [#44](https://github.com/ELITEAYOTO/REL/issues/44) separate offline gameplay lab,
-[#67](https://github.com/ELITEAYOTO/REL/issues/67) JSON integer/u64,
 [#68](https://github.com/ELITEAYOTO/REL/issues/68) rel-diff resource budgets,
 [#69](https://github.com/ELITEAYOTO/REL/issues/69) reproducible build hash drift,
 [#72](https://github.com/ELITEAYOTO/REL/issues/72) supply-chain/CI pin review.

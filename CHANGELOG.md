@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased] — internal PE import/export pointer regressions
+
+- Exercise 96 in-memory boundary mutations of export function/name/ordinal pointers and import descriptor thunk/name pointers on both unchanged, SHA-verified PE32/PE32+ fixtures. Require rejection of an unmappable import DLL-name RVA rather than a clean, incomplete manifest.
+- Test-only validation: no runtime parser change, dependency, public manifest schema or fixture binary addition. This does not replace representative corpus validation or worker CPU/RSS ceilings.
+
 ## [Unreleased] — targeted PE data-directory mutation regressions
 
 - Extend the deterministic rel-pe mutation gate with 96 single-field RVA/size changes across import, export and TLS directory entries in both unchanged, SHA-256-verified PE32/PE32+ reference fixtures. Fail when goblin panics even if REL catches the unwind as `PeError::DependencyPanic`, aligning with the existing fuzz target.

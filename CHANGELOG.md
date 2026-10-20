@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased] — PE32/PE32+ static TLS callback-table oracle (pending validation)
+
+- Construct source-hash-verified in-memory PE32 and PE32+ TLS directories with raw data, index VA and a two-entry, null-terminated callback-VA table; use pinned independent `pefile` structural assertions and check `rel-inspect`'s unchanged public metadata alongside one unmapped callback-table-pointer mutation.
+- Run only static inspection on Windows/Ubuntu CI; preserve original fixtures and SHA-256. Pending exact-head CI; no TLS semantic output, parser correction, external redistribution license, hostile-input safety claim or completion of issues #8/#9.
+
 ## [Unreleased] — strict F001 TLS mutation regression oracle
 
 - Strengthen the existing 1,104 F001 truncation and 1,104 single-byte XOR mutation checks to reject both unwinds escaping `rel-pe` and `PeError::DependencyPanic` returned after a caught Goblin panic. Mutation validity may change, so ordinary parse errors or valid parses remain acceptable.

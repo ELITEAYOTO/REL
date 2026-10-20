@@ -42,6 +42,8 @@
 
 ## [Unreleased] — EX-02 mixed-cardinality resource coverage
 
+- Extend the existing independent `rel-diff` CLI oracle with dense, long and JSON-escaped import/export/section names (~1.1 MiB per controlled input), exact inverse/sorted delta checks, permutation stability, ambiguous-section abstention and duplicate-observation rejection. This adds regression coverage only: no comparator, manifest contract, dependency, CI workflow or resource-limit changes; #68 stays open.
+
 - Extend the existing black-box `rel-diff` output oracle to accept a controlled report over 15 MiB and independently reject a larger serialized report with **zero stdout** under its established 16 MiB limit; input manifests themselves stay below the 16 MiB reader cap.
 - Add one third controlled EX-02 profiling scenario with 2,048 imports, exports and section records per manifest, including shared-name metadata changes. Check exact delta counts for all scenarios and continue reporting observed wall time, sampled RSS/CPU and hashed input/provenance in Windows/Linux CI artifacts.
 - No parser/CLI changes, public schema modifications, new scripts, libraries or runtime resource guarantees. The historical two-scenario measurements remain unchanged; [#68](https://github.com/ELITEAYOTO/REL/issues/68) remains open for representative data and defensible CPU/RSS acceptance criteria.

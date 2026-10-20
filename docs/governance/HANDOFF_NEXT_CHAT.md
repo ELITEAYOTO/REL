@@ -1,29 +1,32 @@
 # REL — Handoff for next ChatGPT / contributor
 
-## Fresh resume checkpoint — 2026-10-20 after PR #95
+## Fresh resume checkpoint — 2026-10-20 after PR #99
 
-**Use [CURRENT_STATE.md](CURRENT_STATE.md) as the canonical dated checkpoint,
-and always query GitHub again.** At this checkpoint `main` was
-[05faa43](https://github.com/ELITEAYOTO/REL/commit/05faa43afd8e6258e192007cdffe9ad9f3913c77);
-[post-squash main CI #39357415523](https://github.com/ELITEAYOTO/REL/actions/runs/39357415523)
-**completed/success Windows and Ubuntu**, with **zero open PRs and ten open issues**.
+**Read [CURRENT_STATE.md](CURRENT_STATE.md), then fetch live GitHub state.**
+Last verified code commit for this snapshot:
+[5f412de](https://github.com/ELITEAYOTO/REL/commit/5f412de9573d806cfa43e02ed426da04331d8769).
+[Exact main Windows/Ubuntu CI #39362984158](https://github.com/ELITEAYOTO/REL/actions/runs/39362984158)
+**completed/success**, with 0 open PRs and 9 open issues when checked.
 
-Recently merged:
-- [PR #94](https://github.com/ELITEAYOTO/REL/pull/94) introduced a small
-  tracked-local-Markdown-link hygiene gate and corrected dated security notes.
-- [PR #95](https://github.com/ELITEAYOTO/REL/pull/95) installed a Linux
-  **per-file** `RLIMIT_FSIZE` in the optional supervised analyzer before exec.
-  CI checks native limit and fast oversized writes. This is **not** a
-  filesystem disk quota, CPU/RSS isolation or generic hostile-input sandbox.
-- Earlier [PR #91](https://github.com/ELITEAYOTO/REL/pull/91) process-group
-  cleanup and [PR #92](https://github.com/ELITEAYOTO/REL/pull/92) controlled
-  MSVC/Clang-cl x86 DLL oracles remain integrated and narrowly verified.
+- [#97](https://github.com/ELITEAYOTO/REL/pull/97) increased EX-02's
+  independent JSON/u64 numeric boundary regression coverage; narrow
+  [audit #67](https://github.com/ELITEAYOTO/REL/issues/67) closed while
+  full EX-02 [#15](https://github.com/ELITEAYOTO/REL/issues/15) is OPEN.
+- [#98](https://github.com/ELITEAYOTO/REL/pull/98) verified 21 temporary
+  controlled malformed PE cases, three runs per OS. Not a licensed PE
+  corpus, peak-memory guarantee or hostile-input sandbox; #9 OPEN.
+- [#99](https://github.com/ELITEAYOTO/REL/pull/99) moved the three
+  import-only support modules to `scripts/_internal/` and preserved all
+  directly invoked CLI/CI script paths. See [scripts README](../../scripts/README.md)
+  for boundaries and further-move criteria.
+- Remaining priorities: [#9](https://github.com/ELITEAYOTO/REL/issues/9)
+  licensed independent PE corpus/resource ceilings, [#8](https://github.com/ELITEAYOTO/REL/issues/8)
+  broader fuzzing; [#16](https://github.com/ELITEAYOTO/REL/issues/16)
+  requires the owner's license choice.
 
-**Still open:** [#9](https://github.com/ELITEAYOTO/REL/issues/9) licensed
-representative PE corpus, robust resource/isolation budgets and
-[#16](https://github.com/ELITEAYOTO/REL/issues/16) owner-led source-license
-decision. Imported binaries must not be executed. Do not treat this dated
-snapshot or the archived checkpoints below as live GitHub status.
+**Historical checkpoint content below is not live status.** Do not edit
+accepted ADRs, old CI claims or retained regression evidence to make them
+appear newly verified.
 
 ---
 

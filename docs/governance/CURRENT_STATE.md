@@ -1,6 +1,6 @@
 # REL — Current state and next-chat entry
 
-**Checkpoint: 2026-10-20, after PR #99 and exact post-squash main CI.** This is a dated
+**Checkpoint: 2026-10-20, after PR #102 and exact post-squash main CI.** This is a dated
 verification, NOT a live GitHub API. Always fetch current main SHA, open PRs,
 issues and completed CI before acting. The large
 [historical handoff archive](HANDOFF_NEXT_CHAT.md) contains old snapshots;
@@ -30,8 +30,8 @@ the canonical entry point is THIS document.
 
 Repository: [ELITEAYOTO/REL](https://github.com/ELITEAYOTO/REL).
 Main at this dated checkpoint:
-[5f412de9573d806cfa43e02ed426da04331d8769](https://github.com/ELITEAYOTO/REL/commit/5f412de9573d806cfa43e02ed426da04331d8769).
-[Exact post-squash main CI #39362984158](https://github.com/ELITEAYOTO/REL/actions/runs/39362984158)
+[a920c87a1f37171833d2b33d2104cc07515cf8fd](https://github.com/ELITEAYOTO/REL/commit/a920c87a1f37171833d2b33d2104cc07515cf8fd).
+[Exact post-squash main CI #39366427190](https://github.com/ELITEAYOTO/REL/actions/runs/39366427190)
 **completed/success on Windows AND Ubuntu**.
 **Open PR count: 0. Open issue count: 9** at this dated checkpoint.
 
@@ -53,6 +53,10 @@ Further verified scoped progress:
 - [PR #98](https://github.com/ELITEAYOTO/REL/pull/98) expanded the controlled temporary malformed PE rejection corpus from 13 to 21 cases (export RVA/count variants), with 3 trials per OS. [Exact main CI #39361179574](https://github.com/ELITEAYOTO/REL/actions/runs/39361179574) passed Windows/Ubuntu; representative licensed samples and full resource limits remain open under #9.
 - [PR #99](https://github.com/ELITEAYOTO/REL/pull/99) moved only three import-only Python modules to `scripts/_internal/`; all CI/CLI entrypoint paths remain unchanged. [Exact main CI #39362984158](https://github.com/ELITEAYOTO/REL/actions/runs/39362984158) passed Windows/Ubuntu. No mass rewrite; [scripts layout](../../scripts/README.md) records what belongs where.
 
+- [PR #100](https://github.com/ELITEAYOTO/REL/pull/100) reconciled the canonical dated handoff after #97–#99. [Exact main CI #39364083241](https://github.com/ELITEAYOTO/REL/actions/runs/39364083241) passed Windows/Ubuntu on 9ab3640. This documentation PR did not alter runtime behavior.
+- [PR #101](https://github.com/ELITEAYOTO/REL/pull/101) expanded EX-02's independent output-budget oracle (accepted report >15 MiB, fail-closed above 16 MiB) and added a controlled mixed import/export/section resource-profile scenario. [Exact main CI #39364978891](https://github.com/ELITEAYOTO/REL/actions/runs/39364978891) passed Windows/Ubuntu on dc2fa60. Host-runner RSS/CPU results are sampled observations, **not** enforced parser resource ceilings; #68 and #15 remain open.
+- [PR #102](https://github.com/ELITEAYOTO/REL/pull/102) made the libFuzzer target fail on `PeError::DependencyPanic` instead of swallowing it, verified byte-identical PE32/PE32+ fuzz seeds and strengthened legacy F001 regressions. Final-head [Windows/Ubuntu CI #39366136881](https://github.com/ELITEAYOTO/REL/actions/runs/39366136881) and [bounded libFuzzer CI #39366136892](https://github.com/ELITEAYOTO/REL/actions/runs/39366136892) passed; [exact post-squash main CI #39366427190](https://github.com/ELITEAYOTO/REL/actions/runs/39366427190) passed Windows/Ubuntu on a920c87. Fuzzer reported 455,715 executions/30 seconds with no crash **in that run**; #8 stays open.
+
 **Boundaries:** watchdog process-group cleanup is not a cgroup, full
 process-tree kill guarantee or aggregate CPU/RSS/disk quota. Generated PE32
 DLLs are never loaded/executed or committed to Git; source/binary
@@ -72,10 +76,10 @@ Earlier milestones:
 | Extended PE fuzz | [run #39318875380](https://github.com/ELITEAYOTO/REL/actions/runs/39318875380): 2,562,113 executions / 301 s, no crash in THAT run; temporary trigger-only PR #84 closed unmerged |
 | Goblin TLS F001 | [#86](https://github.com/ELITEAYOTO/REL/pull/86) and [#88](https://github.com/ELITEAYOTO/REL/pull/88), [main CI #39340610502](https://github.com/ELITEAYOTO/REL/actions/runs/39340610502): historical 0.9.3 OOB reproduced; 1048-byte reduced witness, scoped #11 CLOSED |
 
-## 2. Last negative-PE campaign: issue #9, PARTIAL
+## 2. Historical negative-PE campaign (#89); later expanded by #98
 
 [Technical issue evidence](https://github.com/ELITEAYOTO/REL/issues/9#issuecomment-6280193664).
-[PR #89](https://github.com/ELITEAYOTO/REL/pull/89) generates **13
+**Historical observation, not the current corpus count.** [PR #98](https://github.com/ELITEAYOTO/REL/pull/98) later increased the temporary controlled negative cases to **21**, with [main CI #39361179574](https://github.com/ELITEAYOTO/REL/actions/runs/39361179574) successful. The following retained observations belong specifically to [PR #89](https://github.com/ELITEAYOTO/REL/pull/89), which generated **13
 controlled malformed PE32/PE32+/F001 cases**, including a malformed 8 MiB
 overlay, from already tracked, checksum-verified fixtures. Each case was run
 three times per OS. **39/39 expected status-1 rejections on Ubuntu; 39/39

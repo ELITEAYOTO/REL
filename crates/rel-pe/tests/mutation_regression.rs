@@ -101,4 +101,3 @@ fn pe32_and_pe64_directories_survive_targeted_boundary_mutations() {
     exercise_directory_boundaries(PE32, "PE32");
     exercise_directory_boundaries(PE64, "PE32+");
 }
-

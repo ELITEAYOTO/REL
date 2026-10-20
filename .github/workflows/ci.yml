@@ -27,6 +27,7 @@ jobs:
         run: |
           python scripts/test_linux_cgroup_v2_probe.py
           python scripts/probe_linux_cgroup_v2.py
+          python scripts/probe_linux_cgroup_v2.py --check-empty-child
       - name: Repository hygiene (tracked Markdown links)
         run: |
           python scripts/test_repo_hygiene.py

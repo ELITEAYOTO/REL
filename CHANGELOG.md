@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — opt-in empty cgroup child creation feasibility (pending CI)
+
+- Extend the existing cross-platform cgroup-v2 capability probe with an opt-in `--check-empty-child`: attempt an unpredictable `rel-empty-<random>` directory solely beneath the caller's canonical non-root cgroup, inspect its empty `cgroup.procs`, and `rmdir` it. Refuse ambiguous/root membership or noncanonical paths; report permission denial as observed, and fail CI if an owned temporary group cannot be removed.
+- Existing default invocation remains **read-only**. Never move a PID, start a binary under a cgroup, set `memory.max`/`cpu.max`, enable parent controllers or modify the watchdog. A successful empty-child test does NOT verify delegation or resource isolation. Add deterministic safety and failure-path tests on Windows/Ubuntu, with final-head and post-merge gates.
+- Update canonical CURRENT_STATE through independently verified #127. Issue #9 remains OPEN.
+
 ## [Unreleased] — cgroup v2 read-only capability baseline (pending CI)
 
 - Add standard-library read-only Linux cgroup v2 mount/controller preflight, with cross-platform fake-input/negative regressions and output in existing Windows/Ubuntu CI logs. Explicitly report `candidate_unverified` rather than conflating mount availability with delegated process isolation.

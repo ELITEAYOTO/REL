@@ -4,6 +4,19 @@ use rel_pe::{inspect, PeError};
 const MALFORMED_TLS: &[u8] =
     include_bytes!("../../../fixtures/regressions/goblin-0.9.3-tls-oob.bin");
 
+// Unlike a simple outer catch_unwind check, reject goblin panics that
+// rel-pe caught and returned as DependencyPanic. Mutations may otherwise
+// be valid or malformed; their accept/reject status is not the invariant.
+fn assert_no_dependency_panic(bytes: &[u8], variant: &str, index: usize) {
+    match std::panic::catch_unwind(|| inspect(bytes)) {
+        Ok(Err(PeError::DependencyPanic)) => {
+            panic!("F001 {variant} at {index} triggered a caught parser panic")
+        }
+        Err(_) => panic!("F001 {variant} at {index} unwound out of REL"),
+        _ => {}
+    }
+}
+
 #[test]
 fn malformed_tls_directory_is_rejected_without_unwinding() {
     let attempt = std::panic::catch_unwind(|| inspect(MALFORMED_TLS));
@@ -20,22 +33,16 @@ fn malformed_tls_directory_is_rejected_without_unwinding() {
 fn original_f001_truncations_and_single_byte_corruptions_do_not_unwind() {
     // Keep the historical bytes untouched; mutations use local copies only.
     // Exhaustively test each truncated length and one XOR mutation per byte.
-    // Mutation may change validity, so the only invariant is no propagated panic.
+    // Mutation may change validity: reject both unwinds and caught parser panics.
     assert_eq!(MALFORMED_TLS.len(), 1104, "F001 fixture length changed");
     for length in 0..MALFORMED_TLS.len() {
-        assert!(
-            std::panic::catch_unwind(|| inspect(&MALFORMED_TLS[..length])).is_ok(),
-            "F001 truncated to {length} bytes caused a panic"
-        );
+        assert_no_dependency_panic(&MALFORMED_TLS[..length], "truncation", length);
     }
 
     let mut changed = MALFORMED_TLS.to_vec();
     for offset in 0..MALFORMED_TLS.len() {
         changed[offset] ^= 0xff;
-        assert!(
-            std::panic::catch_unwind(|| inspect(&changed)).is_ok(),
-            "F001 one-byte corruption at offset {offset} caused a panic"
-        );
+        assert_no_dependency_panic(&changed, "XOR-0xff", offset);
         changed[offset] ^= 0xff;
     }
 }

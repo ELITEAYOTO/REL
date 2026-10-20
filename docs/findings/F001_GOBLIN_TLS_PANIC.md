@@ -57,6 +57,25 @@ was written. The bounded isolated replay and its actual results are recorded
 below. Do not introduce the vulnerable old crate into REL's production
 dependency graph or infer broad security guarantees.
 
+## F001 mutation-oracle gap (targeted change, 2026-10-20)
+
+A review of `crates/rel-pe/tests/fuzz_tls_regression.rs` identified an
+**oracle weakness**: the 1,104 strict truncations and 1,104 single-byte
+XOR-0xff variants checked only that `inspect` did not unwind *outward*.
+Because REL wraps the dependency parser in `catch_unwind`, a parser panic
+reported as `PeError::DependencyPanic` could pass those two loops. Other
+F001 golden/minimized tests and the existing libFuzzer target were already
+strict; this change aligns the **mutated** F001 cases with them.
+
+The helper now fails on both outcomes (propagated unwind or returned
+`DependencyPanic`), but still permits ordinary parse errors and successful
+parses for mutants that change validity. It prints the truncation length or
+modified byte offset to enable deterministic reproduction. It does not
+change the preserved original/minimized crash witnesses, Goblin dependency,
+production parsing, or the public manifest. This is a test correctness
+regression, **not** evidence of a newly discovered runtime panic.
+Issues #8 and #9 remain open, including process isolation and resource caps.
+
 ## Independent old-version replay and bounded minimization (2026-10-19)
 
 To complete source-level root-cause investigation without reintroducing the

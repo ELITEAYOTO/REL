@@ -1,6 +1,6 @@
 # REL — Current state and next-chat entry
 
-**Checkpoint: 2026-10-20, after PR #113 and exact post-squash main CI.** This is a dated
+**Checkpoint: 2026-10-20, after PR #118 and exact post-squash main CI.** This is a dated
 verification, NOT a live GitHub API. Always fetch current main SHA, open PRs,
 issues and completed CI before acting. The large
 [historical handoff archive](HANDOFF_NEXT_CHAT.md) contains old snapshots;
@@ -26,7 +26,55 @@ the canonical entry point is THIS document.
 6. Record proof, input hashes, actual runner metrics and residual risks.
    Never infer hostile-file safety from green tests.
 
-## 1. Last verified integration
+## 1. Latest verified integration (dated checkpoint)
+
+Repository: [ELITEAYOTO/REL](https://github.com/ELITEAYOTO/REL).
+As checked on **2026-10-20**, `main` was
+[`dcc87a225c6e52519c364caa1e991e12111e917e`](https://github.com/ELITEAYOTO/REL/commit/dcc87a225c6e52519c364caa1e991e12111e917e).
+The **separate exact-new-main**
+[CI #39388373089](https://github.com/ELITEAYOTO/REL/actions/runs/39388373089)
+finished successfully on **Windows (170 s) and Ubuntu (82 s)**.
+There were **zero open PRs and nine open issues** at this checkpoint.
+This information is historical by design: query GitHub again before merging
+or claiming a newer state.
+
+Since the older #113 checkpoint, these scoped changes were integrated:
+
+- [#114](https://github.com/ELITEAYOTO/REL/pull/114) reconciled verified
+  Windows-native resource-accounting documentation; new-main
+  [CI #39378958134](https://github.com/ELITEAYOTO/REL/actions/runs/39378958134)
+  passed on `2e4c3a69`.
+- [#115](https://github.com/ELITEAYOTO/REL/pull/115) fixed Windows venv
+  redirector process identity **in controlled Python supervisor tests only**.
+  Squash `e0e7a53f` passed
+  [exact-main CI #39383597713](https://github.com/ELITEAYOTO/REL/actions/runs/39383597713).
+- [#116](https://github.com/ELITEAYOTO/REL/pull/116) added dense/escaped
+  import/export/section input oracles to the **existing** `rel-diff`
+  CLI suite; squash `1dc06f85` passed
+  [exact-main CI #39383179851](https://github.com/ELITEAYOTO/REL/actions/runs/39383179851).
+  This did **not** add resource ceilings; #68 remains open.
+- [#117](https://github.com/ELITEAYOTO/REL/pull/117) strengthened the
+  deterministic PE mutation oracle to reject returned
+  `PeError::DependencyPanic`, with **96** top-level import/export/TLS
+  RVA/size mutations. Squash `88da2926` passed
+  [exact-main CI #39385968827](https://github.com/ELITEAYOTO/REL/actions/runs/39385968827).
+- [#118](https://github.com/ELITEAYOTO/REL/pull/118) added **96**
+  in-memory mutations of import/export *internal table pointers* and a
+  negative DLL-name RVA assertion. Exact PR HEAD `c5d9ffa1` passed
+  [Windows/Ubuntu PR CI #39387949449](https://github.com/ELITEAYOTO/REL/actions/runs/39387949449)
+  and a bounded [libFuzzer run #39387949435](https://github.com/ELITEAYOTO/REL/actions/runs/39387949435):
+  555,662 executions over 31 s with no crash reported during that run.
+  Squash `dcc87a22` passed the separate exact-main CI noted above.
+
+**Remaining limits:** No new production parser correction was demonstrated
+in #115–#118, and no PE submitted for inspection was executed. These
+checks do not establish hostile-file security, full process-tree CPU/RSS
+ceilings, complete TLS callback/import semantics or a legally cleared
+representative PE corpus. No independent review approvals are claimed.
+`binary-manifest v1.0.0` remains unchanged. #8, #9, #14, #15, #68
+and licensing #16 remain open. Prior evidence and decisions continue below.
+
+## 1a. Historical baseline before PR #114
 
 Repository: [ELITEAYOTO/REL](https://github.com/ELITEAYOTO/REL).
 Main at this dated checkpoint:
@@ -35,7 +83,7 @@ Main at this dated checkpoint:
 **completed/success on Windows AND Ubuntu**.
 **Open PR count: 0. Open issue count: 9** at this dated checkpoint.
 
-### Latest scoped integration
+### Previously latest scoped integration (#113)
 
 [PR #113](https://github.com/ELITEAYOTO/REL/pull/113) adds Windows direct-analyzer
 native peak working set and final CPU through an owned duplicate of the

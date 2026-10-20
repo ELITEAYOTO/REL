@@ -90,3 +90,28 @@ executed. The test detects backend panics, not whether every mutated
 directory is semantically correct. It neither adds a TLS preflight limit
 nor establishes coverage-guided fuzz depth, CPU/RSS budgets or sandbox
 safety. Issues #8 and #9 remain open.
+
+
+## Internal import/export pointer mutation gate (candidate, 2026-10-20)
+
+The existing in-memory regression suite separately mutates six **internal**
+directory pointers, not the top-level data-directory RVA/size fields:
+export `AddressOfFunctions`, `AddressOfNames`, `AddressOfNameOrdinals`;
+import descriptor `OriginalFirstThunk`, `Name`, and `FirstThunk`. Two verified
+synthetic PE fixtures × six pointers × eight values give **96 single-field
+mutations**. Values include zero, short/out-of-section offsets, both sides of
+the `.rdata` raw-section boundary and near-`u32::MAX` offsets. Each result must
+avoid native unwind **and** `PeError::DependencyPanic`, without pretending
+every mutated image is semantically valid.
+
+A separate negative assertion checks that a required import descriptor DLL
+name RVA set to `u32::MAX` returns `PeError::Parse`, rather than accepting a
+manifest that silently reports incomplete imports. The test asserts the
+source fixtures' expected directory and field positions before mutation,
+while the source SHA-256s remain pinned in `fixtures/expected.json` and
+checked by the existing corpus-provenance CI. No new fixture binaries are
+added, executed or loaded; mutations exist only in test memory.
+
+This is a narrow static-input gate, not complete import-table validation,
+proof of completeness for arbitrary files, or a CPU/RSS sandbox.
+Issues #8 and #9 remain open.

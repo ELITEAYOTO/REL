@@ -101,3 +101,52 @@ fn pe32_and_pe64_directories_survive_targeted_boundary_mutations() {
     exercise_directory_boundaries(PE32, "PE32");
     exercise_directory_boundaries(PE64, "PE32+");
 }
+
+// Targeted internal pointer mutations on known-source golden PE layouts.
+// All changes exist only in memory; no sample is executed or loaded.
+fn exercise_internal_table_rvas(fixture: &[u8], family: &str) {
+    let read = |at: usize| u32::from_le_bytes(fixture[at..at + 4].try_into().unwrap());
+    let nt = read(0x3c) as usize;
+    let optional = nt + 24;
+    let magic = u16::from_le_bytes(fixture[optional..optional + 2].try_into().unwrap());
+    let directory_start = match magic {
+        0x10b => 96,
+        0x20b => 112,
+        other => panic!("unexpected golden PE magic: {other:#x}"),
+    };
+    assert_eq!(read(optional + directory_start), 0x2100, "{family}: export RVA drift");
+    assert_eq!(read(optional + directory_start + 8), 0x2000, "{family}: import RVA drift");
+    assert_eq!(read(0x500 + 20), 1, "{family}: expected one export function");
+    assert_eq!(read(0x500 + 24), 1, "{family}: expected one export name");
+    assert_eq!(read(0x400 + 12), 0x20a0, "{family}: import DLL name RVA drift");
+
+    // Three export table pointers and three import descriptor pointers.
+    for (directory, base, fields) in [
+        ("export", 0x500_usize, [28_usize, 32, 36]),
+        ("import", 0x400_usize, [0_usize, 12, 16]),
+    ] {
+        for field in fields {
+            for value in [0_u32, 1, 0x1fff, 0x2000, 0x23ff, 0x2400, 0xffff_fffc, u32::MAX] {
+                let mut bytes = fixture.to_vec();
+                bytes[base + field..base + field + 4].copy_from_slice(&value.to_le_bytes());
+                let scenario = format!("{family} {directory} +{field} RVA={value:#x}");
+                assert_no_panic(&bytes, &scenario);
+            }
+        }
+    }
+
+    // A required import descriptor name RVA is unmappable: no clean result.
+    let mut invalid_dll_name = fixture.to_vec();
+    invalid_dll_name[0x400 + 12..0x400 + 16].copy_from_slice(&u32::MAX.to_le_bytes());
+    assert!(
+        matches!(inspect(&invalid_dll_name), Err(PeError::Parse(_))),
+        "{family}: unmappable import DLL name was silently accepted"
+    );
+}
+
+#[test]
+fn pe32_and_pe64_internal_directory_table_pointers_fail_safely() {
+    // 2 PE fixtures × 6 fields × 8 values = 96 bounded mutations.
+    exercise_internal_table_rvas(PE32, "PE32");
+    exercise_internal_table_rvas(PE64, "PE32+");
+}

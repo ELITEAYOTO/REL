@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This is the **first independently executable libFuzzer harness** for `rel-pe::inspect`. It is deliberately separate from the Rust stable workspace, CLI and UI; `fuzz/Cargo.toml` declares its own workspace. The target only parses input bytes and ignores whether the parser returns `Ok` or `Err`; a process crash, uncaught panic, sanitizer error or hang is a failure.
+This is the **first independently executable libFuzzer harness** for `rel-pe::inspect`. It is deliberately separate from the Rust stable workspace, CLI and UI; `fuzz/Cargo.toml` declares its own workspace. The target only parses input bytes: ordinary malformed-input rejections are accepted, but a caught `PeError::DependencyPanic` is deliberately surfaced as a fuzz failure (PR #102). A crash, uncaught panic, sanitizer error or timeout is also a failure.
 
 ## Reference tooling
 
@@ -46,7 +46,7 @@ new seed diversity, coverage guarantees, hard resource limits, or automatic
 crash minimization. Confirm the exact PR-head fuzz workflow result before
 treating this increment as verified.
 
-`.github/workflows/fuzz.yml` runs when the parser or fuzz harness changes and on manual dispatch, with a 20-minute job timeout and approximately 30 seconds of mutation after compilation. On failure, the workflow attempts to upload `fuzz/artifacts`; minimization and classification of crashes are manual follow-up steps. The smoke workflow now checks `cargo metadata --locked` before instrumented compilation and detects post-run `fuzz/Cargo.lock` drift; `cargo-fuzz 0.13.2` does not expose a direct `--locked` subcommand option. A successful run must have an identifiable commit and run ID recorded before this is considered verified.
+`.github/workflows/fuzz.yml` runs when the parser or fuzz harness changes and on manual dispatch, with a 20-minute job timeout and approximately 30 seconds of mutation after compilation. The workflow attempts to upload its log, provenance and `fuzz/artifacts` on success or failure; minimization and classification of crashes are manual follow-up steps. Runner cancellation or infrastructure failure can still prevent artifact upload. The smoke workflow now checks `cargo metadata --locked` before instrumented compilation and detects post-run `fuzz/Cargo.lock` drift; `cargo-fuzz 0.13.2` does not expose a direct `--locked` subcommand option. A successful run must have an identifiable commit and run ID recorded before this is considered verified.
 
 This is a **bounded smoke fuzz**. Even a green job does not establish an absence of crashes, hangs or exploitable vulnerabilities. A broad multi-hour corpus campaign, coverage tracking, independent oracle and minimized crash registry remain separate acceptance tasks.
 

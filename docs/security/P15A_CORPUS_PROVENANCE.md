@@ -2,6 +2,37 @@
 
 **Status (2026-10-20):** The controlled corpus and Windows MSVC/Clang-cl static oracles, resource/relocation probes and x86 PE32 DLL checks are integrated in CI; exact [main CI #39354165057](https://github.com/ELITEAYOTO/REL/actions/runs/39354165057) succeeded on Windows and Ubuntu. Prior scoped historical evidence includes [#39153900290](https://github.com/ELITEAYOTO/REL/actions/runs/39153900290), [#39155346166](https://github.com/ELITEAYOTO/REL/actions/runs/39155346166), [#39156574382](https://github.com/ELITEAYOTO/REL/actions/runs/39156574382) and [#39157915184](https://github.com/ELITEAYOTO/REL/actions/runs/39157915184). This is **not** a licensed or representative external PE corpus; compiled binaries are not committed and their redistribution rights are unverified.
 
+## GNU MinGW-w64 x64 PE test (proposed; validation pending)
+
+A separate **Ubuntu-only CI trial** cross-compiles the existing
+`fixtures/probes/msvc_probe.c` source into a Windows PE32+ EXE with
+`x86_64-w64-mingw32-gcc` and the GNU MinGW-w64 linker. GNU MinGW-w64
+offers a distinct compiler and linker lineage from the MSVC/Clang-cl
+Windows-hosted probes; it is **one new controlled build**, not a licensed
+representative collection. The existing script
+`scripts/check_windows_msvc_probe.py` is reused to compare REL against
+independent pinned `pefile==2024.8.26`, now including exact section
+name, raw offset, raw size and virtual address for the entire section table,
+as well as the observed GetTickCount64 import, named export,
+PE machine/magic, raw file size and SHA-256.
+
+CI archives only a JSON evidence record, including the exact source and
+generated binary hashes, independently observed section table,
+compiler/linker version lines, and triggering revision; it does **not**
+upload the generated EXE. The Windows binary is **never run or loaded**.
+The existing C source and generated binary have **unestablished
+redistribution rights** while issue #16 remains unresolved. The
+`ubuntu-latest` image and MinGW packages resolved through signed Ubuntu
+APT repositories are **not exact-version pinned**: captured compiler/linker
+versions identify the observed toolchain, not a reproducible byte-for-byte
+build guarantee. Both upstream GNU and REL are exercised only in an
+authorized controlled static-input experiment.
+
+**Validation status:** pending actual exact-PR-head Ubuntu/Windows CI and
+independent new-main CI. If the new compiler output is rejected, diagnose
+the concrete PE layout before changing parser acceptance; keep issue #9
+open for broader sources, redistribution clearance and true CPU/RSS budgets.
+
 ## PE32 x86 DLL regression (integrated; scoped CI verification)
 
 The Windows hosted job builds two PE32 **DLL** samples from the newly tracked

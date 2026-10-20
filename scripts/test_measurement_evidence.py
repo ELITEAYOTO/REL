@@ -234,7 +234,9 @@ class EvidenceGateTests(unittest.TestCase):
                     self.assertEqual(status, expected)
                     self.assertGreater(rss, 0)
                     self.assertGreaterEqual(cpu_ms, 0)
-                    self.assertEqual(proc.wait(), expected)
+                    # wait4 already reaped the child. A second psutil wait()
+                    # may return None, so retain the exact status from wait4.
+                    self.assertEqual(proc.returncode, expected)
                 finally:
                     if proc.returncode is None:
                         proc.kill()

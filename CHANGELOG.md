@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased] — 2026-10-20 Linux watchdog descendant cleanup (candidate)
+
+- The optional Linux inspection supervisor now creates a dedicated process session
+  and signals its process group on both success and failure, preventing ordinary
+  same-group descendants from outliving the inspected analyzer process. Add two
+  Linux-only regressions for timeout and successful parent exit, with unchanged
+  Windows behavior. This does **not** prevent a descendant from escaping into a
+  different process group, enforce aggregate CPU/RSS, or establish a sandbox.
+- No changes to the Rust parser, the public `binary-manifest v1.0.0` contract,
+  third-party licenses or production default CLI. Issue #9 remains open.
+
 ## [Unreleased] — 2026-10-20 documentation handoff
 
 - Update the canonical current state, next-chat historical handoff preface,

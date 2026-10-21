@@ -34,6 +34,20 @@ class ByteDifferenceTests(unittest.TestCase):
         self.assertEqual(category(101, regions), "debug-data")
         self.assertEqual(category(106, regions), "debug-directory-timestamp")
 
+    def test_debug_data_inside_section_must_use_more_specific_region(self):
+        # A PE debug CodeView blob normally resides in a raw section.
+        # Its bytes must not be mislabeled as ordinary section content.
+        regions = {
+            "coff_timestamp_offset": 8,
+            "debug_directory_timestamps": [{"offset": 109, "value": 7}],
+            "sections": [{"name": ".rdata", "offset": 64, "size": 96}],
+            "debug_blobs": [{"offset": 100, "size": 32}],
+        }
+        self.assertEqual(category(105, regions), "debug-data")
+        self.assertEqual(category(110, regions), "debug-directory-timestamp")
+        self.assertEqual(category(90, regions), "section:.rdata")
+        self.assertEqual(category(160, regions), "header-or-overlay")
+
     def test_capture_preserves_exact_raw_bytes(self):
         with tempfile.TemporaryDirectory() as temp:
             source = Path(temp) / "source"

@@ -139,6 +139,10 @@ def prepare_cases(
             raise ValueError("missing or invalid Clang version provenance")
         clang_version = version_lines[0][:256]
 
+    # Fail before producing any overlay when the native analyzer is absent.
+    if include_windows_executable and not binary.is_file():
+        raise FileNotFoundError(binary)
+
     cases: list[CorpusCase] = []
     for name, seed, digest in load_verified_seeds(fixtures):
         arch = name.split("-")[0]
@@ -157,8 +161,6 @@ def prepare_cases(
             ))
 
     if include_windows_executable:
-        if not binary.is_file():
-            raise FileNotFoundError(binary)
         cases.append(CorpusCase(
             "rel-windows-self", binary, "native-windows-rel-executable",
             None, None, "locally-built-rel-cli",

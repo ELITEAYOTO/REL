@@ -104,6 +104,34 @@ fn rejects_non_null_import_descriptor_with_missing_required_field() {
 }
 
 #[test]
+fn rejects_later_non_null_import_descriptor_with_missing_required_field() {
+    // The two pinned PE fixtures have one descriptor at 0x400, a zero
+    // terminator at 0x414, and unused space for another terminator.
+    // Duplicate the first descriptor in-memory to form a valid second
+    // import descriptor before testing its mandatory field omissions.
+    for (label, fixture) in [("PE32", PE32), ("PE32+", PE64)] {
+        let first = 0x400_usize;
+        let second = first + 20;
+        assert_eq!(&fixture[second..second + 20], &[0; 20], "{label}");
+        let expected = inspect(fixture).expect("tracked PE fixture parses");
+        let mut duplicated = fixture.to_vec();
+        duplicated[second..second + 20].copy_from_slice(&fixture[first..first + 20]);
+        let valid = inspect(&duplicated).expect("a second valid import descriptor parses");
+        assert_eq!(valid.imports, expected.imports, "{label}: duplicate symbols deduplicate");
+        assert_eq!(valid.warnings, expected.warnings, "{label}");
+
+        for field in [12_usize, 16] {
+            let mut malformed = duplicated.clone();
+            malformed[second + field..second + field + 4].fill(0);
+            assert!(
+                matches!(inspect(&malformed), Err(PeError::Parse(_))),
+                "{label}: non-null second descriptor with missing field at +{field} must not silently end import enumeration"
+            );
+        }
+    }
+}
+
+#[test]
 fn ordinal_import_is_flagged_without_changing_v1_import_strings() {
     // In both tracked 2-KiB fixtures the import descriptor starts at raw
     // 0x400, and .rdata RVA 0x2000 maps there. Change only the first

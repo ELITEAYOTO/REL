@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased] — Full named PE32 DLL oracle comparisons (P1.5)
+
+- Close a concrete **test-oracle detection gap** in the existing static-only MSVC/Clang-cl x86 DLL coverage: previous assertions checked only a set of section names and the presence of one export/import. Reports with incorrect section file offsets or silently omitted other named imports/exports could pass.
+- Require complete ordered section fields and canonical named import/export lists from independent pinned `pefile` to agree with the v1 manifest. Refuse ordinal-only entries outside this scoped oracle's representation rather than suppressing them.
+- Add five portable positive/negative test methods to the existing Ubuntu/Windows `pefile` CI steps. Reuse current source-built non-executed DLLs; no change to parser Rust code, dependency set, fixture bytes, license policy, workflow job count or public `binary-manifest v1.0.0` contract.
+- This increases evidence integrity on **two controlled x86 DLLs**, not the variety/licensing of external PE samples, hostile-file safety, or behavior coverage.
+
 ## [Unreleased] — Structured PE independent oracle completeness (P1.5)
 
 - Strengthen the existing controlled Windows MSVC/Clang-cl structured PE oracle: compare **the entire ordered section table (names, raw offsets/sizes and virtual addresses)** and **all observed named imports/exports** in REL's manifest with the independent `pefile` extraction, rather than accepting only the presence of `.rsrc`, `.reloc` and two exports.

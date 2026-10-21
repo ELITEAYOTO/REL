@@ -1,24 +1,25 @@
 # Changelog
 
-## [Unreleased] — EX-02 near-output-cap resource observations (pending final-head CI)
+## [Unreleased] — EX-02 near-output-cap resource observations (verified PR #129)
 
 - Extend the existing measured `rel-diff` resource profile with one deterministic high-cardinality **accepted** report strictly greater than 15 Mio and at most 16 Mio, 8192 distinct synthetic imports on each side, while preserving the 16 Mio per-input limit.
 - Record actual report byte count and SHA-256 for all profile scenarios; reject output byte drift among same-input repetitions, add small deterministic negative unit regressions and run them in existing Windows/Ubuntu CI. This measures an accepted near-cap case rather than duplicating the already tested overflow path.
-- No parser/CLI/schema/fixture changes, no extra dependency, no PE execution, and no general allocation/RSS security claim. Refresh canonical checkpoint through verified #128 and retain experimental EX-02/#68 limitations.
+- No parser/CLI/schema/fixture changes, no extra dependency, no PE execution, and no general allocation/RSS security claim. In #129 the canonical checkpoint was refreshed through #128; the follow-up documentation pass records #129 independently.
+- **Verified:** exact-head [CI #39515866730](https://github.com/ELITEAYOTO/REL/actions/runs/39515866730) and exact-main [CI #39516270775](https://github.com/ELITEAYOTO/REL/actions/runs/39516270775) succeeded Windows/Ubuntu. The accepted 16,040,894-byte report, SHA-256 and measured wall/RSS (four original CI artifacts) are in [EX02_RESOURCE_BASELINE](docs/EX02_RESOURCE_BASELINE.md) and [issue #68](https://github.com/ELITEAYOTO/REL/issues/68#issuecomment-6304298115). #68 remains open.
 
-## [Unreleased] — opt-in empty cgroup child creation feasibility (pending CI)
+## [Unreleased] — opt-in empty cgroup child creation feasibility (verified PR #128)
 
 - Extend the existing cross-platform cgroup-v2 capability probe with an opt-in `--check-empty-child`: attempt an unpredictable `rel-empty-<random>` directory solely beneath the caller's canonical non-root cgroup, inspect its empty `cgroup.procs`, and `rmdir` it. Refuse ambiguous/root membership or noncanonical paths; report permission denial as observed, and fail CI if an owned temporary group cannot be removed.
 - Existing default invocation remains **read-only**. Never move a PID, start a binary under a cgroup, set `memory.max`/`cpu.max`, enable parent controllers or modify the watchdog. A successful empty-child test does NOT verify delegation or resource isolation. Add deterministic safety and failure-path tests on Windows/Ubuntu, with final-head and post-merge gates.
 - Update canonical CURRENT_STATE through independently verified #127. Issue #9 remains OPEN.
 
-## [Unreleased] — cgroup v2 read-only capability baseline (pending CI)
+## [Unreleased] — cgroup v2 read-only capability baseline (verified PR #127)
 
 - Add standard-library read-only Linux cgroup v2 mount/controller preflight, with cross-platform fake-input/negative regressions and output in existing Windows/Ubuntu CI logs. Explicitly report `candidate_unverified` rather than conflating mount availability with delegated process isolation.
 - This probe never writes cgroupfs, starts a target, changes the watchdog, enables controllers, migrates a PID, or modifies public parser/schema/fixtures. Linux cgroup delegation, `memory.max`, `cpu.max`, `cgroup.kill` behavior and runner permissions still require active controlled validation in a suitable delegated environment; #9 stays open.
 - Refresh canonical checkpoint through the verified #126 merge and CI.
 
-## [Unreleased] — controlled errors for Linux descendant RSS sampling (pending CI)
+## [Unreleased] — controlled errors for Linux descendant RSS sampling (verified PR #126)
 
 - Fail explicitly as `WorkerFailed` on inaccessible/vanished tree enumeration or inaccessible descendant RSS rather than letting raw psutil exceptions bypass the watchdog's documented error path; still skip a descendant that vanishes after successful enumeration.
 - Add deterministic negative psutil mocks and a controlled Linux worker with injected observation refusal, checking clean failure and existing cleanup. Reconcile canonical CURRENT_STATE through verified #125; the public parser, original binary fixtures, manifest v1.0.0, Windows Job Objects, and native Linux limits do not change.

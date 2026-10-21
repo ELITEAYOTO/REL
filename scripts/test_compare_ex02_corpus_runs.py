@@ -219,6 +219,9 @@ class CorpusCrossRunTests(unittest.TestCase):
                 if edge["left"] == "clang-v1":
                     edge[f"{kind}_added"] = ["NEW!symbol"]
                     edge[f"{kind}_removed"] = ["OLD!symbol"]
+                elif (edge["left"], edge["right"]) == ("msvc-v1", "clang-v1"):
+                    edge[f"{kind}_added"] = ["OLD!symbol"]
+                    edge[f"{kind}_removed"] = ["NEW!symbol"]
             checked = compare_reports(valid, copy.deepcopy(valid), require_identical=True)
             self.assertEqual(checked["identical_raw_build_count"], 8)
 
@@ -249,7 +252,11 @@ class CorpusCrossRunTests(unittest.TestCase):
                 }:
                     edge[f"{kind}_added"] = ["NEW!symbol"]
                     edge[f"{kind}_removed"] = ["OLD!symbol"]
-                elif identity == ("msvc-v2", "msvc-v4"):
+                elif identity in {
+                    ("msvc-v2", "msvc-v4"),
+                    ("msvc-v2", "clang-v2"),
+                    ("msvc-v3", "clang-v3"),
+                }:
                     edge[f"{kind}_added"] = ["OLD!symbol"]
                     edge[f"{kind}_removed"] = ["NEW!symbol"]
             # v1->v4 is unchanged, v2->v3 is unchanged,
@@ -260,6 +267,42 @@ class CorpusCrossRunTests(unittest.TestCase):
             )
             edge[f"{kind}_added"] = ["OLD!symbol"]
             edge[f"{kind}_removed"] = ["NEW!symbol"]
+            checked = compare_reports(report, copy.deepcopy(report), require_identical=True)
+            self.assertEqual(checked["identical_raw_build_count"], 8)
+
+    def test_cross_compiler_square_rejects_balanced_incompatible_history(self):
+        for kind in ("import", "export"):
+            report = sample()
+            cross = next(
+                pair for pair in report["pairs"]
+                if (pair["left"], pair["right"]) == ("msvc-v2", "clang-v2")
+            )
+            cross[f"{kind}_added"] = ["NEW!symbol"]
+            cross[f"{kind}_removed"] = ["OLD!symbol"]
+            # Every count remains balanced; all within-compiler triangles are
+            # empty, but v1->v2 cannot disagree between the two paths.
+            with self.subTest(kind=kind), self.assertRaisesRegex(
+                ValueError, f"inconsistent {kind} cross-compiler deltas"
+            ):
+                compare_reports(report, copy.deepcopy(report), require_identical=True)
+
+    def test_cross_compiler_square_accepts_valid_single_variant_change(self):
+        for kind in ("import", "export"):
+            report = sample()
+            for edge in report["pairs"]:
+                identity = (edge["left"], edge["right"])
+                if identity in {
+                    ("clang-v1", "clang-v2"),
+                    ("msvc-v2", "clang-v2"),
+                }:
+                    edge[f"{kind}_added"] = ["NEW!symbol"]
+                    edge[f"{kind}_removed"] = ["OLD!symbol"]
+                elif identity in {
+                    ("clang-v2", "clang-v3"),
+                    ("clang-v2", "clang-v4"),
+                }:
+                    edge[f"{kind}_added"] = ["OLD!symbol"]
+                    edge[f"{kind}_removed"] = ["NEW!symbol"]
             checked = compare_reports(report, copy.deepcopy(report), require_identical=True)
             self.assertEqual(checked["identical_raw_build_count"], 8)
 

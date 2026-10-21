@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — EX-02 cross-compiler evidence consistency
+
+- Reject contradictory per-symbol import/export changes around the 6 fully observed MSVC/Clang-cl A/B squares in the existing 8-build EX-02 corpus. The earlier per-pair count and within-compiler triangle checks were insufficient to detect a balanced inconsistency confined to one cross-compiler pair.
+- Add explicit negative and positive synthetic regressions and keep existing valid test reports internally coherent. This is a necessary logical evidence check, not an independent PE oracle, proof of authenticity or completion of #15.
+- Preserve raw SHA-256, all original fixtures, public `binary-manifest v1.0.0`, Rust binaries and dependencies. No new CI jobs or schema changes.
+
 ## [Unreleased] — Reject undecodable PE section names (P1.5 candidate)
 
 - Reproduce a concrete malformed PE32 section-name case with a test-only branch CI failure: the existing `rel-pe` extraction replaced an invalid UTF-8 section name with `<invalid>` and returned no warning, despite losing the original header-name evidence.

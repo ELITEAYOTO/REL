@@ -69,4 +69,14 @@ if not exist compiler-probes\rel-delay-consumer.exe exit /b 1
 >compiler-probes\rel-delay-toolchain.txt echo %VCToolsVersion%
 >>compiler-probes\rel-delay-toolchain.txt echo %WindowsSDKVersion%
 echo Built controlled MSVC x64 delay-load EXE and DLL for static-only checks
+rem Independent ordinal import corpus: DLL export #42 NONAME via .def.
+rem The consumer links its generated import library; never run either PE.
+cl.exe /nologo /W4 /WX /O2 /MD /LD /DREL_ORDINAL_DLL /Fe:compiler-probes\rel-ordinal-target.dll fixtures\probes\ordinal_import_probe.c /link /DEF:fixtures\probes\ordinal_import_probe.def /IMPLIB:compiler-probes\rel-ordinal-target.lib
+if errorlevel 1 exit /b 1
+if not exist compiler-probes\rel-ordinal-target.lib exit /b 1
+if not exist compiler-probes\rel-ordinal-target.dll exit /b 1
+cl.exe /nologo /W4 /WX /O2 /MD /Fe:compiler-probes\rel-ordinal-consumer.exe fixtures\probes\ordinal_import_probe.c /link compiler-probes\rel-ordinal-target.lib
+if errorlevel 1 exit /b 1
+if not exist compiler-probes\rel-ordinal-consumer.exe exit /b 1
+echo Built two controlled x64 ordinal-only PE inputs for static inspection
 exit /b 0

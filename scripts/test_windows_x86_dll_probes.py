@@ -10,6 +10,8 @@ from scripts.check_windows_x86_dll_probes import (
     EXPECTED_DELAY_WARNING,
     verify_delay_load_evidence,
     verify_manifest_evidence,
+    verify_ordinal_import_evidence,
+    EXPECTED_ORDINAL_WARNING,
 )
 
 SECTIONS = [
@@ -94,6 +96,30 @@ class CompleteX86DllOracleTests(unittest.TestCase):
                 AssertionError
             ):
                 verify_delay_load_evidence(report, IMPORTS, delayed)
+    def test_real_ordinal_oracle_refuses_false_completeness(self):
+        direct = list(IMPORTS) + ["rel-ordinal-target.dll!ORDINAL 42"]
+        observed = {"imports": list(direct), "exports": [],
+                    "warnings": [EXPECTED_ORDINAL_WARNING]}
+        verify_ordinal_import_evidence(
+            observed, direct, "rel-ordinal-target.dll!ORDINAL 42"
+        )
+        cases = [
+            ({"imports": list(direct), "exports": [], "warnings": []},
+             direct, "rel-ordinal-target.dll!ORDINAL 42"),
+            ({"imports": list(direct), "exports": [],
+              "warnings": ["unrelated warning"]},
+             direct, "rel-ordinal-target.dll!ORDINAL 42"),
+            ({"imports": list(direct[:-1]), "exports": [],
+              "warnings": [EXPECTED_ORDINAL_WARNING]},
+             direct, "rel-ordinal-target.dll!ORDINAL 42"),
+            (observed, direct, "rel-ordinal-target.dll!ORDINAL 43"),
+            (observed, direct, "rel-ordinal-target.dll!rel_ordinal_probe"),
+        ]
+        for manifest, expected, ordinal in cases:
+            with self.subTest(ordinal=ordinal, manifest=manifest), self.assertRaises(
+                AssertionError
+            ):
+                verify_ordinal_import_evidence(manifest, expected, ordinal)
 
 
 if __name__ == "__main__":

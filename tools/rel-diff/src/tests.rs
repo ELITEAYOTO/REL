@@ -163,6 +163,25 @@ fn sets_are_order_independent_and_inverse() {
 }
 
 #[test]
+fn borrowed_delta_sets_preserve_long_observations_and_sorted_inverse() {
+    let padding = "X".repeat(950);
+    let shared = format!("KERNEL32.dll!Shared{padding}");
+    let removed = format!("KERNEL32.dll!Removed{padding}");
+    let added = format!("KERNEL32.dll!Added{padding}");
+    let left = vec![shared.clone(), removed.clone()];
+    let right = vec![added.clone(), shared.clone()];
+    let forward = delta(&left, &right);
+    assert_eq!(forward.added, vec![added.clone()]);
+    assert_eq!(forward.removed, vec![removed.clone()]);
+    let reverse = delta(&right, &left);
+    assert_eq!(reverse.added, forward.removed);
+    assert_eq!(reverse.removed, forward.added);
+    assert!(delta(&left, &left).added.is_empty());
+    assert_eq!(left[1], removed);
+    assert_eq!(right[0], added);
+}
+
+#[test]
 fn partial_mode_preserves_warnings_and_never_claims_negative_behaviors() {
     let raw = format!(
         r#"{{"schema_version":"1.0.0","binary_sha256":"{}","size_bytes":5,"format":"PE","arch":null,"sections":[],"imports":["kernel32.dll!ORDINAL 42"],"exports":[],"warnings":[]}}"#,

@@ -18,7 +18,10 @@ fn reports_pe32_sections_import_and_export() {
     );
     assert_eq!(output.imports, ["KERNEL32.dll!GetTickCount"]);
     assert_eq!(output.exports, ["SampleExport"]);
-    assert!(output.warnings.is_empty(), "controlled named PE reference has no warnings");
+    assert!(
+        output.warnings.is_empty(),
+        "controlled named PE reference has no warnings"
+    );
 }
 
 #[test]
@@ -35,7 +38,10 @@ fn reports_pe64_sections_import_and_export() {
     );
     assert_eq!(output.imports, ["KERNEL32.dll!GetTickCount64"]);
     assert_eq!(output.exports, ["SampleExport"]);
-    assert!(output.warnings.is_empty(), "controlled named PE reference has no warnings");
+    assert!(
+        output.warnings.is_empty(),
+        "controlled named PE reference has no warnings"
+    );
 }
 
 #[test]
@@ -46,16 +52,23 @@ fn warns_on_export_directory_with_only_ordinal_entries() {
     // is the NumberOfNames u32 at IMAGE_EXPORT_DIRECTORY + 24).
     let export_header = 0x400 + (0x2100 - 0x2000);
     let entries = u32::from_le_bytes(
-        bytes[export_header + 20..export_header + 24].try_into().unwrap(),
+        bytes[export_header + 20..export_header + 24]
+            .try_into()
+            .unwrap(),
     );
     let names = u32::from_le_bytes(
-        bytes[export_header + 24..export_header + 28].try_into().unwrap(),
+        bytes[export_header + 24..export_header + 28]
+            .try_into()
+            .unwrap(),
     );
     assert_eq!((entries, names), (1, 1));
     bytes[export_header + 24..export_header + 28].copy_from_slice(&0_u32.to_le_bytes());
 
     let output = inspect(&bytes).expect("synthetic ordinal-only export remains parseable");
-    assert!(output.exports.is_empty(), "must not fabricate an export name");
+    assert!(
+        output.exports.is_empty(),
+        "must not fabricate an export name"
+    );
     assert!(
         output
             .warnings

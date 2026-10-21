@@ -117,7 +117,10 @@ fn rejects_later_non_null_import_descriptor_with_missing_required_field() {
         let mut duplicated = fixture.to_vec();
         duplicated[second..second + 20].copy_from_slice(&fixture[first..first + 20]);
         let valid = inspect(&duplicated).expect("a second valid import descriptor parses");
-        assert_eq!(valid.imports, expected.imports, "{label}: duplicate symbols deduplicate");
+        assert_eq!(
+            valid.imports, expected.imports,
+            "{label}: duplicate symbols deduplicate"
+        );
         assert_eq!(valid.warnings, expected.warnings, "{label}");
 
         for field in [12_usize, 16] {

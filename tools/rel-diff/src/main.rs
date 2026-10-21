@@ -63,6 +63,23 @@ struct Report {
     limitations: Vec<&'static str>,
 }
 
+#[derive(Serialize)]
+struct PartialCoverage {
+    // v1 has no typed coverage completeness contract; no warnings is UNKNOWN.
+    status: &'static str,
+    left_warnings: Vec<String>,
+    right_warnings: Vec<String>,
+    negative_behavior_conclusions: bool,
+}
+
+#[derive(Serialize)]
+struct PartialReport {
+    schema_version: &'static str,
+    coverage: PartialCoverage,
+    // The historical 0.1 schema remains nested and unchanged.
+    observed: Report,
+}
+
 // JSON Schema requires these keys even when their values are null.
 // Serde's default Option behavior would otherwise accept an omitted key.
 fn required_nullable<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
@@ -115,7 +132,7 @@ fn open_manifest(path: &str) -> Result<File, String> {
     opened.map_err(|e| format!("{path}: {e}"))
 }
 
-fn load(path: &str) -> Result<Manifest, String> {
+fn load(path: &str, allow_warnings: bool) -> Result<Manifest, String> {
     let file = open_manifest(path)?;
     let metadata = file.metadata().map_err(|e| format!("{path}: {e}"))?;
     if !metadata.is_file() {
@@ -148,7 +165,7 @@ fn load(path: &str) -> Result<Manifest, String> {
     if has_duplicates(&manifest.imports) || has_duplicates(&manifest.exports) {
         return Err(format!("{path}: duplicate import or export observations"));
     }
-    if !manifest.warnings.is_empty() {
+    if !allow_warnings && !manifest.warnings.is_empty() {
         return Err(format!(
             "{path}: extraction warnings require explicit coverage handling"
         ));
@@ -265,13 +282,44 @@ fn compare(a: Manifest, b: Manifest) -> Report {
     }
 }
 
+fn compare_partial(mut left: Manifest, mut right: Manifest) -> PartialReport {
+    let mut left_warnings = std::mem::take(&mut left.warnings);
+    let mut right_warnings = std::mem::take(&mut right.warnings);
+    // Retain every warning, even unknown or repeated ones. Canonicalize
+    // their order for byte-identical results from permuted observations.
+    left_warnings.sort();
+    right_warnings.sort();
+    let status = if left_warnings.is_empty() && right_warnings.is_empty() {
+        "unknown"
+    } else {
+        "partial"
+    };
+    PartialReport {
+        schema_version: "0.2.0-experimental",
+        coverage: PartialCoverage {
+            status,
+            left_warnings,
+            right_warnings,
+            negative_behavior_conclusions: false,
+        },
+        observed: compare(left, right),
+    }
+}
+
 fn run() -> Result<(), String> {
     let args: Vec<String> = env::args().collect();
-    if args.len() != 3 {
-        return Err("usage: rel-diff LEFT.json RIGHT.json".to_owned());
-    }
-    let report = compare(load(&args[1])?, load(&args[2])?);
-    let bytes = output::serialize_report(&report)?;
+    let (partial, left_path, right_path) = match args.as_slice() {
+        [_, left, right] => (false, left.as_str(), right.as_str()),
+        [_, flag, left, right] if flag == "--partial" => (true, left.as_str(), right.as_str()),
+        _ => return Err("usage: rel-diff [--partial] LEFT.json RIGHT.json".to_owned()),
+    };
+    let left = load(left_path, partial)?;
+    let right = load(right_path, partial)?;
+    let bytes = if partial {
+        output::serialize_report(&compare_partial(left, right))?
+    } else {
+        output::serialize_report(&compare(left, right))?
+    };
     use std::io::Write;
     std::io::stdout()
         .write_all(&bytes)

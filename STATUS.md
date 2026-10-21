@@ -13,7 +13,7 @@
 - #8 : profondeur/acceptation du fuzz prolongé ; #14 et #68 : preuves expérimentales incomplètes.
 
 ## Prochaine tâche
-- N1 audit Sonnet : spécifier/tester une comparaison partielle EX-02 sans conclusions indues à partir des warnings, puis PR ciblée.
+- N1 #148 : mode `rel-diff --partial` expérimental à valider sur HEAD final, sans promouvoir la gate EX-02.
 - Conserver P1.5 #9 comme priorité de risque documentée ; ne pas démarrer iced-x86 sans gate.
 
 ## Bloquants
@@ -25,6 +25,7 @@
 - Pas de module spéculatif avant mesure du besoin et validation de la phase.
 
 ## Historique (10 entrées maximum)
+- 2026-10-21 · #148 : expérimentation du diff partiel, schéma distinct et oracles ; CI à confirmer.
 - 2026-10-21 · #146 : régression de collision des dossiers de test Windows et allocation résistante aux conflits.
 - 2026-10-21 · chore(governance): simplifier AGENTS, créer STATUS, archiver les anciennes passations (cette PR).
 - 2026-10-21 · #144 : préflight rejette import non vide avec RVA nul ; CI nouvelle main #39549151670 réussie.

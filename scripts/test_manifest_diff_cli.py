@@ -30,17 +30,16 @@ def manifest(sha, imports, exports, sections, *, size=1024, arch="x86"):
     }
 
 
-def execute(binary, directory, left, right):
+def execute(binary, directory, left, right, *, partial=False):
     left_path = directory / "left.json"
     right_path = directory / "right.json"
     left_path.write_text(json.dumps(left), encoding="utf-8")
     right_path.write_text(json.dumps(right), encoding="utf-8")
-    return subprocess.run(
-        [str(binary), str(left_path), str(right_path)],
-        capture_output=True,
-        check=False,
-        timeout=30,
-    )
+    command = [str(binary)]
+    if partial:
+        command.append("--partial")
+    command.extend([str(left_path), str(right_path)])
+    return subprocess.run(command, capture_output=True, check=False, timeout=30)
 
 
 def accepted(binary, directory, validator, left, right):
@@ -214,6 +213,81 @@ def verify_dense_escaped_metadata(binary, directory, input_validator, output_val
         rejected(binary, directory, right, duplicated)
 
 
+def verify_partial_mode(binary, directory, old_schema, partial_schema, left, right):
+    """Black-box independent oracle: unknown warnings are never completeness."""
+    clean = execute(binary, directory, left, right, partial=True)
+    assert clean.returncode == 0, clean.stderr.decode(errors="replace")
+    clean_report = json.loads(clean.stdout)
+    partial_schema.validate(clean_report)
+    assert clean_report["coverage"]["status"] == "unknown"
+    assert clean_report["coverage"]["negative_behavior_conclusions"] is False
+    original, _ = accepted(binary, directory, old_schema, left, right)
+    assert clean_report["observed"] == original
+    assert not old_schema.is_valid(clean_report)
+    assert not partial_schema.is_valid(original)
+
+    warned = copy.deepcopy(right)
+    warned["warnings"] = ["unrecognized future warning", "ordinal import"]
+    rejected(binary, directory, left, warned)  # strict mode is unchanged
+    output = execute(binary, directory, left, warned, partial=True)
+    assert output.returncode == 0, output.stderr.decode(errors="replace")
+    report = json.loads(output.stdout)
+    partial_schema.validate(report)
+    assert report["coverage"]["status"] == "partial"
+    assert report["coverage"]["left_warnings"] == []
+    assert report["coverage"]["right_warnings"] == sorted(warned["warnings"])
+    assert report["coverage"]["negative_behavior_conclusions"] is False
+
+    inverse = execute(binary, directory, warned, left, partial=True)
+    assert inverse.returncode == 0
+    backwards = json.loads(inverse.stdout)
+    partial_schema.validate(backwards)
+    assert backwards["coverage"]["left_warnings"] == sorted(warned["warnings"])
+    assert backwards["observed"]["imports"]["added"] == report["observed"]["imports"]["removed"]
+    assert backwards["observed"]["imports"]["removed"] == report["observed"]["imports"]["added"]
+
+    same = execute(binary, directory, warned, warned, partial=True)
+    assert same.returncode == 0
+    identical = json.loads(same.stdout)
+    partial_schema.validate(identical)
+    assert identical["coverage"]["status"] == "partial"
+    assert identical["observed"]["imports"]["added"] == []
+    assert identical["observed"]["imports"]["removed"] == []
+
+    reordered_left = copy.deepcopy(left)
+    reordered_right = copy.deepcopy(warned)
+    for sample in (reordered_left, reordered_right):
+        for field in ("imports", "exports", "sections", "warnings"):
+            sample[field].reverse()
+    permuted = execute(binary, directory, reordered_left, reordered_right, partial=True)
+    assert permuted.returncode == 0
+    assert permuted.stdout == output.stdout, "permutation changed partial output"
+
+    literal = copy.deepcopy(left)
+    literal["imports"] = ["KERNEL32.dll!ORDINAL 42"]
+    ordinal = copy.deepcopy(literal)
+    ordinal["binary_sha256"] = "f" * 64
+    ordinal["warnings"] = ["unrecognized ordinal-only lookup"]
+    result = execute(binary, directory, literal, ordinal, partial=True)
+    assert result.returncode == 0
+    identical_strings = json.loads(result.stdout)
+    partial_schema.validate(identical_strings)
+    assert identical_strings["coverage"]["status"] == "partial"
+    assert identical_strings["observed"]["imports"]["added"] == []
+    assert identical_strings["observed"]["imports"]["removed"] == []
+
+    invalid = [
+        {**warned, "schema_version": "2.0.0"},
+        {**warned, "binary_sha256": "bad"},
+        {**warned, "imports": warned["imports"] + warned["imports"][:1]},
+        {key: value for key, value in warned.items() if key != "warnings"},
+    ]
+    for candidate in invalid:
+        for a, b in ((left, candidate), (candidate, left)):
+            failed = execute(binary, directory, a, b, partial=True)
+            assert failed.returncode != 0 and not failed.stdout and failed.stderr
+
+
 def verify(binary, inspector):
     root = Path(__file__).resolve().parents[1]
     contract = json.loads(
@@ -228,6 +302,13 @@ def verify(binary, inspector):
     )
     Draft202012Validator.check_schema(contract)
     output_validator = Draft202012Validator(contract)
+    partial_contract = json.loads(
+        (root / "contracts/experimental/manifest-diff-partial.schema.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    Draft202012Validator.check_schema(partial_contract)
+    partial_validator = Draft202012Validator(partial_contract)
     input_validator = Draft202012Validator(input_schema)
 
     text_a = {"name": ".text", "offset": 512, "size": 100, "virtual_address": 4096}
@@ -252,6 +333,7 @@ def verify(binary, inspector):
 
     with tempfile.TemporaryDirectory(prefix="rel-diff-oracle-") as temp:
         directory = Path(temp)
+        verify_partial_mode(binary, directory, output_validator, partial_validator, a, b)
         same, _ = accepted(binary, directory, output_validator, a, a)
         assert not same["size_changed"] and not same["arch_changed"]
         assert same["sections"]["status"] == "unchanged"

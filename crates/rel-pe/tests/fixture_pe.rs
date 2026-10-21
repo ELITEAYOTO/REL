@@ -123,15 +123,14 @@ fn declared_delay_import_directory_must_warn_without_inventing_imports() {
     // optional-header entry (index 13). The synthetic fixtures do not contain
     // a valid delay-load descriptor: this proves advertised coverage, not
     // that any delayed DLL or symbol was successfully parsed.
-    for (label, fixture, directory_start) in [
-        ("PE32", PE32, 96_usize),
-        ("PE32+", PE64, 112_usize),
-    ] {
+    for (label, fixture, directory_start) in [("PE32", PE32, 96_usize), ("PE32+", PE64, 112_usize)]
+    {
         let nt = u32::from_le_bytes(fixture[0x3c..0x40].try_into().unwrap()) as usize;
         let optional = nt + 24;
         let count = u32::from_le_bytes(
             fixture[optional + directory_start - 4..optional + directory_start]
-                .try_into().unwrap(),
+                .try_into()
+                .unwrap(),
         );
         assert!(count > 13, "{label}: delay directory not declared");
         let entry = optional + directory_start + 13 * 8;
@@ -145,8 +144,10 @@ fn declared_delay_import_directory_must_warn_without_inventing_imports() {
         assert_eq!(observed.imports, before.imports, "{label}");
         assert_eq!(observed.exports, before.exports, "{label}");
         assert!(
-            observed.warnings.iter().any(|message|
-                message.contains("delay") && message.contains("import")),
+            observed
+                .warnings
+                .iter()
+                .any(|message| message.contains("delay") && message.contains("import")),
             "{label}: a declared but unparsed delay import directory must not be warning-free"
         );
     }

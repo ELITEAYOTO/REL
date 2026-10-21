@@ -18,25 +18,72 @@ def sha256(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
 
 
-def describe_differences(left: bytes, right: bytes, regions: dict) -> dict:
-    """Preserve raw-file identity and classify ALL differing bytes by first file."""
+def read_mapped_fields(data: bytes) -> dict[str, dict]:
+    """Resolve PE field offsets directly from pinned pefile; never execute DLL."""
+    import pefile
+
+    pe = pefile.PE(data=data, fast_load=False)
+    try:
+        pe.parse_data_directories(
+            directories=[pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_EXPORT"]]
+        )
+        if not hasattr(pe, "DIRECTORY_ENTRY_EXPORT"):
+            raise ValueError("controlled DLL export directory missing")
+        fields = {
+            "optional-checksum": (
+                pe.OPTIONAL_HEADER, "CheckSum"
+            ),
+            "export-directory-timestamp": (
+                pe.DIRECTORY_ENTRY_EXPORT.struct, "TimeDateStamp"
+            ),
+        }
+        observed = {}
+        for name, (structure, field) in fields.items():
+            offset = int(structure.get_field_absolute_offset(field))
+            value = int(getattr(structure, field))
+            if not 0 <= offset <= len(data) - 4:
+                raise ValueError(f"{name} is outside PE source bytes")
+            if int.from_bytes(data[offset:offset + 4], "little") != value:
+                raise ValueError(f"{name} PE field is inconsistent with source bytes")
+            observed[name] = {"offset": offset, "size": 4, "value": value}
+        return observed
+    finally:
+        pe.close()
+
+
+def classified_byte(offset: int, regions: dict, fields: dict | None = None) -> str:
+    for label, field in (fields or {}).items():
+        if field["offset"] <= offset < field["offset"] + field["size"]:
+            return label
+    return category(offset, regions)
+
+
+def describe_differences(
+    left: bytes, right: bytes, regions: dict, fields: dict | None = None
+) -> dict:
+    """Preserve raw identity and classify every changed byte by actual PE fields."""
     spans = differing_ranges(left, right)
     categories: dict[str, int] = {}
     for start, end in spans:
         for offset in range(start, end):
-            name = category(offset, regions)
+            name = classified_byte(offset, regions, fields)
             categories[name] = categories.get(name, 0) + 1
     only_timestamp_fields = bool(spans) and set(categories).issubset({
-        "coff-timestamp", "debug-directory-timestamp",
+        "coff-timestamp", "debug-directory-timestamp", "export-directory-timestamp",
+    })
+    all_known_fields = bool(spans) and set(categories).issubset({
+        "coff-timestamp", "debug-directory-timestamp", "export-directory-timestamp",
+        "optional-checksum",
     })
     return {
         "raw_byte_identical": not spans,
         "changed_byte_count": sum(end - start for start, end in spans),
         "changed_range_count": len(spans),
         "only_timestamp_field_bytes_changed": only_timestamp_fields,
+        "all_changed_bytes_in_observed_pe_fields": all_known_fields,
         "changed_bytes_by_first_file_region": categories,
         "first_changed_ranges": [
-            {"start": start, "end": end, "first_file_region": category(start, regions)}
+            {"start": start, "end": end, "first_file_region": classified_byte(start, regions, fields)}
             for start, end in spans[:32]
         ],
     }
@@ -52,6 +99,9 @@ def check(first: Path, second: Path, source: Path, versions: Path, packages: Pat
     a_fields, b_fields = record_regions(a), record_regions(b)
     if a_fields["machine"] != 0x8664 or b_fields["machine"] != 0x8664:
         raise ValueError("expected AMD64 PE observations")
+    a_mapped, b_mapped = read_mapped_fields(a), read_mapped_fields(b)
+    if any(a_mapped[k]["offset"] != b_mapped[k]["offset"] for k in a_mapped):
+        raise ValueError("observed PE field offsets differ between builds")
     banners = versions.read_text(encoding="utf-8").splitlines()
     if len(banners) != 2 or not all(banners):
         raise ValueError("expected compiler and linker version lines")
@@ -67,7 +117,9 @@ def check(first: Path, second: Path, source: Path, versions: Path, packages: Pat
         "second_size_bytes": len(b),
         "first_pe_regions": a_fields,
         "second_pe_regions": b_fields,
-        "diff": describe_differences(a, b, a_fields),
+        "first_mapped_pe_fields": a_mapped,
+        "second_mapped_pe_fields": b_mapped,
+        "diff": describe_differences(a, b, a_fields, a_mapped),
         "compiler_version": banners[0][:256],
         "linker_version": banners[1][:256],
         "toolchain_packages": package_lines,
@@ -79,7 +131,8 @@ def check(first: Path, second: Path, source: Path, versions: Path, packages: Pat
         "limits": [
             "Two rebuilds of one controlled DLL in the same Ubuntu job only.",
             "Neither executable code nor the DLL was executed or loaded.",
-            "Classifications are byte locations from the first PE, not root causes.",
+            "Mapped checksum/export timestamp offsets come from independent pefile structures.",
+            "Classifications are verified byte locations, not proven build root causes.",
             "Raw hashes are never normalized and cannot establish behavior.",
             "Exact byte differences may reflect toolchain, time, environment or input state.",
             "Package banners alone do not enumerate every transitive linker input.",

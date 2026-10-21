@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — Map GNU DLL export timestamp and checksum bytes (#69)
+
+- Refine existing PE32+ GNU MinGW-w64 same-job raw-byte drift evidence using independent pinned `pefile` field offsets for `IMAGE_EXPORT_DIRECTORY.TimeDateStamp` and `OPTIONAL_HEADER.CheckSum`. Compare the decoded u32 values directly with the exact source bytes and refuse absent or inconsistent fields or mismatched build field offsets.
+- Prior generic `section:.edata` and `header-or-overlay` labels now resolve to their actual structured fields where observable; preserve full raw SHA-256, total changed-byte counts, original source evidence and all other diagnostic categories. Do not assert a timestamp *caused* a build difference or that builds are behaviorally equivalent.
+- Add positive/negative tests for mapped timestamp/checksum classification and unmapped changes. Reuse existing Ubuntu controlled DLL evidence and both-OS Python regression step: no new CI job, artifact name, parser change, PE execution, dependency, fixture or public `binary-manifest v1.0.0` change.
+
 ## [Unreleased] — GNU MinGW-w64 DLL same-job byte-drift evidence (#69)
 
 - Add a bounded, static-only repeat-build diagnostic for the **already controlled** PE32+ AMD64 MinGW-w64 DLL, to investigate observed cross-run raw SHA-256 drift. Rebuild the same source and flags at the same output path in one Ubuntu CI job, retaining the first file only temporarily and never uploading either binary.

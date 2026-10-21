@@ -135,6 +135,49 @@ fn rejects_later_non_null_import_descriptor_with_missing_required_field() {
 }
 
 #[test]
+fn rejects_malformed_second_import_when_directory_size_understates_table() {
+    // The fixtures have a 40-byte declared import directory, one valid
+    // descriptor at 0x400 and an all-zero terminator at 0x414. Duplicate
+    // the first record in memory, then understate the advertised byte span
+    // to only 20 bytes. The next slot at 0x428 stays a zero terminator.
+    for (label, fixture, directory_start) in [
+        ("PE32", PE32, 96_usize),
+        ("PE32+", PE64, 112_usize),
+    ] {
+        let first = 0x400_usize;
+        let second = first + 20;
+        let third = second + 20;
+        assert_eq!(&fixture[second..third], &[0; 20], "{label}");
+        assert_eq!(&fixture[third..third + 20], &[0; 20], "{label}");
+        let nt = u32::from_le_bytes(fixture[0x3c..0x40].try_into().unwrap()) as usize;
+        let import_size = nt + 24 + directory_start + 12;
+        assert_eq!(
+            u32::from_le_bytes(fixture[import_size..import_size + 4].try_into().unwrap()),
+            40,
+            "{label}: source import directory size drifted"
+        );
+
+        let mut underdeclared = fixture.to_vec();
+        underdeclared[second..third].copy_from_slice(&fixture[first..second]);
+        underdeclared[import_size..import_size + 4].copy_from_slice(&20_u32.to_le_bytes());
+
+        let expected = inspect(fixture).expect("tracked fixture should parse");
+        let valid = inspect(&underdeclared).expect("valid duplicated descriptors should parse");
+        assert_eq!(valid.imports, expected.imports, "{label}");
+        assert_eq!(valid.warnings, expected.warnings, "{label}");
+
+        for field in [12_usize, 16] {
+            let mut malformed = underdeclared.clone();
+            malformed[second + field..second + field + 4].fill(0);
+            assert!(
+                matches!(inspect(&malformed), Err(PeError::Parse(_))),
+                "{label}: malformed second import descriptor beyond declared byte span (+{field}) cannot silently terminate imports"
+            );
+        }
+    }
+}
+
+#[test]
 fn ordinal_import_is_flagged_without_changing_v1_import_strings() {
     // In both tracked 2-KiB fixtures the import descriptor starts at raw
     // 0x400, and .rdata RVA 0x2000 maps there. Change only the first

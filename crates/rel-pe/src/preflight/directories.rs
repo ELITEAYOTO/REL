@@ -86,10 +86,18 @@ pub(super) fn validate(
         return Err("export directory declaration exceeds alpha size limit");
     }
     if count >= 2 {
+        let imports_rva =
+            le_u32(data, dir_start + DATA_DIRECTORY_BYTES).ok_or("truncated import directory")?;
         let imports_size = le_u32(data, dir_start + DATA_DIRECTORY_BYTES + 4)
             .ok_or("truncated import directory")?;
         if imports_size > MAX_DIRECTORY_BYTES {
             return Err("import directory declaration exceeds alpha size limit");
+        }
+        // A nonempty declared directory at RVA 0 cannot identify an import
+        // table. Reject this inconsistent declaration before asking Goblin
+        // to extract a potentially empty v1 import list.
+        if imports_rva == 0 && imports_size != 0 {
+            return Err("nonempty import directory requires nonzero RVA");
         }
     }
     if export_rva == 0 && export_size == 0 {
@@ -170,6 +178,31 @@ mod tests {
             check(&bad),
             Err("import directory declaration exceeds alpha size limit")
         );
+    }
+
+    #[test]
+    fn rejects_nonempty_import_directory_with_zero_rva() {
+        for fixture in [PE32, PE64] {
+            let (opt, _) = fixture_fields(fixture);
+            let start = if le_u16(fixture, opt) == Some(0x10b) {
+                PE32_DIRECTORY_START
+            } else {
+                PE64_DIRECTORY_START
+            };
+            let at = opt + start + DATA_DIRECTORY_BYTES;
+            assert_ne!(le_u32(fixture, at), Some(0));
+            assert_ne!(le_u32(fixture, at + 4), Some(0));
+            let bad = modify_u32(fixture, at, 0);
+            assert_eq!(
+                check(&bad),
+                Err("nonempty import directory requires nonzero RVA")
+            );
+
+            // An explicitly absent import directory remains acceptable at
+            // the preflight layer; this does not decode the raw bytes.
+            let absent = modify_u32(&bad, at + 4, 0);
+            assert_eq!(check(&absent), Ok(()));
+        }
     }
 
     #[test]

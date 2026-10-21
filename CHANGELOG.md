@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — Reject nonempty PE import directories with no RVA (P1.5)
+
+- A test-only preflight regression reproduced an observable gap: a PE32/PE32+ import directory with a nonzero declared size but zero RVA was accepted by the preflight as `Ok(())`. This is an inconsistency in declared header evidence, not proof of a demonstrated memory vulnerability or downstream parser omission.
+- Check import RVA/size consistency in the existing allocation-free directory preflight; reject a zero RVA with nonzero size, while preserving the accepted explicitly absent (0,0) declaration. Add public `rel-pe::inspect` regressions for both original fixture-derived PE bitnesses.
+- No change to `binary-manifest v1.0.0`, producer rights, original PE fixtures/hashes, worker budgets, dependencies or module layout. Deliberately leave nonzero-RVA/zero-size policy and comprehensive import completeness out of scope pending representative corpus evidence.
+
 ## [Unreleased] — Disambiguate ordinal-only import coverage (P1.5)
 
 - The existing v1 `imports` strings cannot distinguish a real symbol named `ORDINAL 42` from Goblin's synthetic representation of an import-by-ordinal. Previously both returned `warnings=[]`, potentially presenting ambiguous import evidence as definitive.

@@ -102,10 +102,6 @@ def prepare_cases(
     linux_mingw_probe: Path | None = None,
 ) -> list[CorpusCase]:
     """Create deterministic, provenance-labeled PE cases without running them."""
-    # Fail before producing any overlay when the native analyzer is absent.
-    if include_windows_executable and not binary.is_file():
-        raise FileNotFoundError(binary)
-
     # Fail before producing any overlay if the optional compiler input is invalid.
     for name, probe in (
         ("MSVC", windows_msvc_probe),
@@ -142,6 +138,10 @@ def prepare_cases(
         if not version_lines or not version_lines[0].startswith("clang version "):
             raise ValueError("missing or invalid Clang version provenance")
         clang_version = version_lines[0][:256]
+
+    # Fail before producing any overlay when the native analyzer is absent.
+    if include_windows_executable and not binary.is_file():
+        raise FileNotFoundError(binary)
 
     cases: list[CorpusCase] = []
     for name, seed, digest in load_verified_seeds(fixtures):

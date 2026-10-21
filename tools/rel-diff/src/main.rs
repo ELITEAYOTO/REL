@@ -184,8 +184,8 @@ fn delta(left: &[String], right: &[String]) -> Delta {
     let a: BTreeSet<_> = left.iter().collect();
     let b: BTreeSet<_> = right.iter().collect();
     Delta {
-        added: b.difference(&a).map(|entry| (**entry).clone()).collect(),
-        removed: a.difference(&b).map(|entry| (**entry).clone()).collect(),
+        added: b.difference(&a).map(|entry| entry.as_str().to_owned()).collect(),
+        removed: a.difference(&b).map(|entry| entry.as_str().to_owned()).collect(),
     }
 }
 

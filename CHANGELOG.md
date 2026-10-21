@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — EX-02 transitive evidence consistency (pending PR CI)
+
+- Reject logically contradictory import/export set deltas across fully observed within-toolchain A/B/C triangles in the eight-build EX-02 evidence comparator. Pairwise balanced cardinalities alone cannot guarantee mutually compatible claims.
+- Add negative regression for an impossible balanced v1/v3 change and positive regression for a consistent change and reversal; preserve legacy pairwise checks, existing PE oracles and all raw SHA evidence.
+- This checks necessary consistency of JSON evidence, **not** independent authenticity, binary semantics, PE-parser security, or completion of issue #15. No change to binary-manifest v1.0.0, Rust crates, fixture bytes, or CI matrix.
+
 ## [Unreleased] — EX-02 near-output-cap resource observations (verified PR #129)
 
 - Extend the existing measured `rel-diff` resource profile with one deterministic high-cardinality **accepted** report strictly greater than 15 Mio and at most 16 Mio, 8192 distinct synthetic imports on each side, while preserving the 16 Mio per-input limit.

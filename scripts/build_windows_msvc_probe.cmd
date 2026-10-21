@@ -55,4 +55,18 @@ if errorlevel 1 exit /b 1
 if not exist compiler-probes\rel-msvc-structured.exe exit /b 1
 if not exist compiler-probes\rel-clang-structured.exe exit /b 1
 echo Built two controlled structured PE probes without execution
+rem Build a real PE32+ delay-load descriptor from REL-authored controlled C.
+rem Use a separately built DLL/import library; do NOT run or load either input.
+if not defined VCToolsVersion exit /b 1
+if not defined WindowsSDKVersion exit /b 1
+cl.exe /nologo /W4 /WX /O2 /MD /LD /Fe:compiler-probes\rel-delay-target.dll fixtures\probes\x86_dll_probe.c /link /IMPLIB:compiler-probes\rel-delay-target.lib
+if errorlevel 1 exit /b 1
+if not exist compiler-probes\rel-delay-target.lib exit /b 1
+cl.exe /nologo /W4 /WX /O2 /MD /Fe:compiler-probes\rel-delay-consumer.exe fixtures\probes\delay_import_probe.c /link compiler-probes\rel-delay-target.lib delayimp.lib /DELAYLOAD:rel-delay-target.dll
+if errorlevel 1 exit /b 1
+if not exist compiler-probes\rel-delay-target.dll exit /b 1
+if not exist compiler-probes\rel-delay-consumer.exe exit /b 1
+>compiler-probes\rel-delay-toolchain.txt echo %VCToolsVersion%
+>>compiler-probes\rel-delay-toolchain.txt echo %WindowsSDKVersion%
+echo Built controlled MSVC x64 delay-load EXE and DLL for static-only checks
 exit /b 0

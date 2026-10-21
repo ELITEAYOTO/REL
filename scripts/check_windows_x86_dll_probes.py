@@ -16,6 +16,12 @@ import pefile
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_EXPORT = "rel_dll_probe_transform"
+EXPECTED_DELAY_WARNING = (
+    "PE delay-import directory is declared; "
+    "binary-manifest v1.0.0 does not enumerate delayed imports"
+)
+EXPECTED_DELAY_DLL = "rel-delay-target.dll"
+EXPECTED_DELAY_SYMBOL = f"{EXPECTED_DELAY_DLL}!{EXPECTED_EXPORT}"
 
 
 def verify_manifest_evidence(
@@ -97,6 +103,98 @@ def check(analyzer: Path, path: Path, producer: str, *, x64: bool = False) -> di
     }
 
 
+
+def verify_delay_load_evidence(manifest: dict, direct_imports: list[str],
+                               delayed: list[str]) -> None:
+    """The v1 list is direct-only; delay symbols are reference evidence only."""
+    assert delayed == [EXPECTED_DELAY_SYMBOL], "unexpected delay-import symbols"
+    assert manifest["imports"] == direct_imports, "ordinary import table mismatch"
+    assert not any(EXPECTED_DELAY_DLL.lower() in item.lower()
+                   for item in manifest["imports"]), "delay import leaked into v1"
+    assert manifest["warnings"] == [EXPECTED_DELAY_WARNING], (
+        "missing or incorrect delay-import coverage warning"
+    )
+
+
+def check_delay_load(analyzer: Path, path: Path, dll_path: Path,
+                     version_path: Path) -> dict:
+    """Independently decode a real MSVC /DELAYLOAD PE32+ image with pefile."""
+    data = path.read_bytes()
+    dll_bytes = dll_path.read_bytes()
+    pe = pefile.PE(data=data, fast_load=False)
+    assert pe.FILE_HEADER.Machine == 0x8664, "delay image is not AMD64"
+    assert pe.OPTIONAL_HEADER.Magic == 0x20B, "delay image is not PE32+"
+    assert not (pe.FILE_HEADER.Characteristics & 0x2000), "delay image is a DLL"
+    pe.parse_data_directories()
+    entry = pe.OPTIONAL_HEADER.DATA_DIRECTORY[13]
+    assert int(entry.VirtualAddress) > 0 and int(entry.Size) >= 32, (
+        "missing nonempty delay-load directory declaration"
+    )
+    assert hasattr(pe, "DIRECTORY_ENTRY_DELAY_IMPORT"), (
+        "pefile did not decode the real delay import descriptor"
+    )
+    delayed = []
+    for item in pe.DIRECTORY_ENTRY_DELAY_IMPORT:
+        name = item.dll.decode("ascii")
+        for symbol in item.imports:
+            assert symbol.name is not None, "ordinal delay symbol not modelled"
+            delayed.append(f"{name}!{symbol.name.decode('ascii')}")
+    delayed.sort()
+    assert delayed == [EXPECTED_DELAY_SYMBOL], delayed
+
+    target = pefile.PE(data=dll_bytes, fast_load=False)
+    assert target.FILE_HEADER.Machine == 0x8664, "delay target is not AMD64"
+    assert target.FILE_HEADER.Characteristics & 0x2000, "delay target is not a DLL"
+    target.parse_data_directories()
+    assert hasattr(target, "DIRECTORY_ENTRY_EXPORT"), "delay target missing export"
+    exported = [s.name.decode("ascii") for s in target.DIRECTORY_ENTRY_EXPORT.symbols
+                if s.name is not None]
+    assert EXPECTED_EXPORT in exported, "DLL does not export delayed symbol"
+
+    direct = []
+    for item in pe.DIRECTORY_ENTRY_IMPORT:
+        name = item.dll.decode("ascii")
+        for symbol in item.imports:
+            assert symbol.name is not None, "ordinary ordinal import not modelled"
+            direct.append(f"{name}!{symbol.name.decode('ascii')}")
+    direct = sorted(set(direct))
+    result = subprocess.run([str(analyzer), "analyze", str(path)],
+                            text=True, capture_output=True, check=False, timeout=30)
+    assert result.returncode == 0, result.stderr[:1000]
+    manifest = json.loads(result.stdout)
+    assert manifest["schema_version"] == "1.0.0"
+    assert manifest["arch"] == "x86_64"
+    assert manifest["size_bytes"] == len(data)
+    assert manifest["binary_sha256"] == hashlib.sha256(data).hexdigest()
+    assert manifest["exports"] == [], "unexpected EXE exports"
+    verify_delay_load_evidence(manifest, direct, delayed)
+
+    versions = version_path.read_text(encoding="utf-8").splitlines()
+    assert len(versions) == 2 and all(versions), "missing observed MSVC/SDK versions"
+    source_paths = ["fixtures/probes/delay_import_probe.c",
+                    "fixtures/probes/x86_dll_probe.c"]
+    return {
+        "case_id": "msvc-x64-actual-delay-load-exe",
+        "source_sha256": {p: hashlib.sha256((ROOT / p).read_bytes()).hexdigest()
+                          for p in source_paths},
+        "binary_sha256": hashlib.sha256(data).hexdigest(),
+        "delay_target_sha256": hashlib.sha256(dll_bytes).hexdigest(),
+        "size_bytes": len(data),
+        "pe_magic": "PE32+",
+        "machine": "AMD64",
+        "delay_directory_rva": int(entry.VirtualAddress),
+        "delay_directory_size": int(entry.Size),
+        "independent_delay_imports": delayed,
+        "independent_direct_imports": direct,
+        "v1_coverage_warning": EXPECTED_DELAY_WARNING,
+        "compiler": "MSVC",
+        "observed_vc_tools_version": versions[0][:256],
+        "observed_windows_sdk_version": versions[1][:256],
+        "runner_commit": os.environ.get("GITHUB_SHA"),
+        "redistribution_status": "not-established",
+        "never_executed": True,
+    }
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--binary", required=True, type=Path)
@@ -104,6 +202,9 @@ def main() -> None:
     parser.add_argument("--clang-dll", type=Path)
     parser.add_argument("--mingw-x64-dll", type=Path)
     parser.add_argument("--toolchain-version-file", type=Path)
+    parser.add_argument("--delay-exe", type=Path)
+    parser.add_argument("--delay-dll", type=Path)
+    parser.add_argument("--delay-version-file", type=Path)
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
     analyzer = args.binary.resolve(strict=True)
@@ -112,6 +213,8 @@ def main() -> None:
             parser.error("GNU x64 DLL and Windows x86 DLL modes are exclusive")
         if args.toolchain_version_file is None:
             parser.error("GNU x64 DLL requires observed toolchain versions")
+        if any((args.delay_exe, args.delay_dll, args.delay_version_file)):
+            parser.error("delay-load evidence is Windows MSVC-only")
         lines = args.toolchain_version_file.read_text(encoding="utf-8").splitlines()
         if len(lines) != 2 or not all(lines):
             parser.error("expected exactly two nonempty toolchain version lines")
@@ -135,15 +238,33 @@ def main() -> None:
         ]
         report_format = "rel-p15a-ci-built-x86-dll-oracle-v1"
         scope = "locally-compiled-static-only-pe32-dlls"
+    if any((args.delay_exe, args.delay_dll, args.delay_version_file)):
+        if not all((args.delay_exe, args.delay_dll, args.delay_version_file)):
+            parser.error("all three --delay-* paths must be provided together")
+        if args.mingw_x64_dll is not None:
+            parser.error("delay-load evidence requires Windows MSVC")
+        delay_case = check_delay_load(
+            analyzer, args.delay_exe.resolve(strict=True),
+            args.delay_dll.resolve(strict=True),
+            args.delay_version_file.resolve(strict=True)
+        )
+    else:
+        delay_case = None
     report = {
         "format": report_format,
         "reference_oracle": "pefile==2024.8.26",
         "scope": scope,
         "cases": cases,
     }
+    if delay_case is not None:
+        report["format"] = "rel-p15a-ci-built-x86-dll-plus-delay-oracle-v2"
+        report["scope"] = "locally-compiled-static-only-pe32-dlls-and-x64-delay-load-exe"
+        report["delay_load_case"] = delay_case
     args.output.write_text(
         json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
+    if delay_case is not None:
+        print("PASS real MSVC x64 delay-load descriptor and v1 abstention warning")
     for case in cases:
         print(f"PASS {case['case_id']}: static PE32/PE32+ DLL, sha256={case['binary_sha256']}")
 

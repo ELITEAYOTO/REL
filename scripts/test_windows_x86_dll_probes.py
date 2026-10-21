@@ -5,7 +5,12 @@ from __future__ import annotations
 import copy
 import unittest
 
-from scripts.check_windows_x86_dll_probes import verify_manifest_evidence
+from scripts.check_windows_x86_dll_probes import (
+    EXPECTED_DELAY_SYMBOL,
+    EXPECTED_DELAY_WARNING,
+    verify_delay_load_evidence,
+    verify_manifest_evidence,
+)
 
 SECTIONS = [
     {"name": ".text", "offset": 1024, "size": 512, "virtual_address": 4096},
@@ -71,6 +76,24 @@ class CompleteX86DllOracleTests(unittest.TestCase):
         report["warnings"] = ["partial import enumeration"]
         with self.assertRaisesRegex(AssertionError, "has warnings"):
             check(report)
+    def test_delay_import_oracle_rejects_missing_warning_and_false_completeness(self):
+        baseline = {"imports": list(IMPORTS), "warnings": [EXPECTED_DELAY_WARNING]}
+        verify_delay_load_evidence(baseline, IMPORTS, [EXPECTED_DELAY_SYMBOL])
+        cases = [
+            ({"imports": list(IMPORTS), "warnings": []},
+             [EXPECTED_DELAY_SYMBOL]),
+            ({"imports": list(IMPORTS), "warnings": ["unrelated"]},
+             [EXPECTED_DELAY_SYMBOL]),
+            ({"imports": list(IMPORTS) + [EXPECTED_DELAY_SYMBOL],
+              "warnings": [EXPECTED_DELAY_WARNING]}, [EXPECTED_DELAY_SYMBOL]),
+            (baseline, []),
+            (baseline, ["other.dll!unexpected"]),
+        ]
+        for report, delayed in cases:
+            with self.subTest(report=report, delayed=delayed), self.assertRaises(
+                AssertionError
+            ):
+                verify_delay_load_evidence(report, IMPORTS, delayed)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 # REL — Current state and next-chat entry
 
-**Checkpoint: 2026-10-21, after PR #129 and exact post-squash main CI.** This is a dated
+**Checkpoint: 2026-10-21, verified through PR #134 and its exact post-squash main CI.** This is a dated
 verification, NOT a live GitHub API. Always fetch current main SHA, open PRs,
 issues and completed CI before acting. The large
 [historical handoff archive](HANDOFF_NEXT_CHAT.md) contains old snapshots;
@@ -27,6 +27,14 @@ the canonical entry point is THIS document.
    Never infer hostile-file safety from green tests.
 
 ## 1. Latest verified integration (dated checkpoint)
+
+### Verified 2026-10-21: consolidated updates #130–#134
+
+- Latest live-checked `main` before this incremental PR was `b5355e322bd66c80ff26df8c805c478ff082e173`, 0 PR open; exact post-squash [CI #39531591390](https://github.com/ELITEAYOTO/REL/actions/runs/39531591390) passed Windows/Ubuntu with all 15 preserved artifacts. This remains a **dated** checkpoint, not an assertion about current GitHub state.
+- [PR #134](https://github.com/ELITEAYOTO/REL/pull/134) strengthened the actual MSVC/Clang-cl x64 structured PE `pefile` oracles to require complete sections and named imports/exports. The exact-head [CI #39531281345](https://github.com/ELITEAYOTO/REL/actions/runs/39531281345) passed both OSes. [Issue #9 evidence](https://github.com/ELITEAYOTO/REL/issues/9#issuecomment-6306324686) records limitations: generated corpus rights not established, not a hostile-input sandbox.
+- [PR #133](https://github.com/ELITEAYOTO/REL/pull/133) added six cross-compiler consistency cycles in the EX-02 eight-build oracle; [main CI #39530008877](https://github.com/ELITEAYOTO/REL/actions/runs/39530008877) succeeded Windows/Ubuntu. [PR #132](https://github.com/ELITEAYOTO/REL/pull/132) rejected undecodable PE section names rather than writing a fabricated `<invalid>` in a warning-free v1 manifest; [main CI #39528127015](https://github.com/ELITEAYOTO/REL/actions/runs/39528127015) succeeded. [PR #131](https://github.com/ELITEAYOTO/REL/pull/131) added within-compiler transitive import/export evidence consistency; [main CI #39526453683](https://github.com/ELITEAYOTO/REL/actions/runs/39526453683) succeeded. [PR #130](https://github.com/ELITEAYOTO/REL/pull/130) consolidated the earlier technical checkpoint.
+- GitHub's [issue #15](https://github.com/ELITEAYOTO/REL/issues/15) was observed **closed** on 2026-10-21, whereas the historical narrative below records it open at the time. Closure alone does not establish independent source authenticity, behavior equivalence, representative authorized releases or universal resource safety. #9 and #8 remain open.
+- **Next practical investigation:** deepen independent oracles for controlled PE32 DLL/nontrivial native PE structures, then seek genuinely diverse license-reviewed corpus sources or delegated Linux resource-enforcement evidence. Do not confuse more tests on two C source probes with representative third-party coverage.
 
 ### Verified 2026-10-21: #129 accepted near-16-MiB EX-02 report profiling
 

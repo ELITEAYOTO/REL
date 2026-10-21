@@ -17,6 +17,16 @@ ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_EXPORT = "rel_dll_probe_transform"
 
 
+def verify_manifest_evidence(
+    manifest: dict, sections: list[dict], imports: list[str], exports: list[str],
+) -> None:
+    """Prove complete named v1 observations for a controlled PE32 DLL."""
+    assert manifest["sections"] == sections, "PE32 DLL section table mismatch"
+    assert manifest["imports"] == imports, "PE32 DLL named import mismatch"
+    assert manifest["exports"] == exports, "PE32 DLL named export mismatch"
+    assert manifest["warnings"] == [], "PE32 DLL extraction has warnings"
+
+
 def check(analyzer: Path, path: Path, producer: str) -> dict:
     data = path.read_bytes()
     digest = hashlib.sha256(data).hexdigest()
@@ -26,23 +36,32 @@ def check(analyzer: Path, path: Path, producer: str) -> dict:
     assert pe.FILE_HEADER.Characteristics & 0x2000, "expected DLL flag"
     pe.parse_data_directories()
 
-    section_names = {
-        entry.Name.rstrip(b"\x00").decode("ascii", errors="replace")
+    sections = [
+        {
+            "name": entry.Name.rstrip(b"\x00").decode("ascii"),
+            "offset": int(entry.PointerToRawData),
+            "size": int(entry.SizeOfRawData),
+            "virtual_address": int(entry.VirtualAddress),
+        }
         for entry in pe.sections
-    }
+    ]
+    section_names = {entry["name"] for entry in sections}
     assert ".text" in section_names and len(section_names) >= 2, section_names
     assert hasattr(pe, "DIRECTORY_ENTRY_IMPORT"), "DLL has no imports"
-    imports = {
-        symbol.name.decode("ascii", errors="replace")
-        for directory in pe.DIRECTORY_ENTRY_IMPORT
-        for symbol in directory.imports if symbol.name
-    }
-    assert "GetTickCount64" in imports, imports
+    imports: set[str] = set()
+    for directory in pe.DIRECTORY_ENTRY_IMPORT:
+        dll = directory.dll.decode("ascii")
+        for symbol in directory.imports:
+            # Named symbols only are representable by this scoped oracle.
+            # Refuse unmodelled ordinal-only imports rather than claiming completeness.
+            assert symbol.name is not None, "ordinal-only DLL import not modelled"
+            imports.add(f"{dll}!{symbol.name.decode('ascii')}")
+    assert any(item.endswith("!GetTickCount64") for item in imports), imports
     assert hasattr(pe, "DIRECTORY_ENTRY_EXPORT"), "DLL has no exports"
-    exports = {
-        symbol.name.decode("ascii", errors="replace")
-        for symbol in pe.DIRECTORY_ENTRY_EXPORT.symbols if symbol.name
-    }
+    exports: set[str] = set()
+    for symbol in pe.DIRECTORY_ENTRY_EXPORT.symbols:
+        assert symbol.name is not None, "ordinal-only DLL export not modelled"
+        exports.add(symbol.name.decode("ascii"))
     assert any(name.lstrip("_") == EXPECTED_EXPORT for name in exports), exports
 
     result = subprocess.run(
@@ -55,9 +74,7 @@ def check(analyzer: Path, path: Path, producer: str) -> dict:
     assert manifest["format"] == "PE" and manifest["arch"] == "x86"
     assert manifest["binary_sha256"] == digest
     assert manifest["size_bytes"] == len(data)
-    assert section_names == {section["name"] for section in manifest["sections"]}
-    assert any(EXPECTED_EXPORT in name for name in manifest["exports"])
-    assert any("GetTickCount64" in name for name in manifest["imports"])
+    verify_manifest_evidence(manifest, sections, sorted(imports), sorted(exports))
 
     return {
         "case_id": f"{producer}-x86-dll",

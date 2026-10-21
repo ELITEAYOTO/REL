@@ -13,7 +13,7 @@
 - #8 : profondeur/acceptation du fuzz prolongé ; #14 et #68 : preuves expérimentales incomplètes.
 
 ## Prochaine tâche
-- N1 #148 : mode `rel-diff --partial` expérimental à valider sur HEAD final, sans promouvoir la gate EX-02.
+- N2 : valider le comportement croisé v1 refus / EX-01 preuve brute des noms de section non UTF-8, sans changer les contrats.
 - Conserver P1.5 #9 comme priorité de risque documentée ; ne pas démarrer iced-x86 sans gate.
 
 ## Bloquants
@@ -25,7 +25,8 @@
 - Pas de module spéculatif avant mesure du besoin et validation de la phase.
 
 ## Historique (10 entrées maximum)
-- 2026-10-21 · #148 : expérimentation du diff partiel, schéma distinct et oracles ; CI à confirmer.
+- 2026-10-21 · N2 : test de refus v1 et conservation des octets de noms PE non UTF-8 via EX-01, CI à confirmer.
+- 2026-10-21 · #149 : diff partiel explicite et schéma distinct intégrés ; CI post-fusion #39555891672 réussie.
 - 2026-10-21 · #146 : régression de collision des dossiers de test Windows et allocation résistante aux conflits.
 - 2026-10-21 · chore(governance): simplifier AGENTS, créer STATUS, archiver les anciennes passations (cette PR).
 - 2026-10-21 · #144 : préflight rejette import non vide avec RVA nul ; CI nouvelle main #39549151670 réussie.

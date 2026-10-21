@@ -122,7 +122,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends gcc-mingw-w64-x86-64-win32
-          dpkg-query -W gcc-mingw-w64-x86-64-win32 binutils-mingw-w64-x86-64
+          dpkg-query -W gcc-mingw-w64-x86-64-win32 binutils-mingw-w64-x86-64 | tee mingw-package-versions.txt
       - name: Build controlled MinGW-w64 PE32+ (Ubuntu; never execute)
         if: runner.os == 'Linux'
         shell: bash
@@ -143,6 +143,15 @@ jobs:
           python -m unittest scripts.test_windows_structured_probe -v
           python scripts/check_windows_msvc_probe.py --binary target/release/rel-inspect --probe compiler-probes/rel-mingw-x64-probe.exe --compiler-label MinGW-w64 --toolchain-version-file compiler-probes/mingw-toolchain-version.txt --output rel-mingw-x64-oracle.json
           python scripts/check_windows_x86_dll_probes.py --binary target/release/rel-inspect --mingw-x64-dll compiler-probes/rel-mingw-x64-probe.dll --toolchain-version-file compiler-probes/mingw-toolchain-version.txt --output rel-mingw-x64-dll-oracle.json
+      - name: Same-job MinGW-w64 DLL raw-byte drift diagnostic (Ubuntu; no execution)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp compiler-probes/rel-mingw-x64-probe.dll compiler-probes/rel-mingw-x64-probe-first.bin
+          sleep 2
+          x86_64-w64-mingw32-gcc -std=c11 -O2 -s -shared -Wall -Wextra -Werror -Wno-unknown-pragmas -o compiler-probes/rel-mingw-x64-probe.dll fixtures/probes/x86_dll_probe.c -lkernel32
+          python -m scripts.check_mingw_dll_byte_drift --first compiler-probes/rel-mingw-x64-probe-first.bin --second compiler-probes/rel-mingw-x64-probe.dll --source fixtures/probes/x86_dll_probe.c --versions compiler-probes/mingw-toolchain-version.txt --packages mingw-package-versions.txt --output rel-mingw-x64-dll-rebuild.json
       - name: Upload static MinGW-w64 oracle metadata (Ubuntu only)
         if: runner.os == 'Linux'
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
@@ -151,6 +160,7 @@ jobs:
           path: |
             rel-mingw-x64-oracle.json
             rel-mingw-x64-dll-oracle.json
+            rel-mingw-x64-dll-rebuild.json
           if-no-files-found: error
       - name: Generated TLS fuzz seed integrity regressions
         run: python scripts/test_tls_fuzz_seeds.py
@@ -207,7 +217,9 @@ jobs:
           python scripts/test_windows_diff_pairs_helpers.py
           python scripts/check_windows_diff_pairs.py --inspector target/release/rel-inspect.exe --diff target/release/rel-diff.exe --corpus corpus-pairs --output rel-ex02-compiler-pairs.json
       - name: EX-02 byte-diagnostic unit regressions
-        run: python scripts/test_windows_diff_repro.py
+        run: |
+          python scripts/test_windows_diff_repro.py
+          python -m unittest scripts.test_mingw_dll_byte_drift -v
       - name: EX-02 cross-run report comparison regressions
         run: python scripts/test_compare_ex02_corpus_runs.py
       - name: Capture first EX-02 PE compiler output (Windows)

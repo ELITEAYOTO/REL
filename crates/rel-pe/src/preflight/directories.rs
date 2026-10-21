@@ -44,9 +44,50 @@ fn raw_offset_for_rva(
     Err("export directory cannot be mapped to raw section data")
 }
 
+/// Inspect only import descriptor records within the advertised byte span.
+/// Size is a declared PE field, not a trustworthy guarantee of completeness.
+/// A missing RVA mapping is still delegated to the backend for compatibility.
+fn validate_declared_import_descriptors(
+    data: &[u8],
+    sections_start: usize,
+    section_count: usize,
+    imports_rva: u32,
+    imports_size: u32,
+) -> Result<(), &'static str> {
+    // imports_size is already limited to MAX_DIRECTORY_BYTES. Preserve the
+    // previous first-record check even if the declared size is under 20 bytes.
+    let records = (imports_size as usize / IMPORT_DESCRIPTOR_BYTES).max(1);
+    for index in 0..records {
+        let offset = (index * IMPORT_DESCRIPTOR_BYTES) as u32;
+        let record_rva = imports_rva
+            .checked_add(offset)
+            .ok_or("import descriptor RVA overflow")?;
+        let Ok(raw) = raw_offset_for_rva(
+            data,
+            sections_start,
+            section_count,
+            record_rva,
+            IMPORT_DESCRIPTOR_BYTES,
+        ) else {
+            break;
+        };
+        let descriptor = region(data, raw, IMPORT_DESCRIPTOR_BYTES)
+            .ok_or("truncated import descriptor")?;
+        if descriptor.iter().all(|byte| *byte == 0) {
+            break;
+        }
+        let name = le_u32(data, raw + 12).ok_or("truncated import Name RVA")?;
+        let thunk = le_u32(data, raw + 16).ok_or("truncated import FirstThunk RVA")?;
+        if name == 0 || thunk == 0 {
+            return Err("non-null import descriptor missing Name or FirstThunk");
+        }
+    }
+    Ok(())
+}
+
 /// Verify declared directories and export counts before the backend allocates.
-/// The first two data directory entries, export header and first import descriptor
-/// are inspected; this does not validate later import descriptors or thunks.
+/// The first two data directory entries, export header and advertised import
+/// descriptors are inspected; this does not validate import thunks or every PE layout.
 pub(super) fn validate(
     data: &[u8],
     optional_start: usize,
@@ -101,29 +142,17 @@ pub(super) fn validate(
         if imports_rva == 0 && imports_size != 0 {
             return Err("nonempty import directory requires nonzero RVA");
         }
-        // Goblin stops enumeration when a non-null descriptor lacks Name
-        // or FirstThunk, potentially returning an empty, warning-free v1
-        // import list. Check only the first mapped descriptor; malformed
-        // later entries and unusual unmapped/header-only layouts remain
-        // outside this narrow alpha preflight.
+        // Goblin may stop on a non-null descriptor missing mandatory
+        // fields and silently omit later imports. Inspect each advertised,
+        // raw-mappable record, stopping on the all-zero terminator.
         if imports_rva != 0 && imports_size != 0 {
-            if let Ok(raw) = raw_offset_for_rva(
+            validate_declared_import_descriptors(
                 data,
                 sections_start,
                 section_count,
                 imports_rva,
-                IMPORT_DESCRIPTOR_BYTES,
-            ) {
-                let first = region(data, raw, IMPORT_DESCRIPTOR_BYTES)
-                    .ok_or("truncated first import descriptor")?;
-                if first.iter().any(|byte| *byte != 0) {
-                    let name = le_u32(data, raw + 12).ok_or("truncated import Name RVA")?;
-                    let thunk = le_u32(data, raw + 16).ok_or("truncated import FirstThunk RVA")?;
-                    if name == 0 || thunk == 0 {
-                        return Err("non-null import descriptor missing Name or FirstThunk");
-                    }
-                }
-            }
+                imports_size,
+            )?;
         }
     }
     if export_rva == 0 && export_size == 0 {
@@ -246,6 +275,29 @@ mod tests {
             let mut empty = fixture.to_vec();
             empty[0x400..0x400 + IMPORT_DESCRIPTOR_BYTES].fill(0);
             assert_eq!(check(&empty), Ok(()));
+        }
+    }
+
+    #[test]
+    fn rejects_later_non_null_import_descriptor_missing_required_field() {
+        for fixture in [PE32, PE64] {
+            let second = 0x400_usize + IMPORT_DESCRIPTOR_BYTES;
+            assert_eq!(
+                &fixture[second..second + IMPORT_DESCRIPTOR_BYTES],
+                &[0; IMPORT_DESCRIPTOR_BYTES]
+            );
+            let mut with_two = fixture.to_vec();
+            with_two[second..second + IMPORT_DESCRIPTOR_BYTES]
+                .copy_from_slice(&fixture[0x400..0x400 + IMPORT_DESCRIPTOR_BYTES]);
+            assert_eq!(check(&with_two), Ok(()));
+            for field in [12_usize, 16] {
+                let mut malformed = with_two.clone();
+                malformed[second + field..second + field + 4].fill(0);
+                assert_eq!(
+                    check(&malformed),
+                    Err("non-null import descriptor missing Name or FirstThunk")
+                );
+            }
         }
     }
 

@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased] — Reject malformed first PE import descriptor (P1.5)
+
+- A fail-first regression on controlled PE32/PE32+ fixtures found that a non-null first import descriptor with missing `Name` or `FirstThunk` could be accepted with a misleadingly incomplete imports list.
+- Check the first raw-section-mapped descriptor before Goblin extraction and return a parse error on missing required fields. Preserve the all-zero terminator and document the narrow mapping/scope limits. No changes to original fixture bytes, parser dependency, `binary-manifest v1.0.0` or worker/resource policy.
+
 ## [Unreleased] — Explicit delay-import coverage warning (P1.5)
 
 - A test-only PE32/PE32+ regression demonstrates that a declared delay-import data directory did not produce a v1 coverage warning even though only ordinary imports are enumerated. The first test-only CI failed at the warning assertion (after correcting formatting); no hostile PE safety or actual delayed symbol decoding is claimed.

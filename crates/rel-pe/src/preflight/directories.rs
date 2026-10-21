@@ -6,6 +6,7 @@ use super::{le_u16, le_u32, region, SECTION_HEADER_SIZE};
 pub(super) const MAX_DIRECTORY_BYTES: u32 = 1024 * 1024;
 pub(super) const MAX_EXPORT_SYMBOLS: u32 = 65_536;
 
+const IMPORT_DESCRIPTOR_BYTES: usize = 20;
 const EXPORT_HEADER_BYTES: usize = 40;
 const PE32_DIRECTORY_START: usize = 96;
 const PE64_DIRECTORY_START: usize = 112;
@@ -44,7 +45,8 @@ fn raw_offset_for_rva(
 }
 
 /// Verify declared directories and export counts before the backend allocates.
-/// Only the first two data directory entries and export header are inspected.
+/// The first two data directory entries, export header and first import descriptor
+/// are inspected; this does not validate later import descriptors or thunks.
 pub(super) fn validate(
     data: &[u8],
     optional_start: usize,
@@ -98,6 +100,30 @@ pub(super) fn validate(
         // to extract a potentially empty v1 import list.
         if imports_rva == 0 && imports_size != 0 {
             return Err("nonempty import directory requires nonzero RVA");
+        }
+        // Goblin stops enumeration when a non-null descriptor lacks Name
+        // or FirstThunk, potentially returning an empty, warning-free v1
+        // import list. Check only the first mapped descriptor; malformed
+        // later entries and unusual unmapped/header-only layouts remain
+        // outside this narrow alpha preflight.
+        if imports_rva != 0 && imports_size != 0 {
+            if let Ok(raw) = raw_offset_for_rva(
+                data,
+                sections_start,
+                section_count,
+                imports_rva,
+                IMPORT_DESCRIPTOR_BYTES,
+            ) {
+                let first = region(data, raw, IMPORT_DESCRIPTOR_BYTES)
+                    .ok_or("truncated first import descriptor")?;
+                if first.iter().any(|byte| *byte != 0) {
+                    let name = le_u32(data, raw + 12).ok_or("truncated import Name RVA")?;
+                    let thunk = le_u32(data, raw + 16).ok_or("truncated import FirstThunk RVA")?;
+                    if name == 0 || thunk == 0 {
+                        return Err("non-null import descriptor missing Name or FirstThunk");
+                    }
+                }
+            }
         }
     }
     if export_rva == 0 && export_size == 0 {
@@ -202,6 +228,24 @@ mod tests {
             // the preflight layer; this does not decode the raw bytes.
             let absent = modify_u32(&bad, at + 4, 0);
             assert_eq!(check(&absent), Ok(()));
+        }
+    }
+
+    #[test]
+    fn rejects_first_non_null_import_descriptor_with_missing_required_field() {
+        for fixture in [PE32, PE64] {
+            for field in [12_usize, 16] {
+                let mut malformed = fixture.to_vec();
+                assert_ne!(le_u32(fixture, 0x400 + field), Some(0));
+                malformed[0x400 + field..0x400 + field + 4].fill(0);
+                assert_eq!(
+                    check(&malformed),
+                    Err("non-null import descriptor missing Name or FirstThunk")
+                );
+            }
+            let mut empty = fixture.to_vec();
+            empty[0x400..0x400 + IMPORT_DESCRIPTOR_BYTES].fill(0);
+            assert_eq!(check(&empty), Ok(()));
         }
     }
 

@@ -173,6 +173,26 @@ mod tests {
     }
 
     #[test]
+    fn rejects_nonempty_import_directory_with_zero_rva() {
+        for fixture in [PE32, PE64] {
+            let (opt, _) = fixture_fields(fixture);
+            let start = if le_u16(fixture, opt) == Some(0x10b) {
+                PE32_DIRECTORY_START
+            } else {
+                PE64_DIRECTORY_START
+            };
+            let at = opt + start + DATA_DIRECTORY_BYTES;
+            assert_ne!(le_u32(fixture, at), Some(0));
+            assert_ne!(le_u32(fixture, at + 4), Some(0));
+            let bad = modify_u32(fixture, at, 0);
+            assert_eq!(
+                check(&bad),
+                Err("nonempty import directory requires nonzero RVA")
+            );
+        }
+    }
+
+    #[test]
     fn rejects_declared_oversized_export_directory() {
         let (opt, _) = fixture_fields(PE64);
         let bad = modify_u32(

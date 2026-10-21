@@ -98,14 +98,17 @@ pub fn inspect(data: &[u8]) -> Result<PeInspection, PeError> {
     // Use the parsed lookup-entry variant, not its display text or hint.
     let ordinal_imports = pe.import_data.as_ref().is_some_and(|data| {
         data.import_data.iter().any(|descriptor| {
-            descriptor.import_lookup_table.as_ref().is_some_and(|entries| {
-                entries.iter().any(|entry| {
-                    matches!(
-                        entry,
-                        goblin::pe::import::SyntheticImportLookupTableEntry::OrdinalNumber(_)
-                    )
+            descriptor
+                .import_lookup_table
+                .as_ref()
+                .is_some_and(|entries| {
+                    entries.iter().any(|entry| {
+                        matches!(
+                            entry,
+                            goblin::pe::import::SyntheticImportLookupTableEntry::OrdinalNumber(_)
+                        )
+                    })
                 })
-            })
         })
     });
     let mut warnings = Vec::new();

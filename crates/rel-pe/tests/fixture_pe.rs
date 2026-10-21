@@ -78,7 +78,6 @@ fn warns_on_export_directory_with_only_ordinal_entries() {
     );
 }
 
-
 #[test]
 fn ordinal_import_is_flagged_without_changing_v1_import_strings() {
     // In both tracked 2-KiB fixtures the import descriptor starts at raw
@@ -98,7 +97,10 @@ fn ordinal_import_is_flagged_without_changing_v1_import_strings() {
                     .try_into()
                     .unwrap(),
             );
-            assert!((0x2000..0x2400).contains(&rva), "{label}: import table moved");
+            assert!(
+                (0x2000..0x2400).contains(&rva),
+                "{label}: import table moved"
+            );
             let raw = 0x400 + (rva - 0x2000) as usize;
             bytes[raw..raw + width].copy_from_slice(&ordinal.to_le_bytes()[..width]);
         }
@@ -128,7 +130,10 @@ fn literal_symbol_named_ordinal_is_not_misidentified() {
 
     let report = inspect(&bytes).expect("controlled literal symbol must parse");
     assert_eq!(report.imports, ["KERNEL32.dll!ORDINAL 42"]);
-    assert!(report.warnings.is_empty(), "named import is not ordinal import");
+    assert!(
+        report.warnings.is_empty(),
+        "named import is not ordinal import"
+    );
 }
 
 #[test]

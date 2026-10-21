@@ -152,3 +152,23 @@ establish a full import coverage proof. Unmappable descriptors are still
 delegated to the backend; the entire parser is not sandboxed and CPU/RAM
 budgets remain unresolved. `binary-manifest v1.0.0` remains unchanged.
 See [issue #9](https://github.com/ELITEAYOTO/REL/issues/9) for CI evidence.
+
+## Declared-span import descriptor checks (P1.5 regression)
+
+[PR #164](https://github.com/ELITEAYOTO/REL/pull/164) extends the first-descriptor
+preflight to all **whole descriptor records within the declared import-directory
+byte span**, stopping at an all-zero terminator. A fail-first public API test
+duplicates the existing valid first descriptor as a second entry in the two
+unchanged 2-KiB PE32/PE32+ fixtures, then independently zeros its required
+`Name` and `FirstThunk` fields. The former implementation silently accepted
+the malformed second descriptor on PE32. A valid duplicated descriptor
+remains parseable with the same deduplicated import names.
+
+This is a bounded, allocation-free check on the *advertised* directory
+records only, not a complete import-table proof. The preflight still defers
+raw-unmappable/header-only layouts and any entries past the claimed size
+to Goblin, and does not validate import thunks, bound/delay imports or
+all PE semantics. A potentially dishonest `Size` is not made trustworthy
+by scanning it. No generated PE is executed, fixture bytes and manifest
+v1 remain unchanged. See [issue #9](https://github.com/ELITEAYOTO/REL/issues/9)
+for validation and residual risks.

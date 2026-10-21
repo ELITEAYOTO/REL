@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased] — Inspect declared span of PE import descriptors (P1.5)
+
+- A test-only branch demonstrated that a malformed **second** import descriptor with `Name=0` was accepted as if import enumeration had finished. The positive control duplicates a valid import descriptor in PE32/PE32+ without altering fixture bytes on disk.
+- Iterate only whole descriptor records within the advertised import-directory byte span (up to the existing 1 MiB declaration cap), checking required `Name` and `FirstThunk` fields and stopping at an all-zero terminator. Preserve raw-unmappable delegation, the original first-record behavior, `binary-manifest v1.0.0`, fixture hashes and dependency pins; this is not complete table validation or a security sandbox.
+
 ## [Unreleased] — Reject malformed first PE import descriptor (P1.5)
 
 - A fail-first regression on controlled PE32/PE32+ fixtures found that a non-null first import descriptor with missing `Name` or `FirstThunk` could be accepted with a misleadingly incomplete imports list.

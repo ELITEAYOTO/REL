@@ -212,11 +212,55 @@ class CorpusCrossRunTests(unittest.TestCase):
             ):
                 compare_reports(changed, sample(), require_identical=True)
 
-            # Equal counts may still admit one new and one removed symbol.
+            # Equal counts may still admit one new and one removed symbol,
+            # provided all three edges in each affected triangle agree.
             valid = sample()
-            valid["pairs"][0][f"{kind}_added"] = ["NEW!symbol"]
-            valid["pairs"][0][f"{kind}_removed"] = ["OLD!symbol"]
+            for edge in valid["pairs"]:
+                if edge["left"] == "clang-v1":
+                    edge[f"{kind}_added"] = ["NEW!symbol"]
+                    edge[f"{kind}_removed"] = ["OLD!symbol"]
             checked = compare_reports(valid, copy.deepcopy(valid), require_identical=True)
+            self.assertEqual(checked["identical_raw_build_count"], 8)
+
+    def test_transitive_deltas_reject_balanced_but_impossible_oracle(self):
+        for kind in ("import", "export"):
+            report = sample()
+            edge = next(
+                row for row in report["pairs"]
+                if (row["left"], row["right"]) == ("msvc-v1", "msvc-v3")
+            )
+            edge[f"{kind}_added"] = ["NEW!symbol"]
+            edge[f"{kind}_removed"] = ["OLD!symbol"]
+            # Per-pair counts remain balanced and no member overlaps.
+            # Yet v1->v2 and v2->v3 are both empty: v1->v3 cannot change.
+            with self.subTest(kind=kind), self.assertRaisesRegex(
+                ValueError, f"inconsistent {kind} transitive deltas"
+            ):
+                compare_reports(report, copy.deepcopy(report), require_identical=True)
+
+    def test_transitive_deltas_accept_consistent_change_and_reversal(self):
+        for kind in ("import", "export"):
+            report = sample()
+            for edge in report["pairs"]:
+                identity = (edge["left"], edge["right"])
+                if identity in {
+                    ("msvc-v1", "msvc-v2"),
+                    ("msvc-v1", "msvc-v3"),
+                }:
+                    edge[f"{kind}_added"] = ["NEW!symbol"]
+                    edge[f"{kind}_removed"] = ["OLD!symbol"]
+                elif identity == ("msvc-v2", "msvc-v4"):
+                    edge[f"{kind}_added"] = ["OLD!symbol"]
+                    edge[f"{kind}_removed"] = ["NEW!symbol"]
+            # v1->v4 is unchanged, v2->v3 is unchanged,
+            # and v3->v4 must be the same reversal as v2->v4.
+            edge = next(
+                row for row in report["pairs"]
+                if (row["left"], row["right"]) == ("msvc-v3", "msvc-v4")
+            )
+            edge[f"{kind}_added"] = ["OLD!symbol"]
+            edge[f"{kind}_removed"] = ["NEW!symbol"]
+            checked = compare_reports(report, copy.deepcopy(report), require_identical=True)
             self.assertEqual(checked["identical_raw_build_count"], 8)
 
     def test_reject_disagreeing_counts(self):
@@ -272,8 +316,16 @@ class CorpusCrossRunTests(unittest.TestCase):
             ):
                 compare_reports(sample(), changed, require_identical=True)
         changed = sample()
-        changed["pairs"][0]["import_added"] = ["KERNEL32.dll!Other"]
-        changed["pairs"][0]["import_removed"] = ["KERNEL32.dll!Original"]
+        # Give clang-v1 a different (same-cardinality) symbol set on ALL
+        # affected edges. The report stays internally coherent, so this
+        # isolates the cross-report identical-SHA oracle disagreement.
+        for pair in changed["pairs"]:
+            if pair["left"] == "clang-v1":
+                pair["import_added"] = ["KERNEL32.dll!Original"]
+                pair["import_removed"] = ["KERNEL32.dll!Other"]
+            elif pair["right"] == "clang-v1":
+                pair["import_added"] = ["KERNEL32.dll!Other"]
+                pair["import_removed"] = ["KERNEL32.dll!Original"]
         with self.assertRaisesRegex(ValueError, "conflicting oracle"):
             compare_reports(sample(), changed, require_identical=True)
 

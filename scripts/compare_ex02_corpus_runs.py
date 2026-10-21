@@ -173,6 +173,40 @@ def check_report_structure(report: dict) -> None:
                 raise ValueError(f"{identity}: contradictory delta for identical raw PE")
     if seen != EXPECTED_PAIRS:
         raise ValueError("incomplete pair coverage")
+    check_transitive_pair_deltas({
+        (pair["left"], pair["right"]): pair for pair in pairs
+    })
+
+
+def check_transitive_pair_deltas(by_pair: dict) -> None:
+    """An exact A/B set delta must compose through an intermediate build.
+
+    Only within-toolchain triples are checked: those have all three
+    recorded edges. This is a necessary evidence invariant, not a PE oracle.
+    """
+    for compiler in ("msvc", "clang"):
+        for a, b, c in itertools.combinations(range(1, 5), 3):
+            ab = by_pair[(f"{compiler}-v{a}", f"{compiler}-v{b}")]
+            bc = by_pair[(f"{compiler}-v{b}", f"{compiler}-v{c}")]
+            ac = by_pair[(f"{compiler}-v{a}", f"{compiler}-v{c}")]
+            for kind in ("import", "export"):
+                names = {
+                    name
+                    for edge in (ab, bc, ac)
+                    for suffix in ("added", "removed")
+                    for name in edge[f"{kind}_{suffix}"]
+                }
+                for name in names:
+                    changes = [
+                        int(name in edge[f"{kind}_added"])
+                        - int(name in edge[f"{kind}_removed"])
+                        for edge in (ab, bc, ac)
+                    ]
+                    if changes[0] + changes[1] != changes[2]:
+                        raise ValueError(
+                            f"{compiler} v{a}/v{b}/v{c}: "
+                            f"inconsistent {kind} transitive deltas"
+                        )
 
 
 @contextmanager

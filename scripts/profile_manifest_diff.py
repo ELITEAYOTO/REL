@@ -10,6 +10,7 @@ import hashlib
 import json
 import math
 import statistics
+import sys
 import tempfile
 import time
 from datetime import datetime, timezone
@@ -17,6 +18,10 @@ from pathlib import Path
 
 import psutil
 from _internal.measurement_environment import capture_context
+from profile_resources import poll_child_with_usage
+
+if sys.platform == "win32":
+    from _internal.windows_process_usage import METHOD, WindowsProcessUsage
 
 TIMEOUT_SECONDS = 30
 POLL_SECONDS = 0.002
@@ -73,10 +78,16 @@ def profile_once(
     sampled_rss = None
     sampled_cpu = None
     observations = 0
+    kernel_peak_rss = kernel_cpu = None
+    windows_peak = windows_cpu = None
+    native = None
     with tempfile.TemporaryFile(mode="w+b") as stdout:
         with tempfile.TemporaryFile(mode="w+b") as stderr:
             child = psutil.Popen([str(binary), str(left), str(right)], stdout=stdout, stderr=stderr)
             try:
+                if sys.platform == "win32":
+                    # Keep the original process creation handle, not a reopened PID.
+                    native = WindowsProcessUsage(child)
                 while True:
                     if time.perf_counter() - started > TIMEOUT_SECONDS:
                         raise TimeoutError(f"rel-diff exceeded {TIMEOUT_SECONDS}s")
@@ -89,15 +100,25 @@ def profile_once(
                         sampled_rss = max(sampled_rss or 0, sample.rss)
                         sampled_cpu = (cpu.user + cpu.system) * 1000
                         observations += 1
-                    if child.poll() is not None:
+                    # Linux wait4 reaps the direct child exactly once; poll()
+                    # here would lose its lifetime resource usage on exit.
+                    code, kernel_peak_rss, kernel_cpu = poll_child_with_usage(child)
+                    if code is not None:
                         break
                     time.sleep(POLL_SECONDS)
-                code = child.wait()
+                # The helper already reaped Linux via wait4 or observed
+                # Windows completion via poll. A second psutil wait() after
+                # wait4 can return None instead of the real exit status.
+                if native is not None:
+                    windows_peak, windows_cpu = native.final()
             except BaseException:
                 if child.poll() is None:
                     child.kill()
                 child.wait()
                 raise
+            finally:
+                if native is not None:
+                    native.close()
             elapsed = (time.perf_counter() - started) * 1000
             if code != 0:
                 stderr.seek(0)
@@ -133,6 +154,10 @@ def profile_once(
         "sampled_peak_rss_bytes": sampled_rss,
         "last_sampled_cpu_ms": round(sampled_cpu, 4) if sampled_cpu is not None else None,
         "rss_observations": observations,
+        "kernel_peak_rss_bytes": kernel_peak_rss,
+        "kernel_cpu_ms": kernel_cpu,
+        "windows_peak_working_set_bytes": windows_peak,
+        "windows_cpu_ms": windows_cpu,
     }
 
 
@@ -150,6 +175,18 @@ def summarize(samples: list[dict]) -> dict:
         "median_wall_ms": round(statistics.median(times), 4),
         "p95_wall_ms": times[max(0, math.ceil(0.95 * len(times)) - 1)],
         "max_sampled_rss_bytes": max(observed) if observed else None,
+        "max_kernel_peak_rss_bytes": max(
+            (s["kernel_peak_rss_bytes"] for s in samples
+             if s["kernel_peak_rss_bytes"] is not None), default=None),
+        "max_kernel_cpu_ms": max(
+            (s["kernel_cpu_ms"] for s in samples
+             if s["kernel_cpu_ms"] is not None), default=None),
+        "max_windows_peak_working_set_bytes": max(
+            (s["windows_peak_working_set_bytes"] for s in samples
+             if s["windows_peak_working_set_bytes"] is not None), default=None),
+        "max_windows_cpu_ms": max(
+            (s["windows_cpu_ms"] for s in samples
+             if s["windows_cpu_ms"] is not None), default=None),
         "observations": samples,
     }
 
@@ -163,11 +200,17 @@ def run(binary: Path, samples: int, warmup: int) -> dict:
         "created_utc": datetime.now(timezone.utc).isoformat(),
         "samples": samples,
         "warmup": warmup,
-        "method": "release CLI subprocess; 2ms nominal RSS/CPU sampling; stdout redirected; controlled manifests",
+        "method": "release CLI subprocess; 2ms nominal RSS/CPU sampling plus direct-child lifetime OS accounting; stdout redirected; controlled manifests",
+        "kernel_usage_method": (
+            "linux-wait4-ru_maxrss-and-ru_utime-ru_stime"
+            if sys.platform == "linux" else None
+        ),
+        "windows_usage_method": METHOD if sys.platform == "win32" else None,
         "limitations": [
             "Synthetic imports, exports and sections are not a real PE layout or authorized compiler build corpus.",
             "Near-budget case increases profiling cost; run count is still small and not a performance guarantee.",
-            "Polled RSS can miss transient process peaks; this is not a memory cap.",
+            "Polled RSS can miss transient process peaks; direct-child native metrics improve observation, not enforcement.",
+            "Linux ru_maxrss and Windows peak working set are not equivalent, and child accounting excludes descendants.",
             "Observed runner timings are not cross-platform or cross-run performance guarantees.",
         ],
         "scenarios": [],
@@ -220,6 +263,16 @@ def run(binary: Path, samples: int, warmup: int) -> dict:
                 if i >= warmup:
                     values.append(value)
             summary = summarize(values)
+            if sys.platform == "linux" and any(
+                item["kernel_peak_rss_bytes"] is None
+                or item["kernel_cpu_ms"] is None for item in values
+            ):
+                raise AssertionError("missing Linux lifetime rel-diff resource usage")
+            if sys.platform == "win32" and any(
+                item["windows_peak_working_set_bytes"] is None
+                or item["windows_cpu_ms"] is None for item in values
+            ):
+                raise AssertionError("missing Windows lifetime rel-diff resource usage")
             if name == "near-report-budget-8192" and not (
                 MIN_NEAR_REPORT_BYTES < summary["report_bytes"] <= MAX_REPORT_BYTES
             ):

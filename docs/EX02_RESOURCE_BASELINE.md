@@ -51,3 +51,23 @@ Les sorties et observations individuelles ont été **lues dans les JSON des art
 Les quatre artefacts confirment le même SHA-256 du **rapport JSON complet** : `3d15b30a27ecbefc84c77ef2ca20c66fd22841dd290b37d47fe7932cd0feb03b`. Les deux manifestes d'entrée du cas mesuraient chacun **7 971 111 octets**. Une passe d'échauffement puis **3** exécutions mesurées ont été utilisées par environnement.
 
 Ces mesures sont dépendantes des runners et de l'échantillonnage RSS nominal à 2 ms : les maxima observés peuvent manquer des pics, et les écarts de temps entre OS ne sont pas comparables comme des classements de performance. Les imports longuement remplis sont volontairement artificiels et ne représentent pas un véritable corpus PE. Ce succès n'établit **ni plafond global de RAM/CPU**, ni sûreté des entrées arbitraires, ni validation complète d'EX-02. Voir [la preuve détaillée de l'issue #68](https://github.com/ELITEAYOTO/REL/issues/68#issuecomment-6304298115). L'issue #68 reste ouverte.
+
+
+## Extension des observations natives — portée de la PR expérimentale
+
+Le profileur EX-02 réutilise le suivi du **processus enfant direct** déjà
+déployé pour `rel-inspect` : sous Linux, `wait4` fournit `ru_maxrss`
+(converti de KiB en octets), et le CPU noyau+utilisateur ; sous Windows,
+une copie du handle de création donne `PeakWorkingSetSize` et
+`GetProcessTimes` après la fin du processus. Les valeurs individuelles
+et maxima sont ajoutés aux mêmes artefacts JSON que les quatre scénarios
+synthétiques ; les champs des autres OS restent à `null`.
+
+Cette méthode répond au risque de **pics ratés par l'échantillonnage à 2 ms**,
+mais le working set Windows et le RSS Linux n'ont pas des définitions
+identiques. Les valeurs sont spécifiques au processus `rel-diff` suivi, pas
+à ses descendants, et ne limitent ni la mémoire engagée, ni le CPU, ni
+l'arborescence de processus. Les vieux artefacts ne portent pas ces
+champs. L'intégration et les chiffres doivent être établis à partir des
+CI sur le HEAD de PR puis du nouveau `main`, et consignés dans
+[l'issue #68](https://github.com/ELITEAYOTO/REL/issues/68).

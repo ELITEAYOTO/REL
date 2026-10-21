@@ -22,10 +22,10 @@ def verify_manifest_evidence(
     manifest: dict, sections: list[dict], imports: list[str], exports: list[str],
 ) -> None:
     """Prove complete named v1 observations for a controlled PE32 DLL."""
-    assert manifest["sections"] == sections, "PE32 DLL section table mismatch"
-    assert manifest["imports"] == imports, "PE32 DLL named import mismatch"
-    assert manifest["exports"] == exports, "PE32 DLL named export mismatch"
-    assert manifest["warnings"] == [], "PE32 DLL extraction has warnings"
+    assert manifest["sections"] == sections, "PE DLL section table mismatch"
+    assert manifest["imports"] == imports, "PE DLL named import mismatch"
+    assert manifest["exports"] == exports, "PE DLL named export mismatch"
+    assert manifest["warnings"] == [], "PE DLL extraction has warnings"
 
 
 def check(analyzer: Path, path: Path, producer: str, *, x64: bool = False) -> dict:
@@ -145,7 +145,7 @@ def main() -> None:
         json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     for case in cases:
-        print(f"PASS {case['case_id']}: static PE32 DLL, sha256={case['binary_sha256']}")
+        print(f"PASS {case['case_id']}: static PE32/PE32+ DLL, sha256={case['binary_sha256']}")
 
 
 if __name__ == "__main__":

@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — Explicit delay-import coverage warning (P1.5)
+
+- A test-only PE32/PE32+ regression demonstrates that a declared delay-import data directory did not produce a v1 coverage warning even though only ordinary imports are enumerated. The first test-only CI failed at the warning assertion (after correcting formatting); no hostile PE safety or actual delayed symbol decoding is claimed.
+- Preserve the ordinary `imports[]` names and `binary-manifest v1.0.0` schema. Use Goblin's existing optional-header directory accessor to warn that delayed imports are not enumerated when the PE advertises a nonempty delay-import directory. This is a declaration/coverage observation, **not** validation of the referenced directory bytes or an inference about the program's behavior.
+- Retain existing PE fixtures, SHA-256, fuzz witnesses and all resource limits. Do not add a parser dependency, a new crate or an EX-02 schema variant; consumers already abstain on warnings.
+
 ## [Unreleased] — Reject nonempty PE import directories with no RVA (P1.5)
 
 - A test-only preflight regression reproduced an observable gap: a PE32/PE32+ import directory with a nonzero declared size but zero RVA was accepted by the preflight as `Ok(())`. This is an inconsistency in declared header evidence, not proof of a demonstrated memory vulnerability or downstream parser omission.

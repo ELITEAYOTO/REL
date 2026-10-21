@@ -111,7 +111,20 @@ pub fn inspect(data: &[u8]) -> Result<PeInspection, PeError> {
                 })
         })
     });
+    // Goblin enumerates the ordinary import lookup table, not the PE
+    // IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT descriptor table. A declared
+    // delay-load directory therefore makes the v1 import list incomplete;
+    // its mere presence is not evidence of any specific delayed symbol.
+    let delay_import_directory_declared = pe.header.optional_header.as_ref().is_some_and(
+        |optional| optional.data_directories.get_delay_import_descriptor().is_some(),
+    );
     let mut warnings = Vec::new();
+    if delay_import_directory_declared {
+        warnings.push(
+            "PE delay-import directory is declared; binary-manifest v1.0.0 does not enumerate delayed imports"
+                .to_owned(),
+        );
+    }
     if unrepresented_export_slots {
         warnings.push(
             "export address table has unnamed or unrepresented ordinal slots; only named exports are reported"

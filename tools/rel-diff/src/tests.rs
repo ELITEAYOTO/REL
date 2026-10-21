@@ -161,3 +161,38 @@ fn sets_are_order_independent_and_inverse() {
         }
     );
 }
+
+#[test]
+fn partial_mode_preserves_warnings_and_never_claims_negative_behaviors() {
+    let raw = format!(
+        r#"{{"schema_version":"1.0.0","binary_sha256":"{}","size_bytes":5,"format":"PE","arch":null,"sections":[],"imports":["kernel32.dll!ORDINAL 42"],"exports":[],"warnings":[]}}"#,
+        "a".repeat(64)
+    );
+    let mut left: Manifest = serde_json::from_str(&raw).expect("controlled manifest");
+    left.warnings = vec!["future unknown diagnostic".into(), "ordinal import".into()];
+    let right: Manifest = serde_json::from_str(&raw).expect("controlled manifest");
+    let value = serde_json::to_value(compare_partial(left, right)).expect("partial JSON");
+    assert_eq!(value["schema_version"], "0.2.0-experimental");
+    assert_eq!(value["coverage"]["status"], "partial");
+    assert_eq!(value["coverage"]["negative_behavior_conclusions"], false);
+    assert_eq!(
+        value["coverage"]["left_warnings"],
+        serde_json::json!(["future unknown diagnostic", "ordinal import"])
+    );
+    assert_eq!(value["coverage"]["right_warnings"], serde_json::json!([]));
+    assert_eq!(value["observed"]["schema_version"], "0.1.0-experimental");
+    assert_eq!(value["observed"]["imports"]["removed"], serde_json::json!([]));
+}
+
+#[test]
+fn warning_free_partial_mode_still_has_unknown_coverage() {
+    let raw = format!(
+        r#"{{"schema_version":"1.0.0","binary_sha256":"{}","size_bytes":5,"format":"PE","arch":null,"sections":[],"imports":[],"exports":[],"warnings":[]}}"#,
+        "a".repeat(64)
+    );
+    let left: Manifest = serde_json::from_str(&raw).expect("controlled manifest");
+    let right: Manifest = serde_json::from_str(&raw).expect("controlled manifest");
+    let value = serde_json::to_value(compare_partial(left, right)).expect("partial JSON");
+    assert_eq!(value["coverage"]["status"], "unknown");
+    assert_eq!(value["coverage"]["negative_behavior_conclusions"], false);
+}

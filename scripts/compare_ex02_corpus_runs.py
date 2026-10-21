@@ -173,9 +173,9 @@ def check_report_structure(report: dict) -> None:
                 raise ValueError(f"{identity}: contradictory delta for identical raw PE")
     if seen != EXPECTED_PAIRS:
         raise ValueError("incomplete pair coverage")
-    check_transitive_pair_deltas({
-        (pair["left"], pair["right"]): pair for pair in pairs
-    })
+    by_pair = {(pair["left"], pair["right"]): pair for pair in pairs}
+    check_transitive_pair_deltas(by_pair)
+    check_cross_compiler_pair_deltas(by_pair)
 
 
 def check_transitive_pair_deltas(by_pair: dict) -> None:
@@ -207,6 +207,37 @@ def check_transitive_pair_deltas(by_pair: dict) -> None:
                             f"{compiler} v{a}/v{b}/v{c}: "
                             f"inconsistent {kind} transitive deltas"
                         )
+
+
+def check_cross_compiler_pair_deltas(by_pair: dict) -> None:
+    """Cross-compiler A/B squares must describe one consistent symbol history.
+
+    Each edge is an exact set delta, not a proof of behavior or PE authenticity.
+    """
+    for a, b in itertools.combinations(range(1, 5), 2):
+        edges = (
+            by_pair[(f"msvc-v{a}", f"msvc-v{b}")],
+            by_pair[(f"msvc-v{b}", f"clang-v{b}")],
+            by_pair[(f"msvc-v{a}", f"clang-v{a}")],
+            by_pair[(f"clang-v{a}", f"clang-v{b}")],
+        )
+        for kind in ("import", "export"):
+            names = {
+                name
+                for edge in edges
+                for suffix in ("added", "removed")
+                for name in edge[f"{kind}_{suffix}"]
+            }
+            for name in names:
+                changes = [
+                    int(name in edge[f"{kind}_added"])
+                    - int(name in edge[f"{kind}_removed"])
+                    for edge in edges
+                ]
+                if changes[0] + changes[1] != changes[2] + changes[3]:
+                    raise ValueError(
+                        f"v{a}/v{b}: inconsistent {kind} cross-compiler deltas"
+                    )
 
 
 @contextmanager

@@ -11,6 +11,21 @@ from pathlib import Path
 import pefile
 
 
+def verify_manifest_evidence(
+    manifest: dict, *, sha256: str, size_bytes: int,
+    sections: list[dict], imports: list[str], exports: list[str],
+) -> None:
+    """Check complete v1 observations against independent pefile evidence."""
+    assert manifest["schema_version"] == "1.0.0"
+    assert manifest["format"] == "PE" and manifest["arch"] == "x86_64"
+    assert manifest["binary_sha256"] == sha256
+    assert manifest["size_bytes"] == size_bytes
+    assert manifest["sections"] == sections, "PE sections differ from independent oracle"
+    assert manifest["imports"] == imports, "PE imports differ from independent oracle"
+    assert manifest["exports"] == exports, "PE exports differ from independent oracle"
+    assert manifest["warnings"] == [], "controlled PE extraction is incomplete"
+
+
 def validate(binary: Path, probe: Path, compiler_label: str) -> None:
     data = probe.read_bytes()
     expected_hash = hashlib.sha256(data).hexdigest()
@@ -20,10 +35,16 @@ def validate(binary: Path, probe: Path, compiler_label: str) -> None:
     assert independent.OPTIONAL_HEADER.DllCharacteristics & 0x40, "ASLR flag absent"
     independent.parse_data_directories()
 
-    names = {
-        entry.Name.rstrip(b"\x00").decode("ascii", errors="replace")
+    sections = [
+        {
+            "name": entry.Name.rstrip(b"\x00").decode("ascii"),
+            "offset": int(entry.PointerToRawData),
+            "size": int(entry.SizeOfRawData),
+            "virtual_address": int(entry.VirtualAddress),
+        }
         for entry in independent.sections
-    }
+    ]
+    names = {section["name"] for section in sections}
     assert {".text", ".rsrc", ".reloc"} <= names, names
 
     assert hasattr(independent, "DIRECTORY_ENTRY_RESOURCE"), "resource directory missing"
@@ -48,12 +69,22 @@ def validate(binary: Path, probe: Path, compiler_label: str) -> None:
     ]
     assert relocations, "no DIR64 base relocation entries"
 
+    assert hasattr(independent, "DIRECTORY_ENTRY_IMPORT"), "imports missing"
+    imports = sorted({
+        f"{library.dll.decode('ascii')}!{symbol.name.decode('ascii')}"
+        for library in independent.DIRECTORY_ENTRY_IMPORT
+        for symbol in library.imports
+        if symbol.name is not None
+    })
+    assert any(name.endswith("!GetTickCount") for name in imports), (
+        "expected GetTickCount import missing", imports
+    )
     assert hasattr(independent, "DIRECTORY_ENTRY_EXPORT"), "exports missing"
-    exported = {
-        item.name.decode("ascii", errors="replace")
+    exports = sorted({
+        item.name.decode("ascii")
         for item in independent.DIRECTORY_ENTRY_EXPORT.symbols if item.name
-    }
-    assert {"rel_structured_query", "rel_structured_pointer"} <= exported, exported
+    })
+    assert {"rel_structured_query", "rel_structured_pointer"} <= set(exports), exports
 
     result = subprocess.run(
         [str(binary), "analyze", str(probe)],
@@ -61,12 +92,10 @@ def validate(binary: Path, probe: Path, compiler_label: str) -> None:
     )
     assert result.returncode == 0, result.stderr[:1000]
     manifest = json.loads(result.stdout)
-    assert manifest["schema_version"] == "1.0.0"
-    assert manifest["format"] == "PE" and manifest["arch"] == "x86_64"
-    assert manifest["binary_sha256"] == expected_hash
-    assert manifest["size_bytes"] == len(data)
-    assert {".rsrc", ".reloc"} <= {s["name"] for s in manifest["sections"]}
-    assert {"rel_structured_query", "rel_structured_pointer"} <= set(manifest["exports"])
+    verify_manifest_evidence(
+        manifest, sha256=expected_hash, size_bytes=len(data),
+        sections=sections, imports=imports, exports=exports,
+    )
     print(
         f"PASS {compiler_label}: controlled .rsrc RCDATA and DIR64 relocations "
         f"verified independently; static REL manifest sha256={expected_hash}"

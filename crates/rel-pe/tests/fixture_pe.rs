@@ -78,6 +78,59 @@ fn warns_on_export_directory_with_only_ordinal_entries() {
     );
 }
 
+
+#[test]
+fn ordinal_import_is_flagged_without_changing_v1_import_strings() {
+    // In both tracked 2-KiB fixtures the import descriptor starts at raw
+    // 0x400, and .rdata RVA 0x2000 maps there. Change only the first
+    // lookup/IAT entries; never load or execute either derived PE.
+    for (label, fixture, width) in [("PE32", PE32, 4_usize), ("PE32+", PE64, 8)] {
+        let mut bytes = fixture.to_vec();
+        let descriptor = 0x400;
+        let ordinal = if width == 8 {
+            0x8000_0000_0000_002a_u64
+        } else {
+            0x8000_002a_u64
+        };
+        for field in [0, 16] {
+            let rva = u32::from_le_bytes(
+                bytes[descriptor + field..descriptor + field + 4]
+                    .try_into()
+                    .unwrap(),
+            );
+            assert!((0x2000..0x2400).contains(&rva), "{label}: import table moved");
+            let raw = 0x400 + (rva - 0x2000) as usize;
+            bytes[raw..raw + width].copy_from_slice(&ordinal.to_le_bytes()[..width]);
+        }
+        let report = inspect(&bytes).expect("controlled ordinal import must parse");
+        assert_eq!(report.imports, ["KERNEL32.dll!ORDINAL 42"], "{label}");
+        assert_eq!(report.exports, ["SampleExport"], "{label}");
+        assert!(
+            report
+                .warnings
+                .iter()
+                .any(|warning| warning.contains("import") && warning.contains("ordinal")),
+            "{label}: do not report synthetic import name without coverage warning"
+        );
+    }
+}
+
+#[test]
+fn literal_symbol_named_ordinal_is_not_misidentified() {
+    let mut bytes = PE32.to_vec();
+    let lookup_rva = u32::from_le_bytes(bytes[0x400..0x404].try_into().unwrap());
+    assert!((0x2000..0x2400).contains(&lookup_rva));
+    let lookup_raw = 0x400 + (lookup_rva - 0x2000) as usize;
+    let name_rva = u32::from_le_bytes(bytes[lookup_raw..lookup_raw + 4].try_into().unwrap());
+    assert!((0x2000..0x2400).contains(&name_rva));
+    let name_raw = 0x400 + (name_rva - 0x2000) as usize + 2; // skip hint
+    bytes[name_raw..name_raw + 11].copy_from_slice(b"ORDINAL 42\0");
+
+    let report = inspect(&bytes).expect("controlled literal symbol must parse");
+    assert_eq!(report.imports, ["KERNEL32.dll!ORDINAL 42"]);
+    assert!(report.warnings.is_empty(), "named import is not ordinal import");
+}
+
 #[test]
 fn rejects_corrupt_and_truncated_inputs() {
     assert!(inspect(b"not an executable").is_err());

@@ -53,17 +53,21 @@ pub fn inspect(data: &[u8]) -> Result<PeInspection, PeError> {
     let sections = pe
         .sections
         .iter()
-        .map(|s| BinarySection {
-            name: s
+        .map(|s| {
+            // The v1 manifest stores names as UTF-8 strings. Returning a
+            // fabricated placeholder with no warning would falsely present
+            // an incomplete observation as a successful extraction.
+            let name = s
                 .name()
-                .unwrap_or("<invalid>")
-                .trim_end_matches('\0')
-                .to_string(),
-            offset: u64::from(s.pointer_to_raw_data),
-            size: u64::from(s.size_of_raw_data),
-            virtual_address: Some(u64::from(s.virtual_address)),
+                .map_err(|_| PeError::Parse("section name cannot be decoded as UTF-8".into()))?;
+            Ok(BinarySection {
+                name: name.trim_end_matches('\0').to_string(),
+                offset: u64::from(s.pointer_to_raw_data),
+                size: u64::from(s.size_of_raw_data),
+                virtual_address: Some(u64::from(s.virtual_address)),
+            })
         })
-        .collect();
+        .collect::<Result<Vec<_>, PeError>>()?;
 
     let mut imports: Vec<_> = pe
         .imports

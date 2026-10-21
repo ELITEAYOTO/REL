@@ -71,3 +71,24 @@ adversarial import payloads and richer export/resource semantics,
 large/sparse inputs under real enforced isolation and representative
 resource baselines. CI success is **not** a universal parser memory/time
 limit or proof that hostile files are safe.
+
+
+## Extension des mesures natives du processus de rejet — #9
+
+Le profileur des 21 cas PE malformés conserve son échantillonnage RSS/CPU
+nominal à 2 ms, les limites de spool/temps et les diagnostics d'échec.
+Il réutilise également les compteurs du processus enfant direct déjà
+présents dans `profile_resources.py` : Linux `wait4` (pic `ru_maxrss`
+et CPU noyau+utilisateur) et Windows handle de création retenu
+(`PeakWorkingSetSize`, `GetProcessTimes`). L'enregistrement natif est
+exigé sur chaque exécution mesurée de la plateforme correspondante ;
+les champs des autres OS restent à `null`. Les sorties historiques
+restent lisibles, sans bénéficier rétroactivement de ces observations.
+
+Ces valeurs décrivent les rejets dans un contexte de test contrôlé ; elles
+n'imposent aucune limite CPU ou mémoire. Un pic Windows de working set
+n'est pas directement comparable au `ru_maxrss` Linux. La collecte
+ne prend pas en charge les descendants et n'établit pas la sûreté des
+fichiers PE hostiles. Les chiffres, artefacts et SHA de validation
+doivent être reportés dans [#9](https://github.com/ELITEAYOTO/REL/issues/9)
+après contrôle des CI Windows/Ubuntu sur le HEAD final et sur `main`.

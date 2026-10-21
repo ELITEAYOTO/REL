@@ -163,7 +163,7 @@ fn malformed_section_name_must_not_be_reported_as_complete() {
         let result = inspect(&bytes);
         assert!(
             matches!(result, Err(PeError::Parse(ref detail)) if detail.contains("section name")),
-            "{label}: undecodable name must not become a complete, warning-free manifest: {result:?}"
+            "{label}: undecodable name must not become a complete, warning-free manifest"
         );
     }
 }

@@ -82,6 +82,17 @@ class CorpusCaseTests(unittest.TestCase):
                     include_windows_executable=True, windows_msvc_probe=missing,
                 )
 
+    def test_missing_native_analyzer_fails_before_generating_overlays(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            missing = folder / "rel-inspect.exe"
+            with self.assertRaises(FileNotFoundError):
+                prepare_cases(
+                    ROOT / "fixtures", folder, missing,
+                    include_windows_executable=True,
+                )
+            self.assertEqual(list(folder.iterdir()), [])
+
     def test_compiler_probe_provenance_never_implies_license(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             folder = Path(tmp)

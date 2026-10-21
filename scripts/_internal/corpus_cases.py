@@ -102,6 +102,10 @@ def prepare_cases(
     linux_mingw_probe: Path | None = None,
 ) -> list[CorpusCase]:
     """Create deterministic, provenance-labeled PE cases without running them."""
+    # Fail before producing any overlay when the native analyzer is absent.
+    if include_windows_executable and not binary.is_file():
+        raise FileNotFoundError(binary)
+
     # Fail before producing any overlay if the optional compiler input is invalid.
     for name, probe in (
         ("MSVC", windows_msvc_probe),
@@ -157,8 +161,6 @@ def prepare_cases(
             ))
 
     if include_windows_executable:
-        if not binary.is_file():
-            raise FileNotFoundError(binary)
         cases.append(CorpusCase(
             "rel-windows-self", binary, "native-windows-rel-executable",
             None, None, "locally-built-rel-cli",

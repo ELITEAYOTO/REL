@@ -172,3 +172,30 @@ all PE semantics. A potentially dishonest `Size` is not made trustworthy
 by scanning it. No generated PE is executed, fixture bytes and manifest
 v1 remain unchanged. See [issue #9](https://github.com/ELITEAYOTO/REL/issues/9)
 for validation and residual risks.
+
+## Underdeclared import-directory Size: bounded continuation (P1.5)
+
+The [PR #164](https://github.com/ELITEAYOTO/REL/pull/164) guard
+originally stopped scanning at the PE-advertised import-directory `Size`.
+A new **test-only** PE32/PE32+ case duplicates the valid descriptor in
+memory, reduces `Size` from 40 to 20 bytes, and corrupts the second
+descriptor's `Name` or `FirstThunk`. The positive control confirms that
+the valid duplicate remains accepted. The prior production code accepts the
+malformed second descriptor with incomplete import observations (fail-first
+CI is recorded in [issue #9](https://github.com/ELITEAYOTO/REL/issues/9)).
+
+The preflight now follows contiguous **raw-mappable** 20-byte descriptors
+until a zero terminator, or the existing 1 MiB alpha scan budget measured
+in complete records (52,428). A non-null descriptor missing required fields
+produces a clean parse error even when it lies outside the claimed Size.
+Reaching the scan cap without a terminator produces an explicit error.
+An unmappable RVA still falls back to Goblin rather than rejecting a
+possibly unconventional PE layout; a zero-size declaration is not scanned.
+
+The cap bounds **this preflight traversal only**. It does not impose a
+global parser CPU/RSS/process-tree budget, validate thunk or delayed/bound
+imports, repair dishonest directory records, or prove all arbitrary PE
+imports are complete. A legitimate PE with unusually many import records
+could be rejected under this conservative alpha policy. Fixture bytes,
+`binary-manifest v1.0.0`, dependencies and source redistribution
+rights remain unchanged.

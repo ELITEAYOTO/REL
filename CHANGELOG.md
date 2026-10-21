@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased] — Bound import descriptor checks beyond understated Size (P1.5)
+
+- Reproduce a valid two-descriptor PE32/PE32+ whose import-directory `Size` advertises only the first record, then show that corrupting the second `Name` allows silent import truncation. Preserve the test-only fail-first evidence.
+- Scan contiguous raw-mappable import descriptors to their zero terminator (or up to 1 MiB of complete records) rather than trusting the declared size as a traversal bound; retain clean errors for missing required fields and an explicit error at the cap. No PE fixture, public v1 schema, dependency or isolated worker budget change.
+
 ## [Unreleased] — Inspect declared span of PE import descriptors (P1.5)
 
 - A test-only branch demonstrated that a malformed **second** import descriptor with `Name=0` was accepted as if import enumeration had finished. The positive control duplicates a valid import descriptor in PE32/PE32+ without altering fixture bytes on disk.

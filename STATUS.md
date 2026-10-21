@@ -5,8 +5,7 @@
 
 ## Fonctionne
 - P1 : inspection **statique** PE32/PE32+, manifeste `binary-manifest v1.0.0` et CLI.
-- EX-01 : trois domaines bornés et preuves d'octets sources, dont les noms de sections non UTF-8 via `section-headers` (#150).
-- EX-02 : diff strict `0.1.0-experimental` et mode optionnel `--partial` en `0.2.0-experimental` (#149), sans preuve de comportement.
+- EX-01 : trois domaines bornés, preuves brutes non UTF-8 (#150) ; EX-02 : diff strict `0.1` et `--partial` `0.2` expérimentaux (#149), aucune preuve de comportement.
 - CI Windows/Ubuntu, oracles et fuzzing court ; pas de garantie de sandbox ou de couverture globale.
 
 ## En cours

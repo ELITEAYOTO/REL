@@ -102,6 +102,20 @@ Deux artefacts téléchargés de [CI #39213276412](https://github.com/ELITEAYOTO
 
 Le premier prototype de collecte interrogeait les variables SDK dans le script Python exécuté lors d'une étape CI différente : elles étaient alors absentes. Ce problème de traçabilité a été corrigé en enregistrant les versions **au moment de la compilation**, là où l'environnement est effectivement présent. Même cette provenance enrichie ne fige pas l'ensemble des dépendances système ; éviter toute affirmation de reproductibilité universelle.
 
+### Précision du diagnostic des octets de débogage (#69)
+
+Le diagnostic **expérimental de comparaison de deux builds dans un même job**
+(`scripts/check_windows_diff_repro.py`) classe désormais les régions
+chevauchantes de la plus précise à la plus générale : horodatages COFF /
+entrée de debug, puis blocs de debug effectivement observés, puis section
+englobante, enfin entête/overlay. Un bloc de debug physiquement situé dans
+`.rdata` était auparavant étiqueté `section:.rdata` en raison de l'ordre
+des tests ; une régression déterministe reproduit exactement ce cas.
+Ceci corrige **l'étiquetage du diagnostic**, sans normaliser les octets,
+modifier les SHA-256 bruts, ni attribuer une cause de non-reproductibilité.
+La preuve est toujours limitée à la disposition des champs analysés et
+aux deux builds d'un même job ; les comparaisons entre CI restent distinctes.
+
 ## Limites et prochaines étapes
 
 - Deux compilateurs sur le même environnement Windows et une **seule source C** paramétrée n'établissent pas la diversité réelle des programmes commerciaux/open source, des options de compilation, ni des différents changements entre releases.

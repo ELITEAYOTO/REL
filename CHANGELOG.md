@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — Flag unrepresented export address slots (P1.5)
+
+- Address a v1 export-evidence completeness gap: the parser previously omitted unnamed Goblin export entries via `filter_map` and returned an empty warning list even when the export address table exceeded the name-pointer table. This can conceal ordinal-only exports or unrepresented address slots.
+- Preserve **binary-manifest v1.0.0** and every named export exactly. Warn when Goblin exposes an unnamed entry or `address_table_entries > number_of_name_pointers`. An extra EAT slot can be unused; the warning deliberately does not claim every slot is a live ordinal export.
+- Add a controlled PE32 regression mutating only the synthetic export name-pointer count and requiring no fabricated name and a warning; preserve warning-free expectations for both untouched golden formats. No tracked binary fixture, dependency, new module or PE execution.
+
 ## [Unreleased] — Fixed SOURCE_DATE_EPOCH GNU DLL reproducibility experiment (#69)
 
 - Compare two more **source-built controlled PE32+ AMD64 MinGW-w64 DLLs** inside the existing Ubuntu job, with the same source, output path, GCC flags, nonzero `SOURCE_DATE_EPOCH=1700000000` and explicit `-Wl,--insert-timestamp`. Preserve the original normal-timestamp pair as the control.

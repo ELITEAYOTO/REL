@@ -85,12 +85,29 @@ pub fn inspect(data: &[u8]) -> Result<PeInspection, PeError> {
     exports.sort();
     exports.dedup();
 
+    // The public v1 list contains names only. An export address table may
+    // also have unnamed ordinal entries or unrepresented unused slots; do
+    // not present the remaining name list as complete, warning-free evidence.
+    let unrepresented_export_slots = pe.exports.iter().any(|entry| entry.name.is_none())
+        || pe.export_data.as_ref().is_some_and(|data| {
+            data.export_directory_table.address_table_entries
+                > data.export_directory_table.number_of_name_pointers
+        });
+    let warnings = if unrepresented_export_slots {
+        vec![
+            "export address table has unnamed or unrepresented ordinal slots; only named exports are reported"
+                .to_owned(),
+        ]
+    } else {
+        Vec::new()
+    };
+
     Ok(PeInspection {
         arch,
         sections,
         imports,
         exports,
-        warnings: Vec::new(),
+        warnings,
     })
 }
 

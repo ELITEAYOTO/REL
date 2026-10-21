@@ -106,7 +106,9 @@ def profile_once(
                     if code is not None:
                         break
                     time.sleep(POLL_SECONDS)
-                code = child.wait()
+                # The helper already reaped Linux via wait4 or observed
+                # Windows completion via poll. A second psutil wait() after
+                # wait4 can return None instead of the real exit status.
                 if native is not None:
                     windows_peak, windows_cpu = native.final()
             except BaseException:

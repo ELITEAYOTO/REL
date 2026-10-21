@@ -316,8 +316,16 @@ class CorpusCrossRunTests(unittest.TestCase):
             ):
                 compare_reports(sample(), changed, require_identical=True)
         changed = sample()
-        changed["pairs"][0]["import_added"] = ["KERNEL32.dll!Other"]
-        changed["pairs"][0]["import_removed"] = ["KERNEL32.dll!Original"]
+        # Give clang-v1 a different (same-cardinality) symbol set on ALL
+        # affected edges. The report stays internally coherent, so this
+        # isolates the cross-report identical-SHA oracle disagreement.
+        for pair in changed["pairs"]:
+            if pair["left"] == "clang-v1":
+                pair["import_added"] = ["KERNEL32.dll!Original"]
+                pair["import_removed"] = ["KERNEL32.dll!Other"]
+            elif pair["right"] == "clang-v1":
+                pair["import_added"] = ["KERNEL32.dll!Other"]
+                pair["import_removed"] = ["KERNEL32.dll!Original"]
         with self.assertRaisesRegex(ValueError, "conflicting oracle"):
             compare_reports(sample(), changed, require_identical=True)
 

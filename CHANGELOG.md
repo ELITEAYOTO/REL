@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — Structured PE independent oracle completeness (P1.5)
+
+- Strengthen the existing controlled Windows MSVC/Clang-cl structured PE oracle: compare **the entire ordered section table (names, raw offsets/sizes and virtual addresses)** and **all observed named imports/exports** in REL's manifest with the independent `pefile` extraction, rather than accepting only the presence of `.rsrc`, `.reloc` and two exports.
+- Add portable negative regressions proving that omitted sections, changed section metadata, missing or injected imports/exports and extraction warnings are rejected. Reuse the existing independent-oracle CI setup on Windows and Ubuntu; no new CI jobs, PE fixtures or downloaded binaries.
+- This is stronger evidence for two source-built, non-executed controlled probes, **not** broader representativeness, behavioral coverage or malicious-input isolation. No public `binary-manifest v1.0.0` change, licensing decision or production Rust parser change.
+
 ## [Unreleased] — EX-02 cross-compiler evidence consistency
 
 - Reject contradictory per-symbol import/export changes around the 6 fully observed MSVC/Clang-cl A/B squares in the existing 8-build EX-02 corpus. The earlier per-pair count and within-compiler triangle checks were insufficient to detect a balanced inconsistency confined to one cross-compiler pair.

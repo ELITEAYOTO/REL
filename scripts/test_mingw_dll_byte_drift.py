@@ -44,6 +44,40 @@ class MinGWDriftTests(unittest.TestCase):
             "section:.text": 1,
         })
 
+    def test_structured_export_timestamp_and_checksum_override_generic_regions(self):
+        first = bytearray(b"x" * 25)
+        second = bytearray(first)
+        second[5] = ord("y")
+        second[18] = ord("y")
+        second[21] = ord("y")
+        mapped = {
+            "export-directory-timestamp": {"offset": 16, "size": 4, "value": 1},
+            "optional-checksum": {"offset": 20, "size": 4, "value": 1},
+        }
+        result = describe_differences(first, second, REGIONS, mapped)
+        self.assertEqual(result["changed_byte_count"], 3)
+        self.assertEqual(result["changed_bytes_by_first_file_region"], {
+            "coff-timestamp": 1,
+            "export-directory-timestamp": 1,
+            "optional-checksum": 1,
+        })
+        self.assertTrue(result["all_changed_bytes_in_observed_pe_fields"])
+        self.assertFalse(result["only_timestamp_field_bytes_changed"])
+
+    def test_section_byte_outside_explicit_field_refuses_known_field_claim(self):
+        first = bytearray(b"x" * 25)
+        second = bytearray(first)
+        second[9] = ord("y")
+        mapped = {
+            "export-directory-timestamp": {"offset": 16, "size": 4, "value": 1},
+            "optional-checksum": {"offset": 20, "size": 4, "value": 1},
+        }
+        result = describe_differences(first, second, REGIONS, mapped)
+        self.assertFalse(result["all_changed_bytes_in_observed_pe_fields"])
+        self.assertEqual(result["changed_bytes_by_first_file_region"], {
+            "section:.text": 1,
+        })
+
     def test_trailing_bytes_count_but_are_not_causally_explained(self):
         result = describe_differences(b"x" * 25, b"x" * 27, REGIONS)
         self.assertEqual(result["changed_byte_count"], 2)

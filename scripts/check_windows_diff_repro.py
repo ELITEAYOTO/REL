@@ -107,12 +107,15 @@ def category(pos: int, regions: dict) -> str:
     for field in regions.get("debug_directory_timestamps", []):
         if field["offset"] <= pos < field["offset"] + 4:
             return "debug-directory-timestamp"
-    for section in regions["sections"]:
-        if section["offset"] <= pos < section["offset"] + section["size"]:
-            return f"section:{section['name']}"
+    # PE debug data commonly occupies bytes within a section. Classify
+    # the more specific observed byte range first; exact timestamps above
+    # retain precedence even if embedded in a debug data blob.
     for item in regions["debug_blobs"]:
         if item["offset"] <= pos < item["offset"] + item["size"]:
             return "debug-data"
+    for section in regions["sections"]:
+        if section["offset"] <= pos < section["offset"] + section["size"]:
+            return f"section:{section['name']}"
     return "header-or-overlay"
 
 

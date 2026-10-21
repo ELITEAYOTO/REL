@@ -12,6 +12,7 @@ import tempfile
 from pathlib import Path
 
 from validate_observation_envelope import validate
+from verify_observation_evidence import verify as verify_source_evidence
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = b"rel-observe:section-headers:v1;limit=2097152;max=32;record=40"
@@ -115,14 +116,69 @@ def rejected(binary: Path, path: Path) -> None:
     assert result.returncode != 0 and result.stderr and not result.stdout
 
 
+
+def verify_non_utf8_section_fallback(inspector: Path, observer: Path, folder: Path) -> None:
+    """The same controlled bytes must be rejected by v1 and preserved by EX-01."""
+    fixtures = ROOT / "fixtures"
+    for filename in ("pe32-basic.exe", "pe64-basic.exe"):
+        original = (fixtures / filename).read_bytes()
+        original_path = folder / f"baseline-{filename}"
+        original_path.write_bytes(original)
+        accepted = subprocess.run(
+            [str(inspector), "analyze", str(original_path)],
+            text=True, capture_output=True, check=False, timeout=20,
+        )
+        assert accepted.returncode == 0, accepted.stderr
+        baseline = json.loads(accepted.stdout)
+        assert baseline["schema_version"] == "1.0.0"
+        assert baseline["sections"][0]["name"] == ".text"
+
+        count, _, table = fields(original)
+        assert count >= 1
+        assert original[table:table + 8] == b".text\0\0\0"
+        for invalid_byte in (0xff, 0xfe):
+            # Exactly one 8-byte section-header field changes, never the
+            # original tracked fixture. No PE or DLL is executed or loaded.
+            mutated = bytearray(original)
+            bad_name = b".bad" + bytes([invalid_byte]) + b"\0\0\0"
+            mutated[table:table + 8] = bad_name
+            path = folder / f"{filename}-name-{invalid_byte:02x}.exe"
+            path.write_bytes(mutated)
+
+            strict = subprocess.run(
+                [str(inspector), "analyze", str(path)],
+                text=True, capture_output=True, check=False, timeout=20,
+            )
+            assert strict.returncode != 0
+            assert not strict.stdout, "unrepresentable v1 name must not publish a manifest"
+            assert "section name cannot be decoded as UTF-8" in strict.stderr
+
+            report = verify(observer, path, "complete")
+            verify_source_evidence(report, bytes(mutated))
+            first = report["observations"][0]
+            assert first["raw_value"][:16] == bad_name.hex()
+            assert first["normalized_value"].startswith(f"name_hex={bad_name.hex()};")
+            assert report["evidence"][0]["location"] == {
+                "kind": "file_offset", "start": table, "length": 40
+            }
+            assert report["scope"]["domain"] == "pe.section_headers"
+            # Complete refers only to the bytes of declared header records:
+            # it makes no claim about overall PE validity.
+            assert report["scope"]["status"] == "complete"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--binary", type=Path, required=True)
+    parser.add_argument("--inspector", type=Path, help="optional v1 rejection cross-check")
     args = parser.parse_args()
     binary = args.binary.resolve(strict=True)
+    inspector = args.inspector.resolve(strict=True) if args.inspector else None
     fixtures = ROOT / "fixtures"
     with tempfile.TemporaryDirectory() as tmp:
         folder = Path(tmp)
+        if inspector is not None:
+            verify_non_utf8_section_fallback(inspector, binary, folder)
         for filename in ("pe32-basic.exe", "pe64-basic.exe"):
             fixture = fixtures / filename
             reference = verify(binary, fixture, "complete")
@@ -157,7 +213,7 @@ def main() -> None:
         with oversized.open("wb") as output:
             output.truncate(2 * 1024 * 1024 + 1)
         rejected(binary, oversized)
-    print("PASS EX-01 section headers: exact 40-byte proofs, limits, partial abstention, reproducible ID")
+    print("PASS EX-01 section headers: exact 40-byte proofs, limits, partial abstention, reproducible ID; optional non-UTF8 v1/EX-01 integration")
 
 
 if __name__ == "__main__":

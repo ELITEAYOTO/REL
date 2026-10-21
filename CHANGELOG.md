@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — Reject undecodable PE section names (P1.5 candidate)
+
+- Reproduce a concrete malformed PE32 section-name case with a test-only branch CI failure: the existing `rel-pe` extraction replaced an invalid UTF-8 section name with `<invalid>` and returned no warning, despite losing the original header-name evidence.
+- Reject that observation as `PeError::Parse` instead of emitting a successful warning-free manifest. Test both unchanged PE32/PE32+ fixture derivatives in memory; existing golden fixtures, hashes and permissions are unaffected.
+- Conservative compatibility impact: a PE with an undecodable header-name byte sequence is now refused, rather than presented as fully inspected. No new dependency, PE execution, `binary-manifest v1.0.0` schema change or claims about exhaustive hostile-input protection.
+
 ## [Unreleased] — EX-02 transitive evidence consistency
 
 - Reject logically contradictory import/export set deltas across fully observed within-toolchain A/B/C triangles in the eight-build EX-02 evidence comparator. Pairwise balanced cardinalities alone cannot guarantee mutually compatible claims.

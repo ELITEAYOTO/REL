@@ -146,3 +146,24 @@ fn rejects_out_of_file_raw_section_via_public_inspect_api() {
         ));
     }
 }
+
+// A non-UTF-8 section identifier is not faithfully representable in the
+// current v1 string field. Do not silently report "<invalid>" with no warning.
+#[test]
+fn malformed_section_name_must_not_be_reported_as_complete() {
+    for (label, fixture) in [("PE32", PE32), ("PE32+", PE64)] {
+        let mut bytes = fixture.to_vec();
+        let nt = u32::from_le_bytes(bytes[0x3c..0x40].try_into().unwrap()) as usize;
+        let coff = nt + 4;
+        let optional_size =
+            u16::from_le_bytes(bytes[coff + 16..coff + 18].try_into().unwrap()) as usize;
+        let first_section = coff + 20 + optional_size;
+        bytes[first_section..first_section + 8].copy_from_slice(b".bad\xff\0\0\0");
+
+        let result = inspect(&bytes);
+        assert!(
+            matches!(result, Err(PeError::Parse(ref detail)) if detail.contains("section name")),
+            "{label}: undecodable name must not become a complete, warning-free manifest"
+        );
+    }
+}

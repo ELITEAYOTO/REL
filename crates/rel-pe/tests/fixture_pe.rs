@@ -118,6 +118,42 @@ fn ordinal_import_is_flagged_without_changing_v1_import_strings() {
 }
 
 #[test]
+fn declared_delay_import_directory_must_warn_without_inventing_imports() {
+    // Only change the already present IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT
+    // optional-header entry (index 13). The synthetic fixtures do not contain
+    // a valid delay-load descriptor: this proves advertised coverage, not
+    // that any delayed DLL or symbol was successfully parsed.
+    for (label, fixture, directory_start) in [("PE32", PE32, 96_usize), ("PE32+", PE64, 112_usize)]
+    {
+        let nt = u32::from_le_bytes(fixture[0x3c..0x40].try_into().unwrap()) as usize;
+        let optional = nt + 24;
+        let count = u32::from_le_bytes(
+            fixture[optional + directory_start - 4..optional + directory_start]
+                .try_into()
+                .unwrap(),
+        );
+        assert!(count > 13, "{label}: delay directory not declared");
+        let entry = optional + directory_start + 13 * 8;
+        assert_eq!(&fixture[entry..entry + 8], &[0_u8; 8]);
+        let mut derived = fixture.to_vec();
+        derived[entry..entry + 4].copy_from_slice(&0x2200_u32.to_le_bytes());
+        derived[entry + 4..entry + 8].copy_from_slice(&32_u32.to_le_bytes());
+
+        let before = inspect(fixture).expect("golden fixture should parse");
+        let observed = inspect(&derived).expect("directory declaration should be observable");
+        assert_eq!(observed.imports, before.imports, "{label}");
+        assert_eq!(observed.exports, before.exports, "{label}");
+        assert!(
+            observed
+                .warnings
+                .iter()
+                .any(|message| message.contains("delay") && message.contains("import")),
+            "{label}: a declared but unparsed delay import directory must not be warning-free"
+        );
+    }
+}
+
+#[test]
 fn literal_symbol_named_ordinal_is_not_misidentified() {
     let mut bytes = PE32.to_vec();
     let lookup_rva = u32::from_le_bytes(bytes[0x400..0x404].try_into().unwrap());

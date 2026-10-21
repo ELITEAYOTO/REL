@@ -1,6 +1,6 @@
 # REL — Current state and next-chat entry
 
-**Checkpoint: 2026-10-20, after PR #128 and exact post-squash main CI.** This is a dated
+**Checkpoint: 2026-10-21, after PR #129 and exact post-squash main CI.** This is a dated
 verification, NOT a live GitHub API. Always fetch current main SHA, open PRs,
 issues and completed CI before acting. The large
 [historical handoff archive](HANDOFF_NEXT_CHAT.md) contains old snapshots;
@@ -27,6 +27,14 @@ the canonical entry point is THIS document.
    Never infer hostile-file safety from green tests.
 
 ## 1. Latest verified integration (dated checkpoint)
+
+### Verified 2026-10-21: #129 accepted near-16-MiB EX-02 report profiling
+
+- [PR #129](https://github.com/ELITEAYOTO/REL/pull/129) **merged** with no Rust, PE fixture, dependency or public `binary-manifest v1.0.0` change. Its existing `rel-diff` resource profile now includes a fourth controlled scenario: 8,192 distinct, padded synthetic import strings per side. Each input JSON was **7,971,111 bytes**; successful serialized JSON stdout was **16,040,894 bytes including newline** (between 15 and 16 MiB), with exact output SHA-256 `3d15b30a27ecbefc84c77ef2ca20c66fd22841dd290b37d47fe7932cd0feb03b`. Windows, Ubuntu and same-input repetitions agreed on these output bytes. Three added standalone Python tests reject profile-output byte-count/SHA drift. This is a **profiling acceptance case**, not a new serializer budget or parser fix.
+- **Exact final PR HEAD** `8c5a4d555ad567e0bbc3d242466c5751b6b28920`: [CI #39515866730](https://github.com/ELITEAYOTO/REL/actions/runs/39515866730) passed **Windows + Ubuntu**; PR artifacts Ubuntu `12306928472` and Windows `12307354109`. Median wall/RSS-sampled maximum for near-cap scenario: Ubuntu **61.0518 ms / 68,575,232 bytes**, Windows **84.2736 ms / 54,239,232 bytes** (three measurements after one warmup).
+- **Squash commit on main** `58de047cfa04e2c744b562fcbb43499424c6ae93`: separate [exact-main CI #39516270775](https://github.com/ELITEAYOTO/REL/actions/runs/39516270775) passed **Windows + Ubuntu**, all **15 established artifact names** preserved. New-main artifacts Ubuntu `12308077727` and Windows `12307468814` independently recorded the identical 16,040,894-byte output and SHA; median wall/max sampled RSS: Ubuntu **76.2293 ms / 68,055,040 bytes**, Windows **93.1522 ms / 54,177,792 bytes**. Data and limits are in [issue #68 proof](https://github.com/ELITEAYOTO/REL/issues/68#issuecomment-6304298115) and [EX-02 baseline](../EX02_RESOURCE_BASELINE.md). These 2-ms nominal RSS samples may miss peaks; no cross-OS benchmark ranking, hard RAM/CPU bound, realistic PE import mix or hostile-input safety follows. #68 and #15 remain OPEN.
+- **Latest GitHub verification before this documentation-only PR:** `main` = `58de047cfa04e2c744b562fcbb43499424c6ae93`, 0 open PR, 8 open issues; #9 cgroup-v2 group-creation attempt still failed with `EACCES` on the GitHub Ubuntu runner (see #128 below). This is dated, **not** a claim about the next live `main`.
+- **Next practical development gate:** audit existing EX-02 compiled-corpus/oracle provenance (#15, #69) and the gaps in broader legally cleared PE coverage (#9) **before** proposing new corpus entries or further memory budgets. Seek one small independently testable weakness: use actual compiler-backed A/B comparisons, stronger coverage/oracle evidence or representative benchmarks where rights allow. Do not repeat the completed 16 MiB serializer overflow test, rebuild a cgroup backend without a delegated Linux lab, or claim 10–20 independent products from 16 comparisons of one source. Issue #8 fuzzing is a separate option if a concrete corpus/coverage gap can be demonstrated. Preserve the approved ADR-0013 order P1.5 -> EX-01 -> EX-02 -> P2/P3.
 
 ### Verified 2026-10-20: #128 empty cgroup child permission gate
 

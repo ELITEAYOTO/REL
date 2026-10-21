@@ -33,10 +33,21 @@ Le fichier JSON source contient le contexte d'environnement, la date exacte de c
 
 **Statut :** baseline synthétique documentée, aucune performance de production démontrée ; [issue #68](https://github.com/ELITEAYOTO/REL/issues/68) toujours partiellement ouverte.
 
-## Extension du protocole — candidat #129 (CI finale à valider)
+## Extension du protocole — PR #129 validée le 21 octobre 2026
 
 Le profileur `scripts/profile_manifest_diff.py` mesure désormais la **taille exacte des octets de sortie JSON** (saut de ligne compris), l'empreinte SHA-256 des octets et l'identité de ces résultats entre répétitions de même entrée. Il conserve les observations de RSS échantillonné, CPU et durée avec la même provenance.
 
 Un quatrième scénario synthétique `near-report-budget-8192` contient 8 192 imports artificiels différents de chaque côté, dotés d'un remplissage déterministe de 950 caractères. La condition d'acceptation vérifie **strictement plus de 15 Mio, au plus 16 Mio** de JSON sérialisé, sans dépasser 16 Mio par manifeste d'entrée. Ce cas vise la croissance mémoire du processus `rel-diff` juste sous son plafond de rapport, plutôt que de répéter le seul test de rejet déjà validé. Aucun de ces imports ne représente une table d'import PE réaliste.
 
-Les sorties et observations individuelles sont disponibles dans les artefacts `rel-diff-resource-profile-ubuntu-latest` et `rel-diff-resource-profile-windows-latest` d'une CI finale réussie ; **aucune valeur de RSS/temps n'est affirmée dans cette note avant leur lecture**. Ces mesures sont fortement dépendantes du runner et de l'échantillonnage et ne créent pas de budget mémoire global. L'issue #68 reste ouverte.
+Les sorties et observations individuelles ont été **lues dans les JSON des artefacts réels**, à la fois pour la [CI de PR #39515866730](https://github.com/ELITEAYOTO/REL/actions/runs/39515866730) sur la tête finale `8c5a4d555ad567e0bbc3d242466c5751b6b28920` et pour la [CI post-fusion #39516270775](https://github.com/ELITEAYOTO/REL/actions/runs/39516270775) sur le squash `58de047cfa04e2c744b562fcbb43499424c6ae93`. Les deux CI ont réussi sur Windows et Ubuntu, avec 15 artefacts publiés dans la CI post-fusion.
+
+| CI et plateforme | Artefact GitHub ID | Rapport JSON (octets) | Temps médian (ms) | RSS maximal échantillonné (octets) |
+| --- | ---: | ---: | ---: | ---: |
+| PR Ubuntu | 12306928472 | 16 040 894 | 61,0518 | 68 575 232 |
+| PR Windows | 12307354109 | 16 040 894 | 84,2736 | 54 239 232 |
+| Nouveau `main` Ubuntu | 12308077727 | 16 040 894 | 76,2293 | 68 055 040 |
+| Nouveau `main` Windows | 12307468814 | 16 040 894 | 93,1522 | 54 177 792 |
+
+Les quatre artefacts confirment le même SHA-256 du **rapport JSON complet** : `3d15b30a27ecbefc84c77ef2ca20c66fd22841dd290b37d47fe7932cd0feb03b`. Les deux manifestes d'entrée du cas mesuraient chacun **7 971 111 octets**. Une passe d'échauffement puis **3** exécutions mesurées ont été utilisées par environnement.
+
+Ces mesures sont dépendantes des runners et de l'échantillonnage RSS nominal à 2 ms : les maxima observés peuvent manquer des pics, et les écarts de temps entre OS ne sont pas comparables comme des classements de performance. Les imports longuement remplis sont volontairement artificiels et ne représentent pas un véritable corpus PE. Ce succès n'établit **ni plafond global de RAM/CPU**, ni sûreté des entrées arbitraires, ni validation complète d'EX-02. Voir [la preuve détaillée de l'issue #68](https://github.com/ELITEAYOTO/REL/issues/68#issuecomment-6304298115). L'issue #68 reste ouverte.

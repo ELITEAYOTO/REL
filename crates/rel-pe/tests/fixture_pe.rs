@@ -140,10 +140,8 @@ fn rejects_malformed_second_import_when_directory_size_understates_table() {
     // descriptor at 0x400 and an all-zero terminator at 0x414. Duplicate
     // the first record in memory, then understate the advertised byte span
     // to only 20 bytes. The next slot at 0x428 stays a zero terminator.
-    for (label, fixture, directory_start) in [
-        ("PE32", PE32, 96_usize),
-        ("PE32+", PE64, 112_usize),
-    ] {
+    for (label, fixture, directory_start) in [("PE32", PE32, 96_usize), ("PE32+", PE64, 112_usize)]
+    {
         let first = 0x400_usize;
         let second = first + 20;
         let third = second + 20;

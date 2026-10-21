@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — GNU MinGW-w64 DLL same-job byte-drift evidence (#69)
+
+- Add a bounded, static-only repeat-build diagnostic for the **already controlled** PE32+ AMD64 MinGW-w64 DLL, to investigate observed cross-run raw SHA-256 drift. Rebuild the same source and flags at the same output path in one Ubuntu CI job, retaining the first file only temporarily and never uploading either binary.
+- Reuse existing EX-02 direct PE-field and byte-region helpers to record both **raw SHA-256** values, section/header/debug observations, differing byte ranges and their first-file categories without normalizing or claiming a root cause. Record GCC/linker/package versions and runner image metadata in a third JSON within the **existing MinGW oracle artifact**.
+- Add four synthetic regressions for identical bytes, COFF/debug timestamp fields, section differences and trailing data, executed on Windows and Ubuntu. No parser, v1 manifest, compiler dependencies, new CI job or executable behavior changes. Cross-run reproducibility, independent third-party corpus rights and CPU/RAM caps remain open.
+
 ## [Unreleased] — GNU MinGW-w64 PE32+ DLL corpus probe (P1.5)
 
 - Add a GNU MinGW-w64-linked **AMD64 PE32+ DLL** static probe on Ubuntu using the already tracked C source, complementing existing GNU x64 EXE and native MSVC/Clang-cl x86 DLLs. The generated DLL is never executed, committed or distributed.

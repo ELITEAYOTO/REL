@@ -1,6 +1,6 @@
 # REL — Current state and next-chat entry
 
-**Checkpoint: 2026-10-21, verified through PR #135 and its exact post-squash main CI.** This is a dated
+**Checkpoint: 2026-10-21, verified through PR #136 and its exact post-squash main CI.** This is a dated
 verification, NOT a live GitHub API. Always fetch current main SHA, open PRs,
 issues and completed CI before acting. The large
 [historical handoff archive](HANDOFF_NEXT_CHAT.md) contains old snapshots;
@@ -28,14 +28,15 @@ the canonical entry point is THIS document.
 
 ## 1. Latest verified integration (dated checkpoint)
 
-### Verified 2026-10-21: consolidated updates #130–#135
+### Verified 2026-10-21: consolidated updates #130–#136
 
-- Latest live-checked `main` before this incremental PR was `165d1e4d51473e0bcccecb3ad569643682094f7f`, 0 PR open; exact post-squash [CI #39533014922](https://github.com/ELITEAYOTO/REL/actions/runs/39533014922) passed Windows/Ubuntu with all 15 preserved artifacts. This remains a **dated** checkpoint, not an assertion about current GitHub state.
+- Latest live-checked `main` before this incremental PR was `a844a72f9458bff016064cf0f43ee148bafae2d4`, 0 PR open; exact post-squash [CI #39534724579](https://github.com/ELITEAYOTO/REL/actions/runs/39534724579) passed Windows/Ubuntu with all 15 preserved artifacts. This remains a **dated** checkpoint, not an assertion about current GitHub state.
+- [PR #136](https://github.com/ELITEAYOTO/REL/pull/136) added a GNU MinGW-w64-built **PE32+ AMD64 DLL** from tracked source, independently checked by `pefile`, not executed, uploaded as JSON-only proof to the existing artifact; [exact-head CI #39534412313](https://github.com/ELITEAYOTO/REL/actions/runs/39534412313) and [post-squash #39534724579](https://github.com/ELITEAYOTO/REL/actions/runs/39534724579) passed Windows/Ubuntu. A different raw DLL SHA was observed in those runs, but no root cause was established. [Issue #9 record](https://github.com/ELITEAYOTO/REL/issues/9#issuecomment-6306768725) details the provenance and legal/resource limits.
 - [PR #135](https://github.com/ELITEAYOTO/REL/pull/135) strengthened the MSVC/Clang-cl **PE32 x86 DLL** independent `pefile` oracles to check exact section metadata and named imports/exports. Exact PR [CI #39532750157](https://github.com/ELITEAYOTO/REL/actions/runs/39532750157) and post-merge [CI #39533014922](https://github.com/ELITEAYOTO/REL/actions/runs/39533014922) passed both OSes; [issue #9 evidence](https://github.com/ELITEAYOTO/REL/issues/9#issuecomment-6306515772) records the remaining rights and representativeness gaps.
 - [PR #134](https://github.com/ELITEAYOTO/REL/pull/134) strengthened the actual MSVC/Clang-cl x64 structured PE `pefile` oracles to require complete sections and named imports/exports. The exact-head [CI #39531281345](https://github.com/ELITEAYOTO/REL/actions/runs/39531281345) passed both OSes. [Issue #9 evidence](https://github.com/ELITEAYOTO/REL/issues/9#issuecomment-6306324686) records limitations: generated corpus rights not established, not a hostile-input sandbox.
 - [PR #133](https://github.com/ELITEAYOTO/REL/pull/133) added six cross-compiler consistency cycles in the EX-02 eight-build oracle; [main CI #39530008877](https://github.com/ELITEAYOTO/REL/actions/runs/39530008877) succeeded Windows/Ubuntu. [PR #132](https://github.com/ELITEAYOTO/REL/pull/132) rejected undecodable PE section names rather than writing a fabricated `<invalid>` in a warning-free v1 manifest; [main CI #39528127015](https://github.com/ELITEAYOTO/REL/actions/runs/39528127015) succeeded. [PR #131](https://github.com/ELITEAYOTO/REL/pull/131) added within-compiler transitive import/export evidence consistency; [main CI #39526453683](https://github.com/ELITEAYOTO/REL/actions/runs/39526453683) succeeded. [PR #130](https://github.com/ELITEAYOTO/REL/pull/130) consolidated the earlier technical checkpoint.
 - GitHub's [issue #15](https://github.com/ELITEAYOTO/REL/issues/15) was observed **closed** on 2026-10-21, whereas the historical narrative below records it open at the time. Closure alone does not establish independent source authenticity, behavior equivalence, representative authorized releases or universal resource safety. #9 and #8 remain open.
-- **Next practical investigation:** try a GNU MinGW-w64 linked **PE32+ DLL** on the existing Ubuntu runner, independent of the MSVC/Clang-cl x86 DLL linker lineage; then seek genuinely diverse licensed external samples or delegated Linux resource-enforcement evidence. New compiler outputs from tracked C sources are not representative external samples.
+- **Next practical investigation:** localize the newly observed raw SHA drift of the GNU MinGW-w64 **PE32+ DLL** with two exact-command builds in one authorized Ubuntu job and the existing raw PE byte-field oracle. Distinguish observed byte locations from causality. Then seek truly independent licensed sample sources or delegated OS resource enforcement. Further variations of the same tracked C source are not representative external samples.
 
 ### Verified 2026-10-21: #129 accepted near-16-MiB EX-02 report profiling
 

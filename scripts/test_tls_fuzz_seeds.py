@@ -59,5 +59,25 @@ class TlsFuzzSeedTests(unittest.TestCase):
             synthesize_tls(bytes(modified), is_64=False)
 
 
+    def test_extended_fuzz_records_generated_tls_seeds_before_execution(self) -> None:
+        """The 300s campaign must not fall back to only the three tracked seeds."""
+        workflow = (
+            ROOT / ".github" / "workflows" / "fuzz-long.yml"
+        ).read_text(encoding="utf-8")
+        ordered_steps = (
+            "python scripts/test_corpus_cases.py",
+            "python scripts/test_tls_fuzz_seeds.py",
+            "python scripts/prepare_tls_fuzz_seeds.py --destination fuzz/corpus/pe_inspect",
+            "sha256sum fuzz/corpus/pe_inspect/*",
+            'cargo +"$FUZZ_TOOLCHAIN" fuzz build pe_inspect',
+            'cargo +"$FUZZ_TOOLCHAIN" fuzz run pe_inspect',
+        )
+        positions = []
+        for command in ordered_steps:
+            self.assertEqual(workflow.count(command), 1, f"missing or duplicate: {command}")
+            positions.append(workflow.index(command))
+        self.assertEqual(positions, sorted(positions), "TLS seeds must precede corpus hashing and fuzzing")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -114,3 +114,23 @@ added, executed or loaded; mutations exist only in test memory.
 This is a narrow static-input gate, not complete import-table validation,
 proof of completeness for arbitrary files, or a CPU/RSS sandbox.
 Issues #8 and #9 remain open.
+
+## Nonempty import directory at RVA zero — focused preflight regression (2026-10-21)
+
+The P1.5 preflight previously verified the size cap for the second PE data
+directory (imports), but did not reject a **nonzero size with zero RVA**.
+A test-only branch on the existing PE32 and PE32+ 2 KiB source fixtures
+demonstrated that `preflight::directories::validate` returned `Ok(())`
+for those inconsistent declarations. The new structural guard refuses
+the inconsistent pair before Goblin extraction; an explicitly absent
+pair (RVA=0, size=0) remains accepted by preflight. The conservative
+rule may reject unusual files that previously parsed; external corpus
+compatibility remains unmeasured.
+
+The public `rel-pe::inspect` and local preflight tests require a clean
+`PeError::Parse` on the two in-memory negative samples, not a panic or
+an apparently complete import list. This does **not** verify all import
+descriptors, delayed imports, coherent filesystem snapshots, CPU/RSS
+bounds or arbitrary hostile-PE safety. No PE image is executed, no
+sample is committed or redistributed, and `binary-manifest v1.0.0`
+remains unchanged. See issue #9 for exact-head CI evidence after integration.

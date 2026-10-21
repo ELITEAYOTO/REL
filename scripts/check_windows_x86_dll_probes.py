@@ -22,6 +22,12 @@ EXPECTED_DELAY_WARNING = (
 )
 EXPECTED_DELAY_DLL = "rel-delay-target.dll"
 EXPECTED_DELAY_SYMBOL = f"{EXPECTED_DELAY_DLL}!{EXPECTED_EXPORT}"
+EXPECTED_ORDINAL_DLL = "rel-ordinal-target.dll"
+EXPECTED_ORDINAL = 42
+EXPECTED_ORDINAL_WARNING = (
+    "import lookup table contains ordinal references; "
+    "v1 import strings cannot distinguish ordinals from literal symbol names"
+)
 
 
 def verify_manifest_evidence(
@@ -195,6 +201,112 @@ def check_delay_load(analyzer: Path, path: Path, dll_path: Path,
         "never_executed": True,
     }
 
+def verify_ordinal_import_evidence(
+    manifest: dict, expected_direct: list[str], ordinal_entry: str
+) -> None:
+    """Ordinal notation in v1 is ambiguous; require the explicit warning."""
+    assert ordinal_entry.endswith(f"!ORDINAL {EXPECTED_ORDINAL}"), (
+        "ordinal import reference is missing"
+    )
+    assert ordinal_entry in expected_direct, "oracle omitted the real ordinal"
+    assert manifest["imports"] == expected_direct, "ordinal import list mismatch"
+    assert manifest["exports"] == [], "unexpected consumer exports"
+    assert manifest["warnings"] == [EXPECTED_ORDINAL_WARNING], (
+        "missing or changed ordinal ambiguity warning"
+    )
+
+
+def check_ordinal_import(
+    analyzer: Path, path: Path, dll_path: Path, version_path: Path
+) -> dict:
+    """Verify true linker-produced NONAME/ordinal #42 using independent pefile."""
+    data = path.read_bytes()
+    dll_bytes = dll_path.read_bytes()
+    pe = pefile.PE(data=data, fast_load=False)
+    target = pefile.PE(data=dll_bytes, fast_load=False)
+    try:
+        assert pe.FILE_HEADER.Machine == 0x8664, "ordinal consumer must be AMD64"
+        assert pe.OPTIONAL_HEADER.Magic == 0x20B, "ordinal consumer must be PE32+"
+        assert not (pe.FILE_HEADER.Characteristics & 0x2000), "consumer is a DLL"
+        assert target.FILE_HEADER.Machine == 0x8664, "ordinal target must be AMD64"
+        assert target.FILE_HEADER.Characteristics & 0x2000, "target must be a DLL"
+        pe.parse_data_directories()
+        target.parse_data_directories()
+
+        # NONAME is important: a named export alone cannot exercise ordinal
+        # import ambiguity, even if its export table has an ordinal number.
+        assert hasattr(target, "DIRECTORY_ENTRY_EXPORT"), "no DLL export table"
+        symbols = target.DIRECTORY_ENTRY_EXPORT.symbols
+        assert len(symbols) == 1, "unexpected DLL export cardinality"
+        assert symbols[0].ordinal == EXPECTED_ORDINAL, "wrong export ordinal"
+        assert symbols[0].name is None, "export must have NONAME flag"
+
+        direct = []
+        ordinal = []
+        assert hasattr(pe, "DIRECTORY_ENTRY_IMPORT"), "missing import table"
+        for entry in pe.DIRECTORY_ENTRY_IMPORT:
+            dll = entry.dll.decode("ascii")
+            for symbol in entry.imports:
+                if symbol.import_by_ordinal:
+                    assert symbol.name is None, "expected unresolved ordinal"
+                    assert symbol.ordinal is not None, "missing ordinal value"
+                    ref = f"{dll}!ORDINAL {symbol.ordinal}"
+                    ordinal.append(ref)
+                    direct.append(ref)
+                else:
+                    assert symbol.name is not None, "unexpected unnamed import"
+                    direct.append(f"{dll}!{symbol.name.decode('ascii')}")
+        assert len(ordinal) == 1, "expected one ordinal import"
+        assert ordinal[0].lower() == (
+            f"{EXPECTED_ORDINAL_DLL}!ORDINAL {EXPECTED_ORDINAL}".lower()
+        ), ordinal
+        direct = sorted(set(direct))
+        result = subprocess.run(
+            [str(analyzer), "analyze", str(path)],
+            text=True, capture_output=True, check=False, timeout=30
+        )
+        assert result.returncode == 0, result.stderr[:1000]
+        manifest = json.loads(result.stdout)
+        assert manifest["schema_version"] == "1.0.0"
+        assert manifest["format"] == "PE" and manifest["arch"] == "x86_64"
+        assert manifest["binary_sha256"] == hashlib.sha256(data).hexdigest()
+        assert manifest["size_bytes"] == len(data)
+        verify_ordinal_import_evidence(manifest, direct, ordinal[0])
+
+        versions = version_path.read_text(encoding="utf-8").splitlines()
+        assert len(versions) == 2 and all(versions), "missing toolchain versions"
+        source_paths = [
+            "fixtures/probes/ordinal_import_probe.c",
+            "fixtures/probes/ordinal_import_probe.def",
+        ]
+        return {
+            "case_id": "msvc-x64-real-ordinal-import-exe",
+            "source_sha256": {
+                p: hashlib.sha256((ROOT / p).read_bytes()).hexdigest()
+                for p in source_paths
+            },
+            "binary_sha256": hashlib.sha256(data).hexdigest(),
+            "ordinal_target_sha256": hashlib.sha256(dll_bytes).hexdigest(),
+            "size_bytes": len(data),
+            "machine": "AMD64",
+            "pe_magic": "PE32+",
+            "independent_direct_imports": direct,
+            "independent_ordinal_import": ordinal[0],
+            "independent_export_ordinal": EXPECTED_ORDINAL,
+            "independent_export_is_noname": True,
+            "v1_coverage_warning": EXPECTED_ORDINAL_WARNING,
+            "compiler": "MSVC",
+            "observed_vc_tools_version": versions[0][:256],
+            "observed_windows_sdk_version": versions[1][:256],
+            "runner_commit": os.environ.get("GITHUB_SHA"),
+            "redistribution_status": "not-established",
+            "never_executed": True,
+        }
+    finally:
+        pe.close()
+        target.close()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--binary", required=True, type=Path)
@@ -205,6 +317,9 @@ def main() -> None:
     parser.add_argument("--delay-exe", type=Path)
     parser.add_argument("--delay-dll", type=Path)
     parser.add_argument("--delay-version-file", type=Path)
+    parser.add_argument("--ordinal-exe", type=Path)
+    parser.add_argument("--ordinal-dll", type=Path)
+    parser.add_argument("--ordinal-version-file", type=Path)
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
     analyzer = args.binary.resolve(strict=True)
@@ -213,8 +328,9 @@ def main() -> None:
             parser.error("GNU x64 DLL and Windows x86 DLL modes are exclusive")
         if args.toolchain_version_file is None:
             parser.error("GNU x64 DLL requires observed toolchain versions")
-        if any((args.delay_exe, args.delay_dll, args.delay_version_file)):
-            parser.error("delay-load evidence is Windows MSVC-only")
+        if any((args.delay_exe, args.delay_dll, args.delay_version_file,
+                args.ordinal_exe, args.ordinal_dll, args.ordinal_version_file)):
+            parser.error("delay-load and ordinal evidence are Windows MSVC-only")
         lines = args.toolchain_version_file.read_text(encoding="utf-8").splitlines()
         if len(lines) != 2 or not all(lines):
             parser.error("expected exactly two nonempty toolchain version lines")
@@ -250,6 +366,16 @@ def main() -> None:
         )
     else:
         delay_case = None
+    if any((args.ordinal_exe, args.ordinal_dll, args.ordinal_version_file)):
+        if not all((args.ordinal_exe, args.ordinal_dll, args.ordinal_version_file)):
+            parser.error("all three --ordinal-* paths must be provided together")
+        ordinal_case = check_ordinal_import(
+            analyzer, args.ordinal_exe.resolve(strict=True),
+            args.ordinal_dll.resolve(strict=True),
+            args.ordinal_version_file.resolve(strict=True),
+        )
+    else:
+        ordinal_case = None
     report = {
         "format": report_format,
         "reference_oracle": "pefile==2024.8.26",
@@ -260,11 +386,17 @@ def main() -> None:
         report["format"] = "rel-p15a-ci-built-x86-dll-plus-delay-oracle-v2"
         report["scope"] = "locally-compiled-static-only-pe32-dlls-and-x64-delay-load-exe"
         report["delay_load_case"] = delay_case
+    if ordinal_case is not None:
+        report["format"] = "rel-p15a-ci-built-x86-dll-plus-delay-ordinal-oracle-v3"
+        report["scope"] = "locally-compiled-static-only-x86-dlls-and-x64-special-imports"
+        report["ordinal_import_case"] = ordinal_case
     args.output.write_text(
         json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     if delay_case is not None:
         print("PASS real MSVC x64 delay-load descriptor and v1 abstention warning")
+    if ordinal_case is not None:
+        print("PASS real MSVC x64 NONAME ordinal #42 import and v1 ambiguity warning")
     for case in cases:
         print(f"PASS {case['case_id']}: static PE32/PE32+ DLL, sha256={case['binary_sha256']}")
 

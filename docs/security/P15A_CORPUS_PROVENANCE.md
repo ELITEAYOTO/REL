@@ -150,3 +150,29 @@ redistribution rights are **not** cleared; changing hosted compilers does not
 prove byte-for-byte reproducibility. This is one true linker-generated
 delay-load layout, not a comprehensive or licensed representative corpus.
 See [issue #9](https://github.com/ELITEAYOTO/REL/issues/9).
+
+## MSVC-produced ordinal import and NONAME DLL oracle (P1.5 #9)
+
+The existing Windows static-only builder now creates a DLL with one exported
+function using `ordinal_import_probe.def`, ordinal **42** and `NONAME`, plus
+a separate PE32+ consumer linked with the generated import library. This
+exercises a true linker-produced ordinal import rather than rewriting a
+synthetic fixture's import thunk. The new C and DEF files are tracked as
+source only; generated EXE/DLL/import libraries are ignored, never executed,
+loaded, distributed, or included in CI artifacts.
+
+The existing `pefile==2024.8.26` oracle checks that the target export is
+unnamed at ordinal 42 and that the consumer imports that ordinal from the
+expected DLL, then verifies the exact REL direct-import list and the v1
+ambiguity warning. Falsification tests cover missing warning, missing
+observation, wrong ordinal and false named-import interpretations. The
+existing `rel-pe32-dll-oracle-windows` *JSON-only* evidence retains both
+binary hashes, tracked C/DEF source hashes and observed MSVC/SDK versions.
+Its internal experimental evidence format becomes v3 when this case is
+included; the public `binary-manifest v1.0.0` contract is unchanged.
+
+This proves a single source-produced ordinal-load layout only, not an
+exhaustive ordinal-import parser or behavioral runtime test. Compiler
+reproducibility and redistribution permissions are **not established**.
+Issues [#9](https://github.com/ELITEAYOTO/REL/issues/9) and
+[#16](https://github.com/ELITEAYOTO/REL/issues/16) remain open.

@@ -211,7 +211,7 @@ jobs:
         run: call scripts\\build_windows_x86_dll_probes.cmd
       - name: Independent compiler-built PE32 DLL oracle (Windows)
         if: runner.os == 'Windows'
-        run: python scripts/check_windows_x86_dll_probes.py --binary target/release/rel-inspect.exe --msvc-dll compiler-probes/rel-msvc-x86-probe.dll --clang-dll compiler-probes/rel-clang-x86-probe.dll --delay-exe compiler-probes/rel-delay-consumer.exe --delay-dll compiler-probes/rel-delay-target.dll --delay-version-file compiler-probes/rel-delay-toolchain.txt --output rel-x86-dll-oracle.json
+        run: python scripts/check_windows_x86_dll_probes.py --binary target/release/rel-inspect.exe --msvc-dll compiler-probes/rel-msvc-x86-probe.dll --clang-dll compiler-probes/rel-clang-x86-probe.dll --delay-exe compiler-probes/rel-delay-consumer.exe --delay-dll compiler-probes/rel-delay-target.dll --delay-version-file compiler-probes/rel-delay-toolchain.txt --ordinal-exe compiler-probes/rel-ordinal-consumer.exe --ordinal-dll compiler-probes/rel-ordinal-target.dll --ordinal-version-file compiler-probes/rel-delay-toolchain.txt --output rel-x86-dll-oracle.json
       - name: Upload controlled PE32 DLL oracle evidence (Windows)
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6

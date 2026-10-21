@@ -313,8 +313,7 @@ mod tests {
             );
             two[second..second + IMPORT_DESCRIPTOR_BYTES]
                 .copy_from_slice(&fixture[0x400..0x400 + IMPORT_DESCRIPTOR_BYTES]);
-            two[declared_size_at..declared_size_at + 4]
-                .copy_from_slice(&20_u32.to_le_bytes());
+            two[declared_size_at..declared_size_at + 4].copy_from_slice(&20_u32.to_le_bytes());
             assert_eq!(check(&two), Ok(()));
 
             for field in [12_usize, 16] {

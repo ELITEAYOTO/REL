@@ -7,6 +7,8 @@ pub(super) const MAX_DIRECTORY_BYTES: u32 = 1024 * 1024;
 pub(super) const MAX_EXPORT_SYMBOLS: u32 = 65_536;
 
 const IMPORT_DESCRIPTOR_BYTES: usize = 20;
+// Alpha parser-observation cap, derived from the existing 1 MiB directory policy.
+const MAX_IMPORT_DESCRIPTOR_RECORDS: usize = MAX_DIRECTORY_BYTES as usize / IMPORT_DESCRIPTOR_BYTES;
 const EXPORT_HEADER_BYTES: usize = 40;
 const PE32_DIRECTORY_START: usize = 96;
 const PE64_DIRECTORY_START: usize = 112;
@@ -44,20 +46,16 @@ fn raw_offset_for_rva(
     Err("export directory cannot be mapped to raw section data")
 }
 
-/// Inspect only import descriptor records within the advertised byte span.
-/// Size is a declared PE field, not a trustworthy guarantee of completeness.
-/// A missing RVA mapping is still delegated to the backend for compatibility.
-fn validate_declared_import_descriptors(
+/// Check contiguous raw-mapped import descriptors until their zero terminator
+/// or the alpha byte cap, independently of untrusted declared directory Size.
+/// Unmappable locations remain delegated to the backend for compatibility.
+fn validate_bounded_import_descriptors(
     data: &[u8],
     sections_start: usize,
     section_count: usize,
     imports_rva: u32,
-    imports_size: u32,
 ) -> Result<(), &'static str> {
-    // imports_size is already limited to MAX_DIRECTORY_BYTES. Preserve the
-    // previous first-record check even if the declared size is under 20 bytes.
-    let records = (imports_size as usize / IMPORT_DESCRIPTOR_BYTES).max(1);
-    for index in 0..records {
+    for index in 0..MAX_IMPORT_DESCRIPTOR_RECORDS {
         let offset = (index * IMPORT_DESCRIPTOR_BYTES) as u32;
         let record_rva = imports_rva
             .checked_add(offset)
@@ -74,7 +72,7 @@ fn validate_declared_import_descriptors(
         let descriptor =
             region(data, raw, IMPORT_DESCRIPTOR_BYTES).ok_or("truncated import descriptor")?;
         if descriptor.iter().all(|byte| *byte == 0) {
-            break;
+            return Ok(());
         }
         let name = le_u32(data, raw + 12).ok_or("truncated import Name RVA")?;
         let thunk = le_u32(data, raw + 16).ok_or("truncated import FirstThunk RVA")?;
@@ -82,12 +80,12 @@ fn validate_declared_import_descriptors(
             return Err("non-null import descriptor missing Name or FirstThunk");
         }
     }
-    Ok(())
+    Err("import descriptor scan exceeded alpha byte limit without terminator")
 }
 
 /// Verify declared directories and export counts before the backend allocates.
-/// The first two data directory entries, export header and advertised import
-/// descriptors are inspected; this does not validate import thunks or every PE layout.
+/// The first two data-directory records, export header and bounded raw-mapped
+/// import descriptors are inspected; this does not validate thunks or every layout.
 pub(super) fn validate(
     data: &[u8],
     optional_start: usize,
@@ -142,17 +140,11 @@ pub(super) fn validate(
         if imports_rva == 0 && imports_size != 0 {
             return Err("nonempty import directory requires nonzero RVA");
         }
-        // Goblin may stop on a non-null descriptor missing mandatory
-        // fields and silently omit later imports. Inspect each advertised,
-        // raw-mappable record, stopping on the all-zero terminator.
+        // Goblin may scan past an understated Size and silently terminate
+        // on malformed later descriptors. Use a bounded raw-mapped traversal
+        // rather than treating the PE-supplied directory Size as complete.
         if imports_rva != 0 && imports_size != 0 {
-            validate_declared_import_descriptors(
-                data,
-                sections_start,
-                section_count,
-                imports_rva,
-                imports_size,
-            )?;
+            validate_bounded_import_descriptors(data, sections_start, section_count, imports_rva)?;
         }
     }
     if export_rva == 0 && export_size == 0 {
@@ -295,6 +287,41 @@ mod tests {
                 malformed[second + field..second + field + 4].fill(0);
                 assert_eq!(
                     check(&malformed),
+                    Err("non-null import descriptor missing Name or FirstThunk")
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn underdeclared_size_cannot_hide_later_malformed_import_descriptor() {
+        for fixture in [PE32, PE64] {
+            let (opt, _) = fixture_fields(fixture);
+            let dir_start = if le_u16(fixture, opt) == Some(0x10b) {
+                PE32_DIRECTORY_START
+            } else {
+                PE64_DIRECTORY_START
+            };
+            let declared_size_at = opt + dir_start + DATA_DIRECTORY_BYTES + 4;
+            assert_eq!(le_u32(fixture, declared_size_at), Some(40));
+
+            let mut two = fixture.to_vec();
+            let second = 0x400 + IMPORT_DESCRIPTOR_BYTES;
+            assert_eq!(
+                &fixture[second..second + IMPORT_DESCRIPTOR_BYTES],
+                &[0; IMPORT_DESCRIPTOR_BYTES]
+            );
+            two[second..second + IMPORT_DESCRIPTOR_BYTES]
+                .copy_from_slice(&fixture[0x400..0x400 + IMPORT_DESCRIPTOR_BYTES]);
+            two[declared_size_at..declared_size_at + 4]
+                .copy_from_slice(&20_u32.to_le_bytes());
+            assert_eq!(check(&two), Ok(()));
+
+            for field in [12_usize, 16] {
+                let mut bad = two.clone();
+                bad[second + field..second + field + 4].fill(0);
+                assert_eq!(
+                    check(&bad),
                     Err("non-null import descriptor missing Name or FirstThunk")
                 );
             }

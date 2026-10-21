@@ -56,7 +56,10 @@ fn colliding_test_directory_names_are_allocated_without_overwrite() {
     fs::write(&marker, b"original").expect("write first fixture marker");
     let second = create_test_directory(&sandbox, "fixed-name");
     assert_ne!(first, second, "collision must allocate a different folder");
-    assert_eq!(fs::read(&marker).expect("first fixture marker intact"), b"original");
+    assert_eq!(
+        fs::read(&marker).expect("first fixture marker intact"),
+        b"original"
+    );
     assert!(second.is_dir());
     fs::remove_dir_all(&sandbox).expect("cleanup collision fixtures");
 }

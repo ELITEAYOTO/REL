@@ -25,7 +25,7 @@
 - Pas de module spéculatif avant mesure du besoin et validation de la phase.
 
 ## Historique (10 entrées maximum)
-- 2026-10-21 · #146 : allocation de répertoires de tests Windows résistante aux collisions ; CI à valider.
+- 2026-10-21 · #146 : régression de collision des dossiers de test Windows et allocation résistante aux conflits.
 - 2026-10-21 · chore(governance): simplifier AGENTS, créer STATUS, archiver les anciennes passations (cette PR).
 - 2026-10-21 · #144 : préflight rejette import non vide avec RVA nul ; CI nouvelle main #39549151670 réussie.
 - 2026-10-21 · #143 : avertissement import par ordinal ; CI de nouvelle main #39546359432 réussie.

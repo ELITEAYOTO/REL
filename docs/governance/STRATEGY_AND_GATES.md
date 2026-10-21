@@ -13,8 +13,8 @@ Plateforme **générale de reverse engineering** ; valeur cible à démontrer : 
 | P0 + P1 | `rel-contracts`, `rel-pe`, `rel-inspect`, PE v1, CI Windows/Linux | VALIDÉ dans le périmètre limité testé |
 | P1.5-A | lecture bornée, budgets CPU/RAM/sortie, gestion des chemins et fichiers changeants, corpus légal et oracle | EN COURS — comparaison double lecture sur le même descripteur EX-01 validée, pas de snapshot ni de sandbox ([PR #59](https://github.com/ELITEAYOTO/REL/pull/59), [CI #39188909312](https://github.com/ELITEAYOTO/REL/actions/runs/39188909312)) |
 | P1.5-B | fuzz prolongé + verrouillé, limites de worker, benchmarks variés, isolation selon OS | À POURSUIVRE, pas d'affirmation de sûreté globale |
-| EX-01 | schéma/validateur, trois producteurs de métadonnées bornées et vérificateur indépendant contre les octets sources | PILOTE PARTIEL VÉRIFIÉ ; vérification ≠ authenticité ou sécurité hostile ([PR #57](https://github.com/ELITEAYOTO/REL/pull/57), [CI #39186361225](https://github.com/ELITEAYOTO/REL/actions/runs/39186361225)) |
-| EX-02 | diff v1 de métadonnées PE, Rust CLI indépendant, cas ambigus et tests golden | PILOTE PARTIEL INTÉGRÉ via PR #62 et enrichi depuis ; l'issue pilote [#15](https://github.com/ELITEAYOTO/REL/issues/15) est fermée depuis le 21/10/2026, **sans valider** la gate stratégique complète, la couverture représentative ni le diff de fonctions. État actuel à revérifier sur GitHub. |
+| EX-01 | schéma/validateur, trois producteurs de métadonnées bornées et vérificateur indépendant contre les octets sources | PILOTE PARTIEL VÉRIFIÉ, avec N2 (refus v1 d'un nom non UTF-8 et preuve hexadécimale EX-01) testé sur PE32/PE32+ ([PR #150](https://github.com/ELITEAYOTO/REL/pull/150), [CI #39559445380](https://github.com/ELITEAYOTO/REL/actions/runs/39559445380)). Vérification ≠ sandbox ni preuve de comportement. |
+| EX-02 | diff v1 de métadonnées PE, Rust CLI indépendant, cas ambigus et tests golden | PILOTE PARTIEL INTÉGRÉ : mode strict PR #62 et `--partial` PR #149 ([CI #39555891672](https://github.com/ELITEAYOTO/REL/actions/runs/39555891672)), avec avertissements et couverture inconnue explicites. Issue pilote #15 fermée, **gate stratégique ouverte** (#68, corpus représentatif et mesures, pas de diff de fonctions). |
 | P2 | adaptateur externe Ghidra headless Python | PAS IMPLÉMENTÉ |
 | P3 | matching de fonctions et évaluation précision/rappel/abstention | PAS IMPLÉMENTÉ |
 | P4+ | historique, capacités, essais comportementaux isolés, GUI | VISION |
@@ -39,5 +39,5 @@ Sur 10–20 paires de builds de référence : comparer détections à changement
 
 - Rust : fichier 350 lignes alerte / 500 exception ; fonction 50 / 80 ; complexité 10 / 15 (revue, pas découpage automatique).
 - Pas de graphe dédié, agent IA, moteur de politiques, interface ou WASM sans cas d'usage et ADR.
-- Procédure : hypothèse → tests/fixtures → PR → mesures → CI → CHANGELOG/ROADMAP/HANDOFF.
+- Procédure : hypothèse → tests/fixtures → PR → mesures → CI → `STATUS.md` si jalon significatif, issue technique pour preuves ; aucun nouveau HANDOFF.
 - Choix de licence encore ouvert ; GitHub public n'est pas équivalent à une licence de redistribution.

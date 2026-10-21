@@ -1,11 +1,11 @@
 # EX-02 — Pilote expérimental de diff des manifestes PE
 
-**Statut : pilote partiel intégré dans `main` via [PR #62](https://github.com/ELITEAYOTO/REL/pull/62), [CI post-fusion #39305827604](https://github.com/ELITEAYOTO/REL/actions/runs/39305827604) validée ; la gate EX-02 complète reste NON VALIDÉE.**  
+**Statut : pilote partiel intégré : mode strict [PR #62](https://github.com/ELITEAYOTO/REL/pull/62) (`0.1.0-experimental`) et mode explicitement partiel [PR #149](https://github.com/ELITEAYOTO/REL/pull/149) (`0.2.0-experimental`) ; [CI `main` #39555891672](https://github.com/ELITEAYOTO/REL/actions/runs/39555891672) Windows/Ubuntu réussie. Gate EX-02 complète NON VALIDÉE.**  
 Décision et gates : [ADR-0013](../adr/ADR-0013-vision-evidence-evolution.md), [STRATEGY_AND_GATES](../governance/STRATEGY_AND_GATES.md).
 
 ## Contrat
 
-Entrées effectivement implémentées : exactement deux manifestes JSON PE `binary-manifest` v1.0.0 contrôlés et acceptés par le consommateur Rust. Sortie implémentée : uniquement un rapport JSON de diff `0.1.0-experimental` versionné séparément. Les enveloppes de couverture supplémentaires et une éventuelle sortie texte restent des extensions envisagées, non fournies par le CLI actuel. **Aucun** Ghidra, CFG, fonction identifiée, émulation, verdict de sécurité ou conclusion de changement de comportement.
+Entrées implémentées : deux manifestes JSON PE `binary-manifest` v1.0.0 contrôlés. `rel-diff LEFT RIGHT` demeure strict : tout avertissement d'extraction provoque un rejet sans rapport. `rel-diff --partial LEFT RIGHT` est opt-in et retourne un rapport distinct `0.2.0-experimental` contenant `observed` (l'ancien diff `0.1.0-experimental`) et `coverage` (warnings originaux triés, `partial` si présents, `unknown` sinon, `negative_behavior_conclusions=false`). Aucun état ne prétend une couverture complète du PE. Pas de sortie texte, Ghidra, CFG, fonction identifiée, émulation, verdict de sécurité ou conclusion de changement de comportement.
 
 Diff sur format, architecture, taille, sections, imports directs *tels qu'observés*, exports nommés. Statuts `added, removed, changed, unchanged, ambiguous, incomparable` décrivent le rapport entre observations, pas entre capacités exécutées.
 
@@ -15,7 +15,7 @@ Diff sur format, architecture, taille, sections, imports directs *tels qu'observ
 - Imports v1 = chaînes ; normalisation de casse DLL explicitée et original conservé ; ordinals/retardés/dynamiques non reconstructibles.
 - Exports v1 = noms ; ordinals perdus. Ne pas prétendre comparer ce qui n'a pas été enregistré.
 - Couverture v1 inconnue : le diff des chaînes reste descriptif, et une `suppression` observée d'une chaîne ne démontre pas l'absence de capacité réseau.
-- JSON invalide, versions incompatibles, tailles excessives, doublons et erreurs d'extraction : rejet ou `incomparable`, jamais fallback silencieux à une liste vide.
+- JSON invalide, versions incompatibles, tailles excessives et doublons : rejet sans rapport partiel. Les warnings d'extraction restent bloquants en mode strict ; seul `--partial` conserve ces diagnostics comme observations incertaines.
 - Normalisation déterministe sans effacer les preuves et l'ordre physique pertinent.
 
 ## Tests d'acceptation
@@ -54,4 +54,4 @@ La comparaison de deux compilations successives dans le même job Windows a iden
 
 Le comparateur indépendant `scripts/compare_ex02_corpus_runs.py` refuse les comparaisons de provenance incompatible ; le mode strict `--require-identical` est réservé aux builds `brepro`. Il ne modifie **aucun** octet ni empreinte SHA-256 originale et ne revendique ni équivalence fonctionnelle ni garantie de reproductibilité sous une autre configuration SDK/runner. Ces diagnostics ne clôturent pas la gate EX-02 globale.
 
-**Critères toujours ouverts :** corpus représentatif de 10–20 paires autorisées avec oracles de vérité terrain, benchmarks répétés temps/RSS, décisions sur couverture incomplète et ordinals non représentés, revue des collisions et adéquation complète au schéma public. Ne pas cocher le jalon EX-02 sur `main` pour cette PR seule.
+**Critères toujours ouverts :** corpus représentatif de 10–20 paires autorisées avec oracles de vérité terrain, benchmarks répétés CPU/RSS/temps sur cas complexes (#68), couverture typée par domaine au-delà des warnings opaques v1, ordinals structurels, collisions et limites réelles du consommateur. Le `--partial` ne clôture pas EX-02. Ne pas cocher le jalon EX-02 sur `main` pour cette PR seule.

@@ -5,16 +5,16 @@
 
 ## Fonctionne
 - P1 : inspection **statique** PE32/PE32+, manifeste `binary-manifest v1.0.0` et CLI.
-- EX-01 : quelques observations PE bornées ; EX-02 : diff **de métadonnées** de manifestes.
-- CI Windows/Ubuntu, oracles et fuzzing court ; aucune sécurité universelle démontrée.
+- EX-01 : trois domaines bornés, preuves brutes non UTF-8 (#150) ; EX-02 : diff strict `0.1` et `--partial` `0.2` expérimentaux (#149), aucune preuve de comportement.
+- CI Windows/Ubuntu, oracles et fuzzing court ; pas de garantie de sandbox ou de couverture globale.
 
 ## En cours
 - P1.5 #9 : diversité/provenance des PE, limites réelles de ressources et analyse statique.
 - #8 : profondeur/acceptation du fuzz prolongé ; #14 et #68 : preuves expérimentales incomplètes.
 
 ## Prochaine tâche
-- N2 : valider le comportement croisé v1 refus / EX-01 preuve brute des noms de section non UTF-8, sans changer les contrats.
-- Conserver P1.5 #9 comme priorité de risque documentée ; ne pas démarrer iced-x86 sans gate.
+- #68 : auditer les mesures CPU/RSS et la mémoire transitoire de `rel-diff` ; plafond de sortie 16 Mio déjà implémenté, ne pas le refaire.
+- #9 / #8 : poursuivre les preuves de corpus légal, ressources et fuzzing ; aucune entrée en P2 sans gate.
 
 ## Bloquants
 - P1.5 : corpus représentatif légalement clarifié et isolation/ressources non entièrement démontrées.
@@ -25,7 +25,7 @@
 - Pas de module spéculatif avant mesure du besoin et validation de la phase.
 
 ## Historique (10 entrées maximum)
-- 2026-10-21 · N2 : test de refus v1 et conservation des octets de noms PE non UTF-8 via EX-01, CI à confirmer.
+- 2026-10-21 · #150 : test N2 croisé v1/EX-01, CI `main` #39559445380 Windows/Ubuntu réussie.
 - 2026-10-21 · #149 : diff partiel explicite et schéma distinct intégrés ; CI post-fusion #39555891672 réussie.
 - 2026-10-21 · #146 : régression de collision des dossiers de test Windows et allocation résistante aux conflits.
 - 2026-10-21 · chore(governance): simplifier AGENTS, créer STATUS, archiver les anciennes passations (cette PR).

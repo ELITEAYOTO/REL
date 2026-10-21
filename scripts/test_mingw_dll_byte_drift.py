@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import unittest
 
-from scripts.check_mingw_dll_byte_drift import describe_differences
+from scripts.check_mingw_dll_byte_drift import (
+    describe_differences, validate_source_date_epoch,
+)
 
 
 REGIONS = {
@@ -16,6 +18,15 @@ REGIONS = {
 
 
 class MinGWDriftTests(unittest.TestCase):
+    def test_accepts_fixed_32bit_source_date_epoch(self):
+        self.assertEqual(validate_source_date_epoch("1700000000"), 1700000000)
+
+    def test_rejects_invalid_source_date_epoch_values(self):
+        for value in (None, "", "0", "-1", "+1", " 1", "1 ", "1.0",
+                      "4294967296", "not-a-date", "１２３"):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                validate_source_date_epoch(value)
+
     def test_identical_bytes_are_not_reported_as_timestamp_drifts(self):
         result = describe_differences(b"x" * 25, b"x" * 25, REGIONS)
         self.assertTrue(result["raw_byte_identical"])

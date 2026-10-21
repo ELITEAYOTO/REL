@@ -9,10 +9,22 @@ from pathlib import Path
 
 from _internal.corpus_cases import ROOT, load_verified_seeds
 from profile_malformed_resources import (cases_from_verified_sources,
+                                         max_native,
                                          verified_export_header_offset)
 
 
 class MalformedCorpusTests(unittest.TestCase):
+    def test_native_usage_aggregation_preserves_null_and_peak(self) -> None:
+        observations = [
+            {"kernel_peak_rss_bytes": 40_960, "kernel_cpu_ms": 0.0,
+             "windows_peak_working_set_bytes": None},
+            {"kernel_peak_rss_bytes": 81_920, "kernel_cpu_ms": 4.0,
+             "windows_peak_working_set_bytes": None},
+        ]
+        self.assertEqual(max_native(observations, "kernel_peak_rss_bytes"), 81_920)
+        self.assertEqual(max_native(observations, "kernel_cpu_ms"), 4.0)
+        self.assertIsNone(max_native(observations, "windows_peak_working_set_bytes"))
+
     def test_case_set_is_deterministic_and_source_verified(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
             cases = cases_from_verified_sources(ROOT / "fixtures", Path(folder))

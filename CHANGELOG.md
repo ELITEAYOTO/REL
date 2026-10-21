@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased] — GNU MinGW-w64 PE32+ DLL corpus probe (P1.5)
+
+- Add a GNU MinGW-w64-linked **AMD64 PE32+ DLL** static probe on Ubuntu using the already tracked C source, complementing existing GNU x64 EXE and native MSVC/Clang-cl x86 DLLs. The generated DLL is never executed, committed or distributed.
+- Reuse the existing pinned `pefile==2024.8.26` DLL oracle with explicit machine/magic/architecture checks and full ordered section, named import/export and file-hash agreement. Refuse ordinal-only imports/exports in this scoped evidence. Record source and PE SHA-256, observed compiler/linker version lines and CI revision.
+- Keep the established `rel-mingw-x64-oracle-ubuntu` artifact, now containing both EXE and DLL JSON evidence; all other artifact names and CI job counts unchanged. No new dependency, parser change, fixture binary, contract revision or source-license decision.
+- This adds one **controlled compiler/linker and file-type combination**, not licensed third-party diversity, CPU/RSS enforcement or hostile-file safety.
+
 ## [Unreleased] — Full named PE32 DLL oracle comparisons (P1.5)
 
 - Close a concrete **test-oracle detection gap** in the existing static-only MSVC/Clang-cl x86 DLL coverage: previous assertions checked only a set of section names and the presence of one export/import. Reports with incorrect section file offsets or silently omitted other named imports/exports could pass.

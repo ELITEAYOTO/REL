@@ -132,7 +132,8 @@ jobs:
           x86_64-w64-mingw32-gcc -std=c11 -O2 -Wall -Wextra -Werror -Wno-unknown-pragmas -o compiler-probes/rel-mingw-x64-probe.exe fixtures/probes/msvc_probe.c -lkernel32
           x86_64-w64-mingw32-gcc --version | sed -n '1p' > compiler-probes/mingw-toolchain-version.txt
           x86_64-w64-mingw32-ld --version | sed -n '1p' >> compiler-probes/mingw-toolchain-version.txt
-          sha256sum fixtures/probes/msvc_probe.c compiler-probes/rel-mingw-x64-probe.exe
+          x86_64-w64-mingw32-gcc -std=c11 -O2 -s -shared -Wall -Wextra -Werror -Wno-unknown-pragmas -o compiler-probes/rel-mingw-x64-probe.dll fixtures/probes/x86_dll_probe.c -lkernel32
+          sha256sum fixtures/probes/msvc_probe.c compiler-probes/rel-mingw-x64-probe.exe fixtures/probes/x86_dll_probe.c compiler-probes/rel-mingw-x64-probe.dll
       - name: Independent MinGW-w64 PE32+ oracle (Ubuntu)
         if: runner.os == 'Linux'
         run: |
@@ -141,12 +142,15 @@ jobs:
           python -m unittest scripts.test_windows_x86_dll_probes -v
           python -m unittest scripts.test_windows_structured_probe -v
           python scripts/check_windows_msvc_probe.py --binary target/release/rel-inspect --probe compiler-probes/rel-mingw-x64-probe.exe --compiler-label MinGW-w64 --toolchain-version-file compiler-probes/mingw-toolchain-version.txt --output rel-mingw-x64-oracle.json
+          python scripts/check_windows_x86_dll_probes.py --binary target/release/rel-inspect --mingw-x64-dll compiler-probes/rel-mingw-x64-probe.dll --toolchain-version-file compiler-probes/mingw-toolchain-version.txt --output rel-mingw-x64-dll-oracle.json
       - name: Upload static MinGW-w64 oracle metadata (Ubuntu only)
         if: runner.os == 'Linux'
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: rel-mingw-x64-oracle-ubuntu
-          path: rel-mingw-x64-oracle.json
+          path: |
+            rel-mingw-x64-oracle.json
+            rel-mingw-x64-dll-oracle.json
           if-no-files-found: error
       - name: Generated TLS fuzz seed integrity regressions
         run: python scripts/test_tls_fuzz_seeds.py

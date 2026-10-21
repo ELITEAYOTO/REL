@@ -71,8 +71,8 @@ fn validate_declared_import_descriptors(
         ) else {
             break;
         };
-        let descriptor = region(data, raw, IMPORT_DESCRIPTOR_BYTES)
-            .ok_or("truncated import descriptor")?;
+        let descriptor =
+            region(data, raw, IMPORT_DESCRIPTOR_BYTES).ok_or("truncated import descriptor")?;
         if descriptor.iter().all(|byte| *byte == 0) {
             break;
         }

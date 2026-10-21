@@ -79,6 +79,31 @@ fn warns_on_export_directory_with_only_ordinal_entries() {
 }
 
 #[test]
+fn rejects_non_null_import_descriptor_with_missing_required_field() {
+    // Each tracked fixture starts its import descriptor at raw 0x400.
+    // A non-null descriptor lacking either Name or FirstThunk must not
+    // silently masquerade as the end of imports in binary-manifest v1.
+    for (label, fixture) in [("PE32", PE32), ("PE32+", PE64)] {
+        let descriptor = 0x400_usize;
+        for field in [12_usize, 16] {
+            let value = u32::from_le_bytes(
+                fixture[descriptor + field..descriptor + field + 4]
+                    .try_into()
+                    .unwrap(),
+            );
+            assert_ne!(value, 0, "{label}: source descriptor layout changed");
+            let mut malformed = fixture.to_vec();
+            malformed[descriptor + field..descriptor + field + 4].fill(0);
+            let result = inspect(&malformed);
+            assert!(
+                matches!(result, Err(PeError::Parse(_))),
+                "{label}: non-null import descriptor with missing field at +{field} must not be accepted"
+            );
+        }
+    }
+}
+
+#[test]
 fn ordinal_import_is_flagged_without_changing_v1_import_strings() {
     // In both tracked 2-KiB fixtures the import descriptor starts at raw
     // 0x400, and .rdata RVA 0x2000 maps there. Change only the first

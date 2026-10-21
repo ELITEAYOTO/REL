@@ -181,7 +181,7 @@ Issues [#9](https://github.com/ELITEAYOTO/REL/issues/9) and
 
 The controlled `ordinal_import_probe.c/.def` source extends the previous
 x64 ordinal-only case with **two exports in the same DLL**: ordinal 42
-`NONAME`, plus the named `rel_named_probe` at ordinal 43. The consumer
+`NONAME`, plus the named `rel_named_probe` with a linker-assigned ordinal. The consumer
 calls both through the import library; actual compiled inputs are **only
 read as bytes**, never executed or loaded, and remain outside Git/artifacts.
 

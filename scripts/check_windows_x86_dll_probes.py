@@ -252,7 +252,9 @@ def check_ordinal_import(
         assert len(ordinal_exports) == 1, "missing ordinal export"
         assert ordinal_exports[0].name is None, "ordinal 42 must be NONAME"
         assert len(named_exports) == 1, "missing named export"
-        assert named_exports[0].ordinal == 43, "wrong named export ordinal"
+        assert named_exports[0].ordinal != EXPECTED_ORDINAL, (
+            "named export overlaps the NONAME ordinal"
+        )
 
         direct = []
         ordinal = []
@@ -274,7 +276,8 @@ def check_ordinal_import(
                     if dll.lower() == EXPECTED_ORDINAL_DLL.lower():
                         named_target.append(reference)
         assert named_target == [EXPECTED_NAMED_SYMBOL], (
-            "named and ordinal imports must coexist in the same target DLL"
+            "named and ordinal imports must coexist in the same target DLL",
+            {"named": named_target, "ordinal": ordinal},
         )
         assert len(ordinal) == 1, "expected one ordinal import"
         assert ordinal[0].lower() == (
@@ -316,7 +319,7 @@ def check_ordinal_import(
             "independent_export_ordinal": EXPECTED_ORDINAL,
             "independent_export_is_noname": True,
             "independent_named_export": "rel_named_probe",
-            "independent_named_export_ordinal": 43,
+            "independent_named_export_ordinal": named_exports[0].ordinal,
             "v1_coverage_warning": EXPECTED_ORDINAL_WARNING,
             "compiler": "MSVC",
             "observed_vc_tools_version": versions[0][:256],

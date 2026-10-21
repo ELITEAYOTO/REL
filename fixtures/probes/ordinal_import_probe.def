@@ -1,3 +1,4 @@
 LIBRARY rel-ordinal-target.dll
 EXPORTS
     rel_ordinal_probe @42 NONAME
+    rel_named_probe

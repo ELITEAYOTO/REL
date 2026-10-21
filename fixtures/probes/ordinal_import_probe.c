@@ -10,12 +10,19 @@ DWORD rel_ordinal_probe(DWORD value)
 {
     return value + 17u;
 }
+
+/* Unlike ordinal 42, this export has a public name in the same table. */
+DWORD rel_named_probe(DWORD value)
+{
+    return value ^ 85u;
+}
 #else
 /* The import library for NONAME / ordinal 42 must encode an ordinal thunk. */
 __declspec(dllimport) DWORD rel_ordinal_probe(DWORD value);
+__declspec(dllimport) DWORD rel_named_probe(DWORD value);
 
 int main(void)
 {
-    return (int)(rel_ordinal_probe(3u) & 0x7fu);
+    return (int)((rel_ordinal_probe(3u) + rel_named_probe(4u)) & 0x7fu);
 }
 #endif

@@ -93,14 +93,37 @@ pub fn inspect(data: &[u8]) -> Result<PeInspection, PeError> {
             data.export_directory_table.address_table_entries
                 > data.export_directory_table.number_of_name_pointers
         });
-    let warnings = if unrepresented_export_slots {
-        vec![
+    // Goblin's synthesized "ORDINAL N" import name is indistinguishable
+    // in the v1 string list from a real symbol literally named "ORDINAL N".
+    // Use the parsed lookup-entry variant, not its display text or hint.
+    let ordinal_imports = pe.import_data.as_ref().is_some_and(|data| {
+        data.import_data.iter().any(|descriptor| {
+            descriptor
+                .import_lookup_table
+                .as_ref()
+                .is_some_and(|entries| {
+                    entries.iter().any(|entry| {
+                        matches!(
+                            entry,
+                            goblin::pe::import::SyntheticImportLookupTableEntry::OrdinalNumber(_)
+                        )
+                    })
+                })
+        })
+    });
+    let mut warnings = Vec::new();
+    if unrepresented_export_slots {
+        warnings.push(
             "export address table has unnamed or unrepresented ordinal slots; only named exports are reported"
                 .to_owned(),
-        ]
-    } else {
-        Vec::new()
-    };
+        );
+    }
+    if ordinal_imports {
+        warnings.push(
+            "import lookup table contains ordinal references; v1 import strings cannot distinguish ordinals from literal symbol names"
+                .to_owned(),
+        );
+    }
 
     Ok(PeInspection {
         arch,

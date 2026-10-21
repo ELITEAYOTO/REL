@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased] — Disambiguate ordinal-only import coverage (P1.5)
+
+- The existing v1 `imports` strings cannot distinguish a real symbol named `ORDINAL 42` from Goblin's synthetic representation of an import-by-ordinal. Previously both returned `warnings=[]`, potentially presenting ambiguous import evidence as definitive.
+- On controlled in-memory PE32 and PE32+ fixture derivatives, replace only the first ILT/IAT entries with an ordinal reference; require a warning while preserving the v1 string output. A separate positive named-symbol regression spells `ORDINAL 42` as actual hint/name text and must remain warning-free. Detect the parsed ordinal variant rather than matching the string.
+- Keep public `binary-manifest v1.0.0`, old fixture bytes/SHA-256, static-only inspection, parser dependencies and existing export warning unchanged. This narrows one evidence ambiguity, not a general hostile-PE, import completeness or resource guarantee.
+
+
 ## [Unreleased] — Flag unrepresented export address slots (P1.5)
 
 - Address a v1 export-evidence completeness gap: the parser previously omitted unnamed Goblin export entries via `filter_map` and returned an empty warning list even when the export address table exceeded the name-pointer table. This can conceal ordinal-only exports or unrepresented address slots.

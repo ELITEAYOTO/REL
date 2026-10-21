@@ -179,11 +179,19 @@ fn has_duplicates(items: &[String]) -> bool {
 }
 
 fn delta(left: &[String], right: &[String]) -> Delta {
-    let a: BTreeSet<_> = left.iter().cloned().collect();
-    let b: BTreeSet<_> = right.iter().cloned().collect();
+    // Membership comparisons borrow the input observations; only report
+    // differences need owned strings. Avoid copying every input string.
+    let a: BTreeSet<_> = left.iter().collect();
+    let b: BTreeSet<_> = right.iter().collect();
     Delta {
-        added: b.difference(&a).cloned().collect(),
-        removed: a.difference(&b).cloned().collect(),
+        added: b
+            .difference(&a)
+            .map(|entry| entry.as_str().to_owned())
+            .collect(),
+        removed: a
+            .difference(&b)
+            .map(|entry| entry.as_str().to_owned())
+            .collect(),
     }
 }
 

@@ -134,3 +134,21 @@ descriptors, delayed imports, coherent filesystem snapshots, CPU/RSS
 bounds or arbitrary hostile-PE safety. No PE image is executed, no
 sample is committed or redistributed, and `binary-manifest v1.0.0`
 remains unchanged. See issue #9 for exact-head CI evidence after integration.
+
+## First import descriptor completeness (narrow P1.5 regression)
+
+A test-only branch showed that a non-null first import descriptor with its
+`Name` or `FirstThunk` RVA set to zero could produce an accepted manifest
+rather than a clean error: the current backend stops parsing at a descriptor
+that fails its required-field check. REL's preflight now inspects the **first**
+descriptor only when the declared import RVA can be mapped to a raw section,
+and rejects a non-null descriptor lacking either field. An all-zero
+terminator remains valid at that layer. PE32/PE32+ in-memory regressions
+check this behavior, without modifying or distributing PE fixtures.
+
+This deliberately **does not** scan every import descriptor, check bound or
+delay imports, require unusual header-only RVA layouts to be mappable, or
+establish a full import coverage proof. Unmappable descriptors are still
+delegated to the backend; the entire parser is not sandboxed and CPU/RAM
+budgets remain unresolved. `binary-manifest v1.0.0` remains unchanged.
+See [issue #9](https://github.com/ELITEAYOTO/REL/issues/9) for CI evidence.

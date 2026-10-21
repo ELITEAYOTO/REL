@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased] — EX-02 transitive evidence consistency (pending PR CI)
+## [Unreleased] — EX-02 transitive evidence consistency
 
 - Reject logically contradictory import/export set deltas across fully observed within-toolchain A/B/C triangles in the eight-build EX-02 evidence comparator. Pairwise balanced cardinalities alone cannot guarantee mutually compatible claims.
 - Add negative regression for an impossible balanced v1/v3 change and positive regression for a consistent change and reversal; preserve legacy pairwise checks, existing PE oracles and all raw SHA evidence.

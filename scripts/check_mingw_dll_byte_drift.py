@@ -18,6 +18,16 @@ def sha256(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
 
 
+def validate_source_date_epoch(value: str | None) -> int:
+    """Require an explicit, nonzero 32-bit epoch for this controlled PE test."""
+    if value is None or not value.isascii() or not value.isdecimal():
+        raise ValueError("SOURCE_DATE_EPOCH must be ASCII decimal seconds")
+    number = int(value)
+    if number < 1 or number > 0xFFFFFFFF:
+        raise ValueError("SOURCE_DATE_EPOCH is outside nonzero PE u32 seconds")
+    return number
+
+
 def read_mapped_fields(data: bytes) -> dict[str, dict]:
     """Resolve PE field offsets directly from pinned pefile; never execute DLL."""
     import pefile
@@ -145,8 +155,35 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     for flag in ("first", "second", "source", "versions", "packages", "output"):
         parser.add_argument(f"--{flag}", type=Path, required=True)
+    parser.add_argument("--fixed-epoch-experiment", action="store_true")
     args = parser.parse_args()
+    epoch = None
+    if args.fixed_epoch_experiment:
+        try:
+            epoch = validate_source_date_epoch(os.environ.get("SOURCE_DATE_EPOCH"))
+        except ValueError as exc:
+            parser.error(str(exc))
     report = check(args.first, args.second, args.source, args.versions, args.packages)
+    if epoch is not None:
+        observed = {
+            "first_coff": report["first_pe_regions"]["timestamp"],
+            "second_coff": report["second_pe_regions"]["timestamp"],
+            "first_export": report["first_mapped_pe_fields"]["export-directory-timestamp"]["value"],
+            "second_export": report["second_mapped_pe_fields"]["export-directory-timestamp"]["value"],
+        }
+        report["controlled_timestamp_experiment"] = {
+            "source_date_epoch": epoch,
+            "linker_option": "--insert-timestamp",
+            "observed_timestamp_fields": observed,
+            "all_observed_timestamps_match_epoch": all(
+                value == epoch for value in observed.values()
+            ),
+            "raw_files_equal": report["diff"]["raw_byte_identical"],
+            "scope": (
+                "Two builds in one job with fixed SOURCE_DATE_EPOCH. "
+                "This does not establish portability, loader behavior, or general reproducibility."
+            ),
+        }
     if args.output.exists():
         parser.error("will not overwrite an existing report")
     args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")

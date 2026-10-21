@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased] — Fixed SOURCE_DATE_EPOCH GNU DLL reproducibility experiment (#69)
+
+- Compare two more **source-built controlled PE32+ AMD64 MinGW-w64 DLLs** inside the existing Ubuntu job, with the same source, output path, GCC flags, nonzero `SOURCE_DATE_EPOCH=1700000000` and explicit `-Wl,--insert-timestamp`. Preserve the original normal-timestamp pair as the control.
+- Reuse the existing pinned independent `pefile` field and raw-byte evidence checker to record first/second SHA-256, exact observed COFF/export directory timestamps and all changed-byte categories, without modifying binaries or normalizing hashes. The optional experiment mode records whether all four independently decoded timestamp observations equal the supplied epoch and whether the two raw DLLs are byte-identical; **neither finding is assumed in advance**.
+- Add two portable invalid/valid epoch input regressions. The evidence is an extra JSON file inside the historical MinGW oracle artifact, not a new CI job or file fixture. Do not treat a nonzero timestamp in a temporary DLL as a safe general DLL release policy; no performance, hostile-input or cross-run reproducibility guarantees.
+- No parser Rust changes, dependency, executable invocation, public `binary-manifest v1.0.0` revision or source licence decision.
+
 ## [Unreleased] — Map GNU DLL export timestamp and checksum bytes (#69)
 
 - Refine existing PE32+ GNU MinGW-w64 same-job raw-byte drift evidence using independent pinned `pefile` field offsets for `IMAGE_EXPORT_DIRECTORY.TimeDateStamp` and `OPTIONAL_HEADER.CheckSum`. Compare the decoded u32 values directly with the exact source bytes and refuse absent or inconsistent fields or mismatched build field offsets.

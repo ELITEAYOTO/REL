@@ -152,6 +152,18 @@ jobs:
           sleep 2
           x86_64-w64-mingw32-gcc -std=c11 -O2 -s -shared -Wall -Wextra -Werror -Wno-unknown-pragmas -o compiler-probes/rel-mingw-x64-probe.dll fixtures/probes/x86_dll_probe.c -lkernel32
           python -m scripts.check_mingw_dll_byte_drift --first compiler-probes/rel-mingw-x64-probe-first.bin --second compiler-probes/rel-mingw-x64-probe.dll --source fixtures/probes/x86_dll_probe.c --versions compiler-probes/mingw-toolchain-version.txt --packages mingw-package-versions.txt --output rel-mingw-x64-dll-rebuild.json
+      - name: Controlled SOURCE_DATE_EPOCH MinGW-w64 DLL pair (Ubuntu; never execute)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # A nonzero constant is only a controlled test input, not release metadata.
+          export SOURCE_DATE_EPOCH=1700000000
+          x86_64-w64-mingw32-gcc -std=c11 -O2 -s -shared -Wall -Wextra -Werror -Wno-unknown-pragmas -Wl,--insert-timestamp -o compiler-probes/rel-mingw-fixed-epoch.dll fixtures/probes/x86_dll_probe.c -lkernel32
+          cp compiler-probes/rel-mingw-fixed-epoch.dll compiler-probes/rel-mingw-fixed-epoch-first.bin
+          sleep 2
+          x86_64-w64-mingw32-gcc -std=c11 -O2 -s -shared -Wall -Wextra -Werror -Wno-unknown-pragmas -Wl,--insert-timestamp -o compiler-probes/rel-mingw-fixed-epoch.dll fixtures/probes/x86_dll_probe.c -lkernel32
+          python -m scripts.check_mingw_dll_byte_drift --first compiler-probes/rel-mingw-fixed-epoch-first.bin --second compiler-probes/rel-mingw-fixed-epoch.dll --source fixtures/probes/x86_dll_probe.c --versions compiler-probes/mingw-toolchain-version.txt --packages mingw-package-versions.txt --fixed-epoch-experiment --output rel-mingw-x64-dll-fixed-epoch.json
       - name: Upload static MinGW-w64 oracle metadata (Ubuntu only)
         if: runner.os == 'Linux'
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
@@ -161,6 +173,7 @@ jobs:
             rel-mingw-x64-oracle.json
             rel-mingw-x64-dll-oracle.json
             rel-mingw-x64-dll-rebuild.json
+            rel-mingw-x64-dll-fixed-epoch.json
           if-no-files-found: error
       - name: Generated TLS fuzz seed integrity regressions
         run: python scripts/test_tls_fuzz_seeds.py

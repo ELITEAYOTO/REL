@@ -181,7 +181,10 @@ fn partial_mode_preserves_warnings_and_never_claims_negative_behaviors() {
     );
     assert_eq!(value["coverage"]["right_warnings"], serde_json::json!([]));
     assert_eq!(value["observed"]["schema_version"], "0.1.0-experimental");
-    assert_eq!(value["observed"]["imports"]["removed"], serde_json::json!([]));
+    assert_eq!(
+        value["observed"]["imports"]["removed"],
+        serde_json::json!([])
+    );
 }
 
 #[test]

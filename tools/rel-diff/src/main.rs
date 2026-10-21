@@ -310,9 +310,7 @@ fn run() -> Result<(), String> {
     let args: Vec<String> = env::args().collect();
     let (partial, left_path, right_path) = match args.as_slice() {
         [_, left, right] => (false, left.as_str(), right.as_str()),
-        [_, flag, left, right] if flag == "--partial" => {
-            (true, left.as_str(), right.as_str())
-        }
+        [_, flag, left, right] if flag == "--partial" => (true, left.as_str(), right.as_str()),
         _ => return Err("usage: rel-diff [--partial] LEFT.json RIGHT.json".to_owned()),
     };
     let left = load(left_path, partial)?;

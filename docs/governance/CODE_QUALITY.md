@@ -38,9 +38,9 @@ Demonstrated bug, security risk, untestable coupling, repeated stable concept, m
 
 ## Repository hygiene / preventing stale-file debt
 
-- The live source of truth is GitHub `main` with exact-head CI. `CURRENT_STATE.md`
-  is a **dated snapshot**, while `HANDOFF_NEXT_CHAT.md`, past audits and ADRs
-  retain **historical evidence**, not an automatically current task list.
+- The live source of truth is GitHub `main` with exact-head CI. `STATUS.md`
+  is a **short dated navigation checkpoint**, not live GitHub state. The files
+  in `docs/archive/`, past audits and ADRs retain historical evidence, not a task list.
 - A tracked source file should have an identified consumer (crate, CLI, test,
   workflow step, or explicitly retained finding). Before deleting or relocating
   it, search callers, workflow steps, docs, fixture references and provenance.

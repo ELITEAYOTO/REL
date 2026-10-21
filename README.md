@@ -4,9 +4,16 @@ A **modular, reproducible, offline-first reverse-engineering platform** for auth
 
 **Strategic decision:** [RFC-0001](docs/rfc/RFC-0001-EVIDENCE-EVOLUTION.md), accepted with [ADR-0013](docs/adr/ADR-0013-vision-evidence-evolution.md). [Milestone gates](docs/governance/STRATEGY_AND_GATES.md).
 
-**Current status (2026-10-21 dated checkpoint): P1 alpha, selected P1.5 hardening, limited EX-01 producers, and experimental EX-02 metadata-only pilot are integrated. A GNU MinGW-w64 x64 PE32+ compiler-built static oracle was added in [PR #107](https://github.com/ELITEAYOTO/REL/pull/107), and exact new-main [Windows/Ubuntu CI #39371988276](https://github.com/ELITEAYOTO/REL/actions/runs/39371988276) passed. The MinGW PE also participates in paired Linux resource observations ([PR #109](https://github.com/ELITEAYOTO/REL/pull/109); [main CI #39373817606](https://github.com/ELITEAYOTO/REL/actions/runs/39373817606) passed). This is one controlled new compiler/linker case, **not** a legally cleared representative corpus or hostile-file sandbox. Full P1.5, EX-01 and EX-02 gates remain OPEN. Consult [CURRENT_STATE.md](docs/governance/CURRENT_STATE.md) and verify live GitHub.** The original [CI run](https://github.com/ELITEAYOTO/REL/actions/runs/39096882395) passed on Ubuntu and Windows. P1.5 evidence is recorded in [CHANGELOG](CHANGELOG.md). See [P1 evidence](docs/P1_VALIDATION.md).
+## Ce que REL fait aujourd'hui
 
-**Latest dated integration verified before this documentation update (2026-10-21):** [PR #140](https://github.com/ELITEAYOTO/REL/pull/140) is merged as `93ccb07f6a838d3560e967b4a53cfb402873f73f`; separate exact-main [Windows/Ubuntu CI #39541464397](https://github.com/ELITEAYOTO/REL/actions/runs/39541464397) passed with 15 preserved artifact names. The v1 PE parser now **warns about unnamed/unrepresented export address slots** instead of silently reporting an apparently complete names-only export list; the `binary-manifest v1.0.0` contract is unchanged. [Bounded libFuzzer CI #39541140785](https://github.com/ELITEAYOTO/REL/actions/runs/39541140785) also passed on the final PR commit, without establishing hostile-input safety. Prior EX-02 near-16-MiB output profiling [#129](https://github.com/ELITEAYOTO/REL/pull/129) and denied Ubuntu cgroup child creation [#128](https://github.com/ELITEAYOTO/REL/pull/128) are **scoped**, not broad RAM/CPU isolation. The EX-02 pilot issue [#15](https://github.com/ELITEAYOTO/REL/issues/15) was closed on 2026-10-21, but complete strategic gates remain unfinished. For current SHA, PRs, CI, open issues and next work consult the canonical dated [CURRENT_STATE](docs/governance/CURRENT_STATE.md) **and recheck live GitHub**.
+- **Inspection statique PE32/PE32+** : sections, imports, exports, empreinte SHA-256 et manifeste JSON `binary-manifest v1.0.0`.
+- **EX-01 expérimental** : observations limitées de structures PE avec preuves et incertitudes explicites.
+- **EX-02 expérimental** : comparaison de métadonnées de manifestes PE, **sans démontrer l'équivalence comportementale**.
+- **Qualité** : CI Rust Windows/Ubuntu, oracles indépendants et fuzzing borné sur des entrées contrôlées.
+- **Limites** : pas encore de corpus PE représentatif aux droits établis ni de sandbox complète CPU/RAM ; P2 Ghidra, matching de fonctions et GUI non livrés.
+
+**État de reprise :** [STATUS.md](STATUS.md) et GitHub en direct. [Roadmap](ROADMAP.md), [décisions](docs/governance/DECISIONS_FIGEES.md) et [ancien checkpoint](docs/archive/CURRENT_STATE.md).
+
 
 ## Experimental EX-01 observation contract (prototype only)
 
@@ -136,10 +143,10 @@ The PE alpha preflight also checks declared import/export directory sizes (each 
 - `goblin` is a provisional parser adapter, not a permanent lock-in; switching requires measured reasons and an ADR.
 - No source license selected: do not assume redistribution rights for third-party code/binaries.
 
-See [changelog](CHANGELOG.md), [roadmap](ROADMAP.md), **[current-state / next-chat entry point](docs/governance/CURRENT_STATE.md)** and the [historical handoff archive](docs/governance/HANDOFF_NEXT_CHAT.md).
+See [changelog](CHANGELOG.md), [roadmap](ROADMAP.md), **[statut de reprise](STATUS.md)** and the [historical handoff archive](docs/archive/HANDOFF_NEXT_CHAT.md).
 
 ## Current development direction (snapshot 2026-10-19; verify GitHub)
 
-EX-01 has **limited experimental observation producers and source verification** already integrated in `main`, not a universal complete-coverage analysis engine. EX-02 has an **experimental metadata-only PE manifest comparison pilot integrated on `main` via [PR #62](https://github.com/ELITEAYOTO/REL/pull/62)**, independently versioned from the public v1 manifest and **not** the complete EX-02 acceptance gate. Later P2 Ghidra adaptation and P3 function matching are planned, not implemented. `binary-manifest v1.0.0` remains unchanged. Consult [CURRENT_STATE](docs/governance/CURRENT_STATE.md) for the latest known checkpoint and verify live PR heads/CI rather than trusting this dated summary.
+EX-01 has **limited experimental observation producers and source verification** already integrated in `main`, not a universal complete-coverage analysis engine. EX-02 has an **experimental metadata-only PE manifest comparison pilot integrated on `main` via [PR #62](https://github.com/ELITEAYOTO/REL/pull/62)**, independently versioned from the public v1 manifest and **not** the complete EX-02 acceptance gate. Later P2 Ghidra adaptation and P3 function matching are planned, not implemented. `binary-manifest v1.0.0` remains unchanged. Consult [STATUS.md](STATUS.md) for the current task and [archived checkpoint](docs/archive/CURRENT_STATE.md) for past evidence and verify live PR heads/CI rather than trusting this dated summary.
 
 Read [EX-01 spec](docs/specs/OBSERVATION_ENVELOPE_DRAFT.md), [EX-02 spec](docs/specs/METADATA_DIFF_PILOT.md), and [alpha threat model](docs/security/THREAT_MODEL_ALPHA.md). The repo is public but no source license is selected yet.

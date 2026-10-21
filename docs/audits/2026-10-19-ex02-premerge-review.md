@@ -50,4 +50,4 @@
 
 ## Restart instructions
 
-**Start with [CURRENT_STATE.md](../governance/CURRENT_STATE.md).** Fetch `main`, PR #62, issue #15 and the latest CI on their actual SHAs. Work on one **proven** blocker, not on arbitrary features; keep tests and docs. This file captures a dated review only. The next chat should **not assume** that #62 remained at `45ee42d`, that #70 merged, or that any formerly green CI proves a later commit safe.
+**For current work start with [STATUS.md](../../STATUS.md); historical checkpoint: [CURRENT_STATE.md](../archive/CURRENT_STATE.md).** Fetch `main`, PR #62, issue #15 and the latest CI on their actual SHAs. Work on one **proven** blocker, not on arbitrary features; keep tests and docs. This file captures a dated review only. The next chat should **not assume** that #62 remained at `45ee42d`, that #70 merged, or that any formerly green CI proves a later commit safe.

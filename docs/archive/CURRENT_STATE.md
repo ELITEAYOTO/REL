@@ -9,7 +9,7 @@ the canonical entry point is THIS document.
 ## 0. Mandatory resumption
 
 1. Read [AGENTS](../../AGENTS.md), [ROADMAP](../../ROADMAP.md),
-   [CODE_QUALITY](CODE_QUALITY.md), [DECISIONS_FIGEES](DECISIONS_FIGEES.md),
+   [CODE_QUALITY](../governance/CODE_QUALITY.md), [DECISIONS_FIGEES](../governance/DECISIONS_FIGEES.md),
    [ADR-0013](../adr/ADR-0013-vision-evidence-evolution.md) and the relevant
    contracts/security docs. The project is modular, static and Rust-first.
 2. Query GitHub for latest main, PRs, issues, exact-head checks and reviews.

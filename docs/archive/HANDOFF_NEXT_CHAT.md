@@ -156,7 +156,7 @@ Future assistants must not claim these modules exist: source decompiler, version
 
 ## Strategic decision from PR #13 (18 October 2026)
 
-- **Accepted:** [RFC-0001](../rfc/RFC-0001-EVIDENCE-EVOLUTION.md) with explicit amendments in [ADR-0013](../adr/ADR-0013-vision-evidence-evolution.md) and [STRATEGY_AND_GATES](STRATEGY_AND_GATES.md).
+- **Accepted:** [RFC-0001](../rfc/RFC-0001-EVIDENCE-EVOLUTION.md) with explicit amendments in [ADR-0013](../adr/ADR-0013-vision-evidence-evolution.md) and [STRATEGY_AND_GATES](../governance/STRATEGY_AND_GATES.md).
 - REL continues as a **full reverse-engineering platform**. The Evidence & Evolution approach focuses on source-backed, version-aware, reproducible findings, without reducing product scope.
 - Official milestones: **P1.5-A critical input hardening -> EX-01 minimal observation/coverage contract -> EX-02 PE manifest metadata diff -> P2 Ghidra -> P3 deep matching**. P1.5-B continuous hardening remains incomplete.
 - **PARTIALLY BUILT (EXPERIMENTAL):** EX-01 has three narrow controlled-file producers (`dos-magic`, `coff-machine`, `section-headers`) plus a source-backed evidence verifier; see the later verified EX-01 sections and PRs #57/#59. EX-01 remains incomplete and does not establish atomic snapshots or hostile-input safety.

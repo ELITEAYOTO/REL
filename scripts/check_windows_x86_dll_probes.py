@@ -24,6 +24,7 @@ EXPECTED_DELAY_DLL = "rel-delay-target.dll"
 EXPECTED_DELAY_SYMBOL = f"{EXPECTED_DELAY_DLL}!{EXPECTED_EXPORT}"
 EXPECTED_ORDINAL_DLL = "rel-ordinal-target.dll"
 EXPECTED_ORDINAL = 42
+EXPECTED_NAMED_SYMBOL = f"{EXPECTED_ORDINAL_DLL}!rel_named_probe"
 EXPECTED_ORDINAL_WARNING = (
     "import lookup table contains ordinal references; "
     "v1 import strings cannot distinguish ordinals from literal symbol names"
@@ -209,6 +210,12 @@ def verify_ordinal_import_evidence(
         "ordinal import reference is missing"
     )
     assert ordinal_entry in expected_direct, "oracle omitted the real ordinal"
+    assert EXPECTED_NAMED_SYMBOL in expected_direct, "oracle omitted named import"
+    target_imports = [
+        item for item in expected_direct
+        if item.lower().startswith(f"{EXPECTED_ORDINAL_DLL}!".lower())
+    ]
+    assert len(target_imports) == 2, "expected mixed named and ordinal target imports"
     assert manifest["imports"] == expected_direct, "ordinal import list mismatch"
     assert manifest["exports"] == [], "unexpected consumer exports"
     assert manifest["warnings"] == [EXPECTED_ORDINAL_WARNING], (
@@ -237,12 +244,19 @@ def check_ordinal_import(
         # import ambiguity, even if its export table has an ordinal number.
         assert hasattr(target, "DIRECTORY_ENTRY_EXPORT"), "no DLL export table"
         symbols = target.DIRECTORY_ENTRY_EXPORT.symbols
-        assert len(symbols) == 1, "unexpected DLL export cardinality"
-        assert symbols[0].ordinal == EXPECTED_ORDINAL, "wrong export ordinal"
-        assert symbols[0].name is None, "export must have NONAME flag"
+        assert len(symbols) == 2, "expected both unnamed and named DLL exports"
+        ordinal_exports = [item for item in symbols
+                           if item.ordinal == EXPECTED_ORDINAL]
+        named_exports = [item for item in symbols
+                         if item.name == b"rel_named_probe"]
+        assert len(ordinal_exports) == 1, "missing ordinal export"
+        assert ordinal_exports[0].name is None, "ordinal 42 must be NONAME"
+        assert len(named_exports) == 1, "missing named export"
+        assert named_exports[0].ordinal == 43, "wrong named export ordinal"
 
         direct = []
         ordinal = []
+        named_target = []
         assert hasattr(pe, "DIRECTORY_ENTRY_IMPORT"), "missing import table"
         for entry in pe.DIRECTORY_ENTRY_IMPORT:
             dll = entry.dll.decode("ascii")
@@ -255,7 +269,13 @@ def check_ordinal_import(
                     direct.append(ref)
                 else:
                     assert symbol.name is not None, "unexpected unnamed import"
-                    direct.append(f"{dll}!{symbol.name.decode('ascii')}")
+                    reference = f"{dll}!{symbol.name.decode('ascii')}"
+                    direct.append(reference)
+                    if dll.lower() == EXPECTED_ORDINAL_DLL.lower():
+                        named_target.append(reference)
+        assert named_target == [EXPECTED_NAMED_SYMBOL], (
+            "named and ordinal imports must coexist in the same target DLL"
+        )
         assert len(ordinal) == 1, "expected one ordinal import"
         assert ordinal[0].lower() == (
             f"{EXPECTED_ORDINAL_DLL}!ORDINAL {EXPECTED_ORDINAL}".lower()
@@ -280,7 +300,7 @@ def check_ordinal_import(
             "fixtures/probes/ordinal_import_probe.def",
         ]
         return {
-            "case_id": "msvc-x64-real-ordinal-import-exe",
+            "case_id": "msvc-x64-mixed-named-and-ordinal-import-exe",
             "source_sha256": {
                 p: hashlib.sha256((ROOT / p).read_bytes()).hexdigest()
                 for p in source_paths
@@ -292,8 +312,11 @@ def check_ordinal_import(
             "pe_magic": "PE32+",
             "independent_direct_imports": direct,
             "independent_ordinal_import": ordinal[0],
+            "independent_named_import": named_target[0],
             "independent_export_ordinal": EXPECTED_ORDINAL,
             "independent_export_is_noname": True,
+            "independent_named_export": "rel_named_probe",
+            "independent_named_export_ordinal": 43,
             "v1_coverage_warning": EXPECTED_ORDINAL_WARNING,
             "compiler": "MSVC",
             "observed_vc_tools_version": versions[0][:256],
@@ -387,7 +410,7 @@ def main() -> None:
         report["scope"] = "locally-compiled-static-only-pe32-dlls-and-x64-delay-load-exe"
         report["delay_load_case"] = delay_case
     if ordinal_case is not None:
-        report["format"] = "rel-p15a-ci-built-x86-dll-plus-delay-ordinal-oracle-v3"
+        report["format"] = "rel-p15a-ci-built-x86-dll-plus-delay-ordinal-oracle-v4"
         report["scope"] = "locally-compiled-static-only-x86-dlls-and-x64-special-imports"
         report["ordinal_import_case"] = ordinal_case
     args.output.write_text(
@@ -396,7 +419,7 @@ def main() -> None:
     if delay_case is not None:
         print("PASS real MSVC x64 delay-load descriptor and v1 abstention warning")
     if ordinal_case is not None:
-        print("PASS real MSVC x64 NONAME ordinal #42 import and v1 ambiguity warning")
+        print("PASS real MSVC x64 mixed named/ordinal #42 imports and v1 ambiguity warning")
     for case in cases:
         print(f"PASS {case['case_id']}: static PE32/PE32+ DLL, sha256={case['binary_sha256']}")
 

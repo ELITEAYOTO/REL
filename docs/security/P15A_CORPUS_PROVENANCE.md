@@ -176,3 +176,24 @@ exhaustive ordinal-import parser or behavioral runtime test. Compiler
 reproducibility and redistribution permissions are **not established**.
 Issues [#9](https://github.com/ELITEAYOTO/REL/issues/9) and
 [#16](https://github.com/ELITEAYOTO/REL/issues/16) remain open.
+
+## Real mixed named and ordinal imports in one MSVC DLL (P1.5 #9)
+
+The controlled `ordinal_import_probe.c/.def` source extends the previous
+x64 ordinal-only case with **two exports in the same DLL**: ordinal 42
+`NONAME`, plus the named `rel_named_probe` at ordinal 43. The consumer
+calls both through the import library; actual compiled inputs are **only
+read as bytes**, never executed or loaded, and remain outside Git/artifacts.
+
+The independent pinned `pefile` oracle now demands *both* imported entries
+from `rel-ordinal-target.dll` in the same consumer, verifies the named and
+unnamed exports in the linked DLL, compares the complete direct-import list
+with REL and preserves the existing v1 ambiguity warning. The oracle's
+negative tests reject missing/extra named observations and altered ordinals.
+The existing JSON-only artifact preserves the source/binary SHA-256 and
+toolchain identity; its **internal experimental** evidence format is v4
+for this expanded case, without modifying `binary-manifest v1.0.0`.
+
+This is a single compiler-produced mixed-import layout, **not** general
+ordinal coverage, an execution test, a redistribution grant, or a hard
+resource/sandbox guarantee. Issues #9 and #16 remain unresolved.

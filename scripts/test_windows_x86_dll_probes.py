@@ -12,6 +12,7 @@ from scripts.check_windows_x86_dll_probes import (
     verify_manifest_evidence,
     verify_ordinal_import_evidence,
     EXPECTED_ORDINAL_WARNING,
+    EXPECTED_NAMED_SYMBOL,
 )
 
 SECTIONS = [
@@ -97,7 +98,8 @@ class CompleteX86DllOracleTests(unittest.TestCase):
             ):
                 verify_delay_load_evidence(report, IMPORTS, delayed)
     def test_real_ordinal_oracle_refuses_false_completeness(self):
-        direct = list(IMPORTS) + ["rel-ordinal-target.dll!ORDINAL 42"]
+        direct = list(IMPORTS) + ["rel-ordinal-target.dll!ORDINAL 42",
+                                  EXPECTED_NAMED_SYMBOL]
         observed = {"imports": list(direct), "exports": [],
                     "warnings": [EXPECTED_ORDINAL_WARNING]}
         verify_ordinal_import_evidence(
@@ -111,6 +113,12 @@ class CompleteX86DllOracleTests(unittest.TestCase):
              direct, "rel-ordinal-target.dll!ORDINAL 42"),
             ({"imports": list(direct[:-1]), "exports": [],
               "warnings": [EXPECTED_ORDINAL_WARNING]},
+             direct, "rel-ordinal-target.dll!ORDINAL 42"),
+            ({"imports": list(direct[:-1]), "exports": [],
+              "warnings": [EXPECTED_ORDINAL_WARNING]},
+             direct, "rel-ordinal-target.dll!ORDINAL 42"),
+            ({"imports": list(direct) + ["rel-ordinal-target.dll!spurious"],
+              "exports": [], "warnings": [EXPECTED_ORDINAL_WARNING]},
              direct, "rel-ordinal-target.dll!ORDINAL 42"),
             (observed, direct, "rel-ordinal-target.dll!ORDINAL 43"),
             (observed, direct, "rel-ordinal-target.dll!rel_ordinal_probe"),

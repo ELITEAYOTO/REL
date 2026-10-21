@@ -13,8 +13,8 @@
 - #8 : profondeur/acceptation du fuzz prolongé ; #14 et #68 : preuves expérimentales incomplètes.
 
 ## Prochaine tâche
-- Examiner l'audit stratégique du propriétaire et ses implications sur [ADR-0013](docs/adr/ADR-0013-vision-evidence-evolution.md).
-- En parallèle, choisir **un** risque P1.5 prouvé sur [#9](https://github.com/ELITEAYOTO/REL/issues/9) ; ne pas démarrer iced-x86 sans nouveau gate.
+- N1 audit Sonnet : spécifier/tester une comparaison partielle EX-02 sans conclusions indues à partir des warnings, puis PR ciblée.
+- Conserver P1.5 #9 comme priorité de risque documentée ; ne pas démarrer iced-x86 sans gate.
 
 ## Bloquants
 - P1.5 : corpus représentatif légalement clarifié et isolation/ressources non entièrement démontrées.
@@ -25,6 +25,7 @@
 - Pas de module spéculatif avant mesure du besoin et validation de la phase.
 
 ## Historique (10 entrées maximum)
+- 2026-10-21 · #146 : allocation de répertoires de tests Windows résistante aux collisions ; CI à valider.
 - 2026-10-21 · chore(governance): simplifier AGENTS, créer STATUS, archiver les anciennes passations (cette PR).
 - 2026-10-21 · #144 : préflight rejette import non vide avec RVA nul ; CI nouvelle main #39549151670 réussie.
 - 2026-10-21 · #143 : avertissement import par ordinal ; CI de nouvelle main #39546359432 réussie.

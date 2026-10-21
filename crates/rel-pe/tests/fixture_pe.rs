@@ -198,10 +198,8 @@ fn rejects_oversized_export_count_via_public_inspect_api() {
 
 #[test]
 fn rejects_nonempty_import_directory_with_zero_rva_at_public_api() {
-    for (label, fixture, directory_start) in [
-        ("PE32", PE32, 96_usize),
-        ("PE32+", PE64, 112_usize),
-    ] {
+    for (label, fixture, directory_start) in [("PE32", PE32, 96_usize), ("PE32+", PE64, 112_usize)]
+    {
         let nt = u32::from_le_bytes(fixture[0x3c..0x40].try_into().unwrap()) as usize;
         let opt = nt + 24;
         let magic = u16::from_le_bytes(fixture[opt..opt + 2].try_into().unwrap());
@@ -209,7 +207,11 @@ fn rejects_nonempty_import_directory_with_zero_rva_at_public_api() {
         let mut invalid = fixture.to_vec();
         let import_entry = opt + directory_start + 8;
         let rva = u32::from_le_bytes(fixture[import_entry..import_entry + 4].try_into().unwrap());
-        let size = u32::from_le_bytes(fixture[import_entry + 4..import_entry + 8].try_into().unwrap());
+        let size = u32::from_le_bytes(
+            fixture[import_entry + 4..import_entry + 8]
+                .try_into()
+                .unwrap(),
+        );
         assert_ne!(rva, 0, "{label}: fixture import RVA drifted");
         assert_ne!(size, 0, "{label}: fixture import size drifted");
         invalid[import_entry..import_entry + 4].copy_from_slice(&0_u32.to_le_bytes());

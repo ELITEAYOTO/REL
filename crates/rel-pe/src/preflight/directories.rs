@@ -86,8 +86,8 @@ pub(super) fn validate(
         return Err("export directory declaration exceeds alpha size limit");
     }
     if count >= 2 {
-        let imports_rva = le_u32(data, dir_start + DATA_DIRECTORY_BYTES)
-            .ok_or("truncated import directory")?;
+        let imports_rva =
+            le_u32(data, dir_start + DATA_DIRECTORY_BYTES).ok_or("truncated import directory")?;
         let imports_size = le_u32(data, dir_start + DATA_DIRECTORY_BYTES + 4)
             .ok_or("truncated import directory")?;
         if imports_size > MAX_DIRECTORY_BYTES {

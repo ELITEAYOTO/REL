@@ -7,10 +7,11 @@ import struct
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from _internal.corpus_cases import ROOT, load_verified_seeds
 from _internal.import_fuzz_fixture import (
-    derive_import_boundary, verified_import_fuzz_seeds,
+    IMPORT_FUZZ_SHA256, derive_import_boundary, verified_import_fuzz_seeds,
 )
 from prepare_import_fuzz_seeds import populate
 
@@ -69,6 +70,12 @@ class ImportFuzzSeedTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "descriptor terminator"):
             derive_import_boundary(bytes(modified), is_64=False,
                                    overlap=False, malformed=False)
+
+    def test_pinned_generated_sha_detects_algorithm_drift(self) -> None:
+        name = "imp-overlap-missing-name-pe32.exe"
+        with patch.dict(IMPORT_FUZZ_SHA256, {name: "0" * 64}):
+            with self.assertRaisesRegex(ValueError, "source-derived SHA-256 mismatch"):
+                verified_import_fuzz_seeds()
 
     def test_idempotence_and_fail_before_any_partial_generation(self) -> None:
         with tempfile.TemporaryDirectory(prefix="rel-import-fuzz-") as folder:

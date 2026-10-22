@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased] — Keep zero-Size import directories inside bounded preflight (P1.5)
+
+- A PE32/PE32+ in-memory regression demonstrates that a nonzero import RVA with declared `Size=0` can still expose imports through the backend, but a non-null descriptor with missing `Name` could silently truncate those observations.
+- Apply the already bounded, raw-mappable descriptor check whenever the import RVA is nonzero, preserving true absent pairs, unmappable delegation, existing tests, `binary-manifest v1.0.0` and binary fixture identities.
+
 ## [Unreleased] — Distinguish unmappable PE import RVAs from descriptor scan exhaustion (P1.5)
 
 - Red/green PE32 and PE32+ regression for an unmappable initial import descriptor and a valid first descriptor followed by an unmappable slot; this situation was incorrectly reported as if the 1 MiB descriptor scan had been exhausted.

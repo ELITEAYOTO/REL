@@ -176,6 +176,50 @@ fn rejects_malformed_second_import_when_directory_size_understates_table() {
 }
 
 #[test]
+fn nonzero_import_rva_with_zero_size_must_not_hide_malformed_descriptor() {
+    // A nonzero import RVA with an advertised Size of zero is not the same
+    // as the fully absent RVA=0/Size=0 pair. First prove backend visibility
+    // for the valid variant, then mutate a required field on the same
+    // pinned, in-memory-only PE32 and PE32+ samples.
+    for (label, fixture, directory_start) in [("PE32", PE32, 96_usize), ("PE32+", PE64, 112_usize)]
+    {
+        let nt = u32::from_le_bytes(fixture[0x3c..0x40].try_into().unwrap()) as usize;
+        let import_entry = nt + 24 + directory_start + 8;
+        assert_ne!(
+            u32::from_le_bytes(fixture[import_entry..import_entry + 4].try_into().unwrap()),
+            0,
+            "{label}: source RVA must be populated"
+        );
+        assert_eq!(
+            u32::from_le_bytes(
+                fixture[import_entry + 4..import_entry + 8]
+                    .try_into()
+                    .unwrap()
+            ),
+            40,
+            "{label}: source Size drifted"
+        );
+        let mut zero_sized = fixture.to_vec();
+        zero_sized[import_entry + 4..import_entry + 8].fill(0);
+        let original = inspect(fixture).expect("tracked fixture should parse");
+        let visible = inspect(&zero_sized).expect("zero-size declaration should remain parseable");
+        assert_eq!(
+            visible.imports, original.imports,
+            "{label}: nonzero RVA still identifies import observations"
+        );
+
+        for field in [12_usize, 16] {
+            let mut malformed = zero_sized.clone();
+            malformed[0x400 + field..0x400 + field + 4].fill(0);
+            assert!(
+                matches!(inspect(&malformed), Err(PeError::Parse(_))),
+                "{label}: zero-size import directory must not hide a non-null malformed descriptor at +{field}"
+            );
+        }
+    }
+}
+
+#[test]
 fn ordinal_import_is_flagged_without_changing_v1_import_strings() {
     // In both tracked 2-KiB fixtures the import descriptor starts at raw
     // 0x400, and .rdata RVA 0x2000 maps there. Change only the first

@@ -142,10 +142,10 @@ pub(super) fn validate(
         if imports_rva == 0 && imports_size != 0 {
             return Err("nonempty import directory requires nonzero RVA");
         }
-        // Goblin may scan past an understated Size and silently terminate
-        // on malformed later descriptors. Use a bounded raw-mapped traversal
-        // rather than treating the PE-supplied directory Size as complete.
-        if imports_rva != 0 && imports_size != 0 {
+        // Goblin can read import descriptors with nonzero RVA even when
+        // Size is zero. A zero Size is therefore not evidence of absence.
+        // Bound the raw-mapped scan by the existing alpha record budget.
+        if imports_rva != 0 {
             validate_bounded_import_descriptors(data, sections_start, section_count, imports_rva)?;
         }
     }
@@ -325,6 +325,32 @@ mod tests {
                     check(&bad),
                     Err("non-null import descriptor missing Name or FirstThunk")
                 );
+            }
+        }
+    }
+
+    #[test]
+    fn nonzero_import_rva_with_zero_size_still_checks_required_fields() {
+        for fixture in [PE32, PE64] {
+            let (opt, _) = fixture_fields(fixture);
+            let directory_start = if le_u16(fixture, opt) == Some(0x10b) {
+                PE32_DIRECTORY_START
+            } else {
+                PE64_DIRECTORY_START
+            };
+            let size_at = opt + directory_start + DATA_DIRECTORY_BYTES + 4;
+            assert_eq!(le_u32(fixture, size_at), Some(40));
+            let mut zero_sized = modify_u32(fixture, size_at, 0);
+            assert_eq!(check(&zero_sized), Ok(()));
+
+            for field in [12_usize, 16] {
+                zero_sized[0x400 + field..0x400 + field + 4].fill(0);
+                assert_eq!(
+                    check(&zero_sized),
+                    Err("non-null import descriptor missing Name or FirstThunk")
+                );
+                zero_sized[0x400 + field..0x400 + field + 4]
+                    .copy_from_slice(&fixture[0x400 + field..0x400 + field + 4]);
             }
         }
     }

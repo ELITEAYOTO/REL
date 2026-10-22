@@ -13,7 +13,7 @@
 - #8 : fuzz prolongé ; #14 : couverture EX-01 ; #68 : budgets/mesures EX-02 ; #69 : reproductibilité inter-CI et causes encore inconnues.
 
 ## Prochaine tâche
-- Priorité #9 : auditer les cas d'imports RVA non mappables délégués à Goblin (premier/suivant, RVA hors section, dispositions inhabituelles) avec PE32/PE32+ contrôlés et oracle indépendant ; **fail-first avant tout correctif**, préserver la compatibilité des PE valides.
+- #9 / PR #169 (candidate, non fusionnée) : défaut PE32 reproduit sur le second descripteur à frontière de section ; le précontrôle doit suivre les offsets bruts contigus que Goblin lit, tout en conservant la délégation du premier RVA non mappable. Test rouge `f5b0823` ; contrôler les CI finales, fuzzing borné, logs et compatibilité avant tout squash.
 - Autres axes si plus probants : corpus PE licite et provenance (#9), mesures CPU/RAM comparables et budgets justifiables (#68), fuzz prolongé (#8), dérive de builds inter-CI non expliquée (#69). Une PR ciblée à la fois, CI Windows/Ubuntu puis `main`.
 
 ## Bloquants

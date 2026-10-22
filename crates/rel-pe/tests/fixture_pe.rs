@@ -220,6 +220,78 @@ fn nonzero_import_rva_with_zero_size_must_not_hide_malformed_descriptor() {
 }
 
 #[test]
+fn import_descriptor_outside_raw_section_must_not_silently_truncate() {
+    // Reuse the two unchanged 2-KiB PE fixtures. Split their .rdata raw
+    // mapping after the first 20-byte import descriptor, leaving the next
+    // descriptor in a raw-section gap. Goblin can still read it from the
+    // contiguous file bytes after mapping the directory's initial RVA.
+    for (label, fixture) in [("PE32", PE32), ("PE32+", PE64)] {
+        let nt = u32::from_le_bytes(fixture[0x3c..0x40].try_into().unwrap()) as usize;
+        let coff = nt + 4;
+        let optional_size =
+            u16::from_le_bytes(fixture[coff + 16..coff + 18].try_into().unwrap()) as usize;
+        let sections = coff + 20 + optional_size;
+        let rdata = sections + 40;
+        let extra = sections + 80;
+        assert!(
+            extra + 40 <= 0x200,
+            "{label}: new section header needs space"
+        );
+        assert_eq!(
+            u16::from_le_bytes(fixture[coff + 2..coff + 4].try_into().unwrap()),
+            2,
+            "{label}: expected two sections"
+        );
+        assert_eq!(
+            u32::from_le_bytes(fixture[rdata + 12..rdata + 16].try_into().unwrap()),
+            0x2000,
+            "{label}: .rdata VA drifted"
+        );
+        assert_eq!(
+            u32::from_le_bytes(fixture[rdata + 16..rdata + 20].try_into().unwrap()),
+            0x400,
+            "{label}: .rdata raw size drifted"
+        );
+        assert_eq!(
+            u32::from_le_bytes(fixture[rdata + 20..rdata + 24].try_into().unwrap()),
+            0x400,
+            "{label}: .rdata raw offset drifted"
+        );
+        assert_eq!(&fixture[0x414..0x428], &[0; 20], "{label}");
+
+        let mut split = fixture.to_vec();
+        split[coff + 2..coff + 4].copy_from_slice(&3_u16.to_le_bytes());
+        split[extra..extra + 40].copy_from_slice(&fixture[rdata..rdata + 40]);
+        split[extra..extra + 8].copy_from_slice(b".rdata2\0");
+        split[extra + 8..extra + 12].copy_from_slice(&0x3c0_u32.to_le_bytes());
+        split[extra + 12..extra + 16].copy_from_slice(&0x2040_u32.to_le_bytes());
+        split[extra + 16..extra + 20].copy_from_slice(&0x3c0_u32.to_le_bytes());
+        split[extra + 20..extra + 24].copy_from_slice(&0x440_u32.to_le_bytes());
+        split[rdata + 8..rdata + 12].copy_from_slice(&20_u32.to_le_bytes());
+        split[rdata + 16..rdata + 20].copy_from_slice(&20_u32.to_le_bytes());
+
+        // Positive control: both import descriptors are valid even though
+        // the second is no longer covered by any section's raw mapping.
+        split[0x414..0x428].copy_from_slice(&fixture[0x400..0x414]);
+        let original = inspect(fixture).expect("unchanged fixture must parse");
+        let valid = inspect(&split).expect("valid split-section PE must remain parseable");
+        assert_eq!(valid.imports, original.imports, "{label}");
+        assert_eq!(valid.exports, original.exports, "{label}");
+
+        // Negative controls: Goblin terminates on missing required fields,
+        // but this cannot become a silently shortened successful manifest.
+        for field in [12_usize, 16] {
+            let mut malformed = split.clone();
+            malformed[0x414 + field..0x414 + field + 4].fill(0);
+            assert!(
+                matches!(inspect(&malformed), Err(PeError::Parse(_))),
+                "{label}: non-null unmappable second descriptor missing +{field} must not truncate accepted imports"
+            );
+        }
+    }
+}
+
+#[test]
 fn ordinal_import_is_flagged_without_changing_v1_import_strings() {
     // In both tracked 2-KiB fixtures the import descriptor starts at raw
     // 0x400, and .rdata RVA 0x2000 maps there. Change only the first

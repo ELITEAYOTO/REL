@@ -22,10 +22,12 @@ jobs:
           cargo +"$FUZZ_TOOLCHAIN" install cargo-fuzz --version "$CARGO_FUZZ_VERSION" --locked
       - name: Assert fuzz PE32/PE32+ corpus matches hashed canonical fixtures
         run: python scripts/test_corpus_cases.py
-      - name: Verify and generate two ignored TLS callback fuzz seeds
+      - name: Verify and generate ignored TLS and import-boundary fuzz seeds
         run: |
           python scripts/test_tls_fuzz_seeds.py
           python scripts/prepare_tls_fuzz_seeds.py --destination fuzz/corpus/pe_inspect
+          python scripts/test_import_fuzz_seeds.py
+          python scripts/prepare_import_fuzz_seeds.py --destination fuzz/corpus/pe_inspect
       - name: Record executable, compiler and corpus provenance
         run: |
           {

@@ -345,8 +345,14 @@ fn import_rva_in_aligned_section_padding_must_not_hide_malformed_descriptor() {
 
         let valid = inspect(&aligned).expect("aligned-padding import directory should parse");
         let original = inspect(fixture).expect("known synthetic source should parse");
-        assert_eq!(valid.imports, original.imports, "{label}: imports stay visible");
-        assert!(valid.exports.is_empty(), "{label}: export directory disabled");
+        assert_eq!(
+            valid.imports, original.imports,
+            "{label}: imports stay visible"
+        );
+        assert!(
+            valid.exports.is_empty(),
+            "{label}: export directory disabled"
+        );
 
         for field in [12_usize, 16] {
             let mut malformed = aligned.clone();

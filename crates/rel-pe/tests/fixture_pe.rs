@@ -375,10 +375,8 @@ fn earlier_aligned_section_must_win_over_later_strict_raw_import_mapping() {
     // alignment. A later overlapping strict raw section must not persuade
     // preflight to validate different bytes than the backend actually reads.
     // The two original PE32/PE32+ fixtures remain untouched on disk.
-    for (label, fixture, directory_offset) in [
-        ("PE32", PE32, 96_usize),
-        ("PE32+", PE64, 112_usize),
-    ] {
+    for (label, fixture, directory_offset) in [("PE32", PE32, 96_usize), ("PE32+", PE64, 112_usize)]
+    {
         let nt = u32::from_le_bytes(fixture[0x3c..0x40].try_into().unwrap()) as usize;
         let coff = nt + 4;
         let optional = nt + 24;
@@ -389,7 +387,10 @@ fn earlier_aligned_section_must_win_over_later_strict_raw_import_mapping() {
         let alias = sections + 80;
         assert_eq!(&fixture[0x414..0x428], &[0; 20], "{label}");
         assert_eq!(&fixture[0x600..0x620], &[0; 32], "{label}");
-        assert!(alias + 40 <= 0x200, "{label}: section table must fit headers");
+        assert!(
+            alias + 40 <= 0x200,
+            "{label}: section table must fit headers"
+        );
         assert_eq!(
             u16::from_le_bytes(fixture[coff + 2..coff + 4].try_into().unwrap()),
             2,
@@ -416,8 +417,14 @@ fn earlier_aligned_section_must_win_over_later_strict_raw_import_mapping() {
 
         let original = inspect(fixture).expect("tracked PE fixture");
         let valid = inspect(&overlapped).expect("valid overlapping PE must still parse");
-        assert_eq!(valid.imports, original.imports, "{label}: valid imports survive");
-        assert!(valid.exports.is_empty(), "{label}: exports deliberately absent");
+        assert_eq!(
+            valid.imports, original.imports,
+            "{label}: valid imports survive"
+        );
+        assert!(
+            valid.exports.is_empty(),
+            "{label}: exports deliberately absent"
+        );
 
         for field in [12_usize, 16] {
             let mut malformed = overlapped.clone();

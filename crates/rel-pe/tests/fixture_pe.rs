@@ -305,8 +305,12 @@ fn import_descriptor_outside_raw_section_must_not_silently_truncate() {
             let mut malformed = first_straddles.clone();
             malformed[0x400 + field..0x400 + field + 4].fill(0);
             assert!(
-                matches!(inspect(&malformed), Err(PeError::Parse(_))),
-                "{label}: first descriptor straddles raw section and misses +{field}; cannot accept incomplete imports"
+                matches!(
+                    inspect(&malformed),
+                    Err(PeError::Parse(ref detail))
+                        if detail.contains("non-null import descriptor missing Name or FirstThunk")
+                ),
+                "{label}: first descriptor straddles raw section and misses +{field}; preflight must report the precise missing-field error"
             );
         }
     }

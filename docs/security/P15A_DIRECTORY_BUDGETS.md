@@ -218,3 +218,21 @@ exhaustion path remains a separate explicit error. No claim is made
 that a malformed PE becomes valid, that Goblin accepts every such
 layout, or that the 1 MiB scan is a global CPU/RSS/security boundary.
 No fixture bytes, v1 manifest, dependency or worker policy changes.
+
+## Nonzero import RVA with Size zero (P1.5, #167 candidate)
+
+The import directory has two independently supplied fields: an RVA and
+a declared Size. The third-party PE backend can still enumerate ordinary
+imports if the **RVA is nonzero and Size is zero**. REL's previous
+preflight skipped all such descriptors, allowing a malformed non-null
+entry with a missing `Name` or `FirstThunk` to silently truncate the
+v1 import observations. The fail-first PE32 test on source-only in-memory
+mutations is recorded in [issue #9](https://github.com/ELITEAYOTO/REL/issues/9).
+
+The bounded descriptor scan now applies whenever the RVA is nonzero,
+regardless of Size; the fully absent (RVA=0, Size=0) pair remains exempt.
+This is a **narrow consistency gate**, not a claim that the size field is
+truthful or that all imports are complete. Raw-unmappable entries still
+defer to Goblin per #166, and the existing 52,428-record alpha budget
+remains the same. No fixture, dependency, manifest schema or worker policy
+is changed.

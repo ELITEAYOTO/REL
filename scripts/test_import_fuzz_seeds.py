@@ -34,7 +34,7 @@ class ImportFuzzSeedTests(unittest.TestCase):
                 self.assertEqual(data[:2], b"MZ")
                 self.assertNotEqual(data, original)
                 nt, = struct.unpack_from("<I", data, 0x3C)
-                opt, = (nt + 24,)
+                opt = nt + 24
                 magic, = struct.unpack_from("<H", data, opt)
                 self.assertEqual(magic, 0x20B if is_64 else 0x10B)
                 directory_start = 112 if is_64 else 96
@@ -110,8 +110,14 @@ class ImportFuzzSeedTests(unittest.TestCase):
                 )
                 positions = []
                 for command in commands:
-                    self.assertEqual(source.count(command), 1, f"{workflow}: {command}")
-                    positions.append(source.index(command))
+                    if command.startswith("sha256sum"):
+                        # The smoke workflow also fingerprints original seeds
+                        # before deriving additions; final provenance is later.
+                        self.assertGreaterEqual(source.count(command), 1)
+                        positions.append(source.rindex(command))
+                    else:
+                        self.assertEqual(source.count(command), 1, f"{workflow}: {command}")
+                        positions.append(source.index(command))
                 self.assertEqual(positions, sorted(positions))
                 self.assertIn("python scripts/test_tls_fuzz_seeds.py", source)
 

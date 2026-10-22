@@ -1,19 +1,19 @@
 # STATUS — REL
 
 **Phase :** P1.5 (consolidation PE) ; pilotes EX-01 / EX-02 expérimentaux intégrés ; **P2 non engagé**.
-**Mis à jour :** 2026-10-22, checkpoint **daté** de la base avant #170 : `main` `c92861b589f1b0672458d76355b4cbb258b8ab4d` après #169 ; [CI de PR #39704450435](https://github.com/ELITEAYOTO/REL/actions/runs/39704450435) Windows/Ubuntu réussie (15 artefacts), [fuzzing #39704450419](https://github.com/ELITEAYOTO/REL/actions/runs/39704450419) réussi. Le `push` post-fusion de #169 n'a pas encore été vérifié directement ; toujours revérifier GitHub en direct.
+**Mis à jour :** 2026-10-22, checkpoint daté sur `main` `e610eef0118c716c62edd5877a9c20a018a42297` après #170 ; CI finale de PR #39707761862 Windows/Ubuntu réussie (15 artefacts), fuzz #39707761859 réussi. `push` post-fusion non vérifié indépendamment ; état live à revérifier.
 
 ## Fonctionne
 - P1 : inspection **statique** PE32/PE32+, CLI et manifeste `binary-manifest v1.0.0` préservé ; aucune entrée soumise n'est exécutée.
 - EX-01 : trois domaines bornés, preuves source non UTF-8 (#150). EX-02 : `rel-diff` strict `0.1` et `--partial` `0.2` expérimentaux (#149), avertissements/UNKNOWN conservés.
-- P1.5 : mesures/oracles (#153–#160), contrôles d'imports (#163–#169) ; suite d'enregistrements à offsets fichiers réels précontrôlée (#169). #170 ajoute la vérification du premier descripteur traversant une frontière brute (voir preuves de PR) ; aucune garantie de sandbox.
+- P1.5 : mesures/oracles (#153–#160), contrôles PE (#163–#170) : descripteurs contigus (#169), premier descripteur chevauchant la section (#170) ; garantie limitée aux cas contrôlés, aucune sandbox CPU/RAM.
 
 ## En cours
 - #9 : corpus PE représentatif, provenance et droits ; limites CPU/RAM/process-tree encore incomplètes malgré les garde-fous existants.
 - #8 : fuzz prolongé ; #14 : couverture EX-01 ; #68 : budgets/mesures EX-02 ; #69 : reproductibilité inter-CI et causes encore inconnues.
 
 ## Prochaine tâche
-- #9 : après #170, poursuivre l'étude des RVA d'imports réellement non mappables et des dispositions alignées atypiques ; oracle indépendant quand pertinent, PE32/PE32+, zéro nouveau rejet sans reproduction. Vérifier la CI `push` exacte sur `main` après chaque fusion.
+- #9 / PR #171 candidate : test rouge PE32 avec import à RVA dans le padding brut aligné alors que Goblin le lit ; garde ciblée sur ce mappage, puis CI Windows/Ubuntu, fuzzing et `push` exact avant clôture de l'incrément.
 - Autres axes si plus probants : corpus PE licite et provenance (#9), mesures CPU/RAM comparables et budgets justifiables (#68), fuzz prolongé (#8), dérive de builds inter-CI non expliquée (#69). Une PR ciblée à la fois, CI Windows/Ubuntu puis `main`.
 
 ## Bloquants
@@ -25,6 +25,7 @@
 - Aucun module spéculatif ni transition P2 Ghidra sans décision et validations correspondantes.
 
 ## Historique (10 entrées maximum)
+- 2026-10-22 · #171 (candidate) : RVA d'import dans le padding file-aligned accepté par Goblin, mauvaise complétude prouvée PE32 ; test `a246919e`, CI rouge #39708868057 ; fix et validation en cours.
 - 2026-10-22 · #170 : premier descripteur à cheval sur la fin de section, test PE32 rouge, contrôle du premier octet RVA étendu avant parcours contigu ; preuves et CI détaillées dans PR.
 - 2026-10-22 · #169 : descripteurs suivants contigus hors frontière de section désormais précontrôlés, CI de PR Windows/Ubuntu et fuzzing réussis ; CI `push` distincte non confirmée.
 - 2026-10-22 · #167 : RVA d'import non nul et Size=0 précontrôlé, test rouge→vert ; CI `main` #39701091132 réussie (15 artefacts).
@@ -34,4 +35,3 @@
 - 2026-10-21 · #163 : rejet du premier descripteur d'import non nul sans Name/FirstThunk, test rouge→vert ; CI `main` #39604236819 réussie.
 - 2026-10-21 · #162 : prévalidation de l'analyseur Windows avant création d'overlays ; CI `main` #39600580152 réussie.
 - 2026-10-21 · #160 : classification des données debug incluses dans sections EX-02 corrigée, test rouge→vert ; CI `main` #39593729097 réussie.
-- 2026-10-21 · #159 : vrai import mixte nommé + ordinal d'une même DLL, oracle pefile ; CI `main` #39591156832 réussie.

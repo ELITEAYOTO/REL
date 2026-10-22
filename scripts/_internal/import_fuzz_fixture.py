@@ -28,10 +28,10 @@ def derive_import_boundary(source: bytes, *, is_64: bool, overlap: bool,
     coff, opt = nt + 4, nt + 24
     magic, = struct.unpack_from("<H", data, opt)
     require(magic == (0x20B if is_64 else 0x10B), "optional header magic")
-    header_size, section_count = struct.unpack_from("<HH", data, coff + 16)[0], None
+    header_size, = struct.unpack_from("<H", data, coff + 16)
     section_count, = struct.unpack_from("<H", data, coff + 2)
     require(section_count == 2, "source section count")
-    rdata, = (opt + header_size + 40,)
+    rdata = opt + header_size + 40
     alias = rdata + 40
     require(alias + 40 <= 0x200, "third section header space")
     va, raw_size, raw = struct.unpack_from("<III", data, rdata + 12)

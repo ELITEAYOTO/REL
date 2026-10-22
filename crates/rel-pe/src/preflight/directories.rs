@@ -46,11 +46,11 @@ fn raw_offset_for_rva(
     Err("export directory cannot be mapped to raw section data")
 }
 
-/// Conservative subset of Goblin's file-aligned section mapping for imports.
-/// A short raw span may still have readable trailing bytes in its aligned
-/// file block. Inspect those bytes only for plainly aligned section starts;
-/// other unusual layouts retain backend delegation (not a coverage proof).
-fn aligned_import_raw_offset(
+/// Resolve the first import RVA in section-table order, as Goblin does.
+/// A later strict raw mapping must not override an earlier aligned mapping.
+/// This deliberately covers conventional aligned, file-backed sections only;
+/// other layouts may still be delegated (not a full PE coverage proof).
+fn first_import_raw_offset(
     data: &[u8],
     optional_start: usize,
     sections_start: usize,
@@ -59,9 +59,7 @@ fn aligned_import_raw_offset(
 ) -> Option<usize> {
     // FileAlignment is at +36 in both PE32 and PE32+ optional headers.
     let alignment = u64::from(le_u32(data, optional_start.checked_add(36)?)?);
-    if alignment == 0 || !alignment.is_power_of_two() {
-        return None;
-    }
+    let alignment_valid = alignment != 0 && alignment.is_power_of_two();
     let target = u64::from(rva);
     for index in 0..section_count {
         let header = sections_start.checked_add(index * SECTION_HEADER_SIZE)?;
@@ -69,9 +67,19 @@ fn aligned_import_raw_offset(
         let virtual_size = u64::from(le_u32(data, header + 8)?);
         let raw_size = u64::from(le_u32(data, header + 16)?);
         let raw_start = u64::from(le_u32(data, header + 20)?);
-        // Avoid claiming equivalence for unaligned pointers or virtual-only
-        // sections. The strict backend decides those cases.
-        if raw_size == 0 || raw_start % 512 != 0 || raw_start % alignment != 0 {
+        if raw_size == 0 {
+            continue;
+        }
+        let Some(delta) = target.checked_sub(va) else {
+            continue;
+        };
+        if delta < raw_size {
+            let raw = usize::try_from(raw_start.checked_add(delta)?).ok()?;
+            return region(data, raw, 1).map(|_| raw);
+        }
+        // Outside the strict raw span, only claim a match when the
+        // file-aligned padding is unambiguous and physically backed.
+        if !alignment_valid || raw_start % 512 != 0 || raw_start % alignment != 0 {
             continue;
         }
         let aligned_size = raw_size.checked_add(alignment - 1)? & !(alignment - 1);
@@ -81,18 +89,11 @@ fn aligned_import_raw_offset(
         } else {
             virtual_size.checked_add(4095)? & !4095
         };
-        let mapped_size = aligned_size.min(raw_page_size).min(virtual_page_size);
-        let Some(delta) = target.checked_sub(va) else {
-            continue;
-        };
-        // Already covered by strict raw mapping, or not in aligned padding.
-        if delta < raw_size || delta >= mapped_size {
+        if delta >= aligned_size.min(raw_page_size).min(virtual_page_size) {
             continue;
         }
         let raw = usize::try_from(raw_start.checked_add(delta)?).ok()?;
-        if region(data, raw, 1).is_some() {
-            return Some(raw);
-        }
+        return region(data, raw, 1).map(|_| raw);
     }
     None
 }
@@ -110,17 +111,13 @@ fn validate_bounded_import_descriptors(
     section_count: usize,
     imports_rva: u32,
 ) -> Result<(), &'static str> {
-    let first_raw = raw_offset_for_rva(data, sections_start, section_count, imports_rva, 1)
-        .ok()
-        .or_else(|| {
-            aligned_import_raw_offset(
-                data,
-                optional_start,
-                sections_start,
-                section_count,
-                imports_rva,
-            )
-        });
+    let first_raw = first_import_raw_offset(
+        data,
+        optional_start,
+        sections_start,
+        section_count,
+        imports_rva,
+    );
     let Some(first_raw) = first_raw else {
         // Truly unmappable initial RVAs remain delegated to the backend.
         return Ok(());

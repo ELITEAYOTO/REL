@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — Honor PE import section-table precedence (P1.5, #172)
+
+- A test-only PE32/PE32+ synthetic overlap keeps a valid import descriptor in an earlier section's **file-aligned padding** but adds a later section whose strict raw mapping of the same RVA points to an unrelated zero record. Goblin reads the earlier section. The former REL preflight silently missed a malformed import `Name=0` in the earlier record: [fail-first CI #39710380761](https://github.com/ELITEAYOTO/REL/actions/runs/39710380761), test-only SHA `e0fec9c7e49f930155ad8995732537d76914979d`.
+- Resolve import RVA mappings **in section-table order**, whether they are strictly raw-mapped or conservatively file-aligned. Continue to delegate genuinely unsupported layouts, use the existing descriptor scan budget, preserve the synthetic fixtures and immutable `binary-manifest v1.0.0`. This does not constitute a general PE mapping equivalence proof or sandbox.
+
+
 ## [Unreleased] — Check file-aligned PE import RVA padding (P1.5)
 
 - Fail-first controlled PE32/PE32+ variants move an import descriptor to RVA `0x2014` while the section declares 16 raw bytes. The backend maps its file-aligned padding and reads imports; setting the descriptor's `Name` to zero was silently accepted on PE32 (test-only SHA `a246919e8342c53a3e8c43f3d8fd526d16967274`, Ubuntu CI #39708868057).

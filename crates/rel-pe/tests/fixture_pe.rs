@@ -370,6 +370,78 @@ fn import_rva_in_aligned_section_padding_must_not_hide_malformed_descriptor() {
 }
 
 #[test]
+fn earlier_aligned_section_must_win_over_later_strict_raw_import_mapping() {
+    // Goblin resolves RVA to the first section that covers it after file
+    // alignment. A later overlapping strict raw section must not persuade
+    // preflight to validate different bytes than the backend actually reads.
+    // The two original PE32/PE32+ fixtures remain untouched on disk.
+    for (label, fixture, directory_offset) in [("PE32", PE32, 96_usize), ("PE32+", PE64, 112_usize)]
+    {
+        let nt = u32::from_le_bytes(fixture[0x3c..0x40].try_into().unwrap()) as usize;
+        let coff = nt + 4;
+        let optional = nt + 24;
+        let optional_size =
+            u16::from_le_bytes(fixture[coff + 16..coff + 18].try_into().unwrap()) as usize;
+        let sections = optional + optional_size;
+        let rdata = sections + 40;
+        let alias = sections + 80;
+        assert_eq!(&fixture[0x414..0x428], &[0; 20], "{label}");
+        assert_eq!(&fixture[0x600..0x620], &[0; 32], "{label}");
+        assert!(
+            alias + 40 <= 0x200,
+            "{label}: section table must fit headers"
+        );
+        assert_eq!(
+            u16::from_le_bytes(fixture[coff + 2..coff + 4].try_into().unwrap()),
+            2,
+            "{label}: fixture sections changed"
+        );
+
+        let mut overlapped = fixture.to_vec();
+        // Remove unrelated export declaration, then point imports into
+        // padding beyond the original .rdata raw span.
+        overlapped[optional + directory_offset..optional + directory_offset + 8].fill(0);
+        overlapped[optional + directory_offset + 8..optional + directory_offset + 12]
+            .copy_from_slice(&0x2014_u32.to_le_bytes());
+        overlapped[rdata + 16..rdata + 20].copy_from_slice(&16_u32.to_le_bytes());
+        overlapped[0x414..0x428].copy_from_slice(&fixture[0x400..0x414]);
+        // Add an overlapping section whose strict raw mapping of RVA
+        // 0x2014 would find an unrelated zero record at file offset 0x600.
+        overlapped[coff + 2..coff + 4].copy_from_slice(&3_u16.to_le_bytes());
+        overlapped[alias..alias + 40].fill(0);
+        overlapped[alias..alias + 8].copy_from_slice(b".alias\0\0");
+        overlapped[alias + 8..alias + 12].copy_from_slice(&32_u32.to_le_bytes());
+        overlapped[alias + 12..alias + 16].copy_from_slice(&0x2014_u32.to_le_bytes());
+        overlapped[alias + 16..alias + 20].copy_from_slice(&32_u32.to_le_bytes());
+        overlapped[alias + 20..alias + 24].copy_from_slice(&0x600_u32.to_le_bytes());
+
+        let original = inspect(fixture).expect("tracked PE fixture");
+        let valid = inspect(&overlapped).expect("valid overlapping PE must still parse");
+        assert_eq!(
+            valid.imports, original.imports,
+            "{label}: valid imports survive"
+        );
+        assert!(
+            valid.exports.is_empty(),
+            "{label}: exports deliberately absent"
+        );
+
+        for field in [12_usize, 16] {
+            let mut malformed = overlapped.clone();
+            malformed[0x414 + field..0x414 + field + 4].fill(0);
+            assert!(
+                matches!(
+                    inspect(&malformed),
+                    Err(PeError::Parse(ref detail))
+                        if detail.contains("non-null import descriptor missing Name or FirstThunk")
+                ),
+                "{label}: earlier aligned section import missing +{field} was masked by later strict raw section"
+            );
+        }
+    }
+}
+
+#[test]
 fn ordinal_import_is_flagged_without_changing_v1_import_strings() {
     // In both tracked 2-KiB fixtures the import descriptor starts at raw
     // 0x400, and .rdata RVA 0x2000 maps there. Change only the first

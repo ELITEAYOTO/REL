@@ -197,3 +197,34 @@ for this expanded case, without modifying `binary-manifest v1.0.0`.
 This is a single compiler-produced mixed-import layout, **not** general
 ordinal coverage, an execution test, a redistribution grant, or a hard
 resource/sandbox guarantee. Issues #9 and #16 remain unresolved.
+
+
+## Temporary import-boundary fuzz corpus (#8/#9, PR #174)
+
+The existing PE32/PE32+ source fixtures are SHA-256 checked against
+`fixtures/expected.json` before creating **eight ignored, ephemeral**
+libFuzzer inputs. Each architecture yields the valid and `Name=0` variants
+for both a descriptor in file-aligned raw padding (#171) and an overlapping
+later section whose raw bytes differ from the earlier aligned mapping (#172).
+These are deterministic transformations of REL's existing synthetic data,
+not new compiler-origin samples, redistributable software or a representative
+wild PE corpus. Neither inspected PE nor an imported DLL is executed.
+
+`scripts/_internal/import_fuzz_fixture.py` owns the conservative mutations;
+`scripts/prepare_import_fuzz_seeds.py` rejects mismatching/symlinked existing
+files before writing and prints the source/derived SHA-256 values.
+`scripts/test_import_fuzz_seeds.py` checks source fingerprints, structural
+fields, idempotence, negative drift/conflict behavior and workflow ordering.
+The normal CI runs those tests on Windows/Ubuntu. Both the 30-second
+`fuzz.yml` smoke and the optional 300-second `fuzz-long.yml` campaign
+generate seeds **before** recording the final corpus file hashes in their
+existing provenance artifacts. Neither the originals nor generated PE bytes
+are added to Git; the original 3 tracked fuzz corpus entries remain in place.
+
+This adds **targeted starting points**, not measured additional coverage,
+proof of panic freedom or a resource budget. The nightly/tool versions,
+input limits, per-input timeout and instrumentation remain unchanged;
+longer coverage measurements, minimized crashing regressions, verified
+redistribution rights and enforceable CPU/RSS/process-tree limits remain
+open in [#8](https://github.com/ELITEAYOTO/REL/issues/8) and
+[#9](https://github.com/ELITEAYOTO/REL/issues/9).

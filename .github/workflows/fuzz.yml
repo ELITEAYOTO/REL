@@ -14,6 +14,9 @@ on:
       - 'scripts/prepare_tls_fuzz_seeds.py'
       - 'scripts/test_tls_fuzz_seeds.py'
       - 'scripts/test_tls_callbacks_oracle.py'
+      - 'scripts/_internal/import_fuzz_fixture.py'
+      - 'scripts/prepare_import_fuzz_seeds.py'
+      - 'scripts/test_import_fuzz_seeds.py'
       - '.github/workflows/fuzz.yml'
   workflow_dispatch:
 
@@ -42,10 +45,12 @@ jobs:
             'fuzz/corpus/pe_inspect/f001-goblin-tls-oob.bin' | sha256sum --check -
       - name: Assert fuzz PE32/PE32+ corpus matches hashed canonical fixtures
         run: python scripts/test_corpus_cases.py
-      - name: Verify and generate two ignored TLS callback fuzz seeds
+      - name: Verify and generate ignored TLS and import-boundary fuzz seeds
         run: |
           python scripts/test_tls_fuzz_seeds.py
           python scripts/prepare_tls_fuzz_seeds.py --destination fuzz/corpus/pe_inspect
+          python scripts/test_import_fuzz_seeds.py
+          python scripts/prepare_import_fuzz_seeds.py --destination fuzz/corpus/pe_inspect
       - name: Install pinned cargo-fuzz
         run: cargo +"$FUZZ_TOOLCHAIN" install cargo-fuzz --version "$CARGO_FUZZ_VERSION" --locked
       - name: Record bounded fuzz campaign provenance

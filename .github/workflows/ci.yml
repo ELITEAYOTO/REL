@@ -48,7 +48,9 @@ jobs:
       - name: Install pinned process-metric collector
         run: python -m pip install psutil==7.0.0
       - name: Corpus source hashes and overlay reproducibility
-        run: python scripts/test_corpus_cases.py
+        run: |
+          python scripts/test_corpus_cases.py
+          python scripts/test_import_fuzz_seeds.py
       - name: Malformed PE case integrity regressions
         run: python scripts/test_malformed_resource_cases.py
       - name: Measurement context regressions

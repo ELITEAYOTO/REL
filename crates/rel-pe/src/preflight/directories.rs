@@ -348,11 +348,8 @@ mod tests {
             // unresolvable. That is not evidence of hitting the 1 MiB cap.
             let section_start = opt + size;
             let import_rva = le_u32(fixture, opt + dir_start + DATA_DIRECTORY_BYTES).unwrap();
-            let section_count = le_u16(
-                fixture,
-                le_u32(fixture, 0x3c).unwrap() as usize + 4 + 2,
-            )
-            .unwrap() as usize;
+            let section_count =
+                le_u16(fixture, le_u32(fixture, 0x3c).unwrap() as usize + 4 + 2).unwrap() as usize;
             let section = (0..section_count)
                 .map(|index| section_start + index * SECTION_HEADER_SIZE)
                 .find(|&header| {

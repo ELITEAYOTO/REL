@@ -277,6 +277,35 @@ mod tests {
     }
 
     #[test]
+    fn checks_first_import_descriptor_even_if_raw_section_covers_only_its_first_bytes() {
+        // Goblin maps RVA 0x2000 to file offset 0x400 under file-alignment
+        // rules and reads the whole descriptor even when the section declares
+        // only 16 raw bytes. The preflight must not skip its required fields.
+        for fixture in [PE32, PE64] {
+            let (opt, size) = fixture_fields(fixture);
+            let sections = opt + size;
+            let rdata = sections + SECTION_HEADER_SIZE;
+            assert_eq!(le_u32(fixture, rdata + 12), Some(0x2000));
+            assert_eq!(le_u32(fixture, rdata + 16), Some(0x400));
+
+            let mut shortened = modify_u32(fixture, rdata + 16, 16);
+            assert_eq!(
+                validate_bounded_import_descriptors(&shortened, sections, 2, 0x2000),
+                Ok(())
+            );
+            for field in [12_usize, 16] {
+                shortened[0x400 + field..0x400 + field + 4].fill(0);
+                assert_eq!(
+                    validate_bounded_import_descriptors(&shortened, sections, 2, 0x2000),
+                    Err("non-null import descriptor missing Name or FirstThunk")
+                );
+                shortened[0x400 + field..0x400 + field + 4]
+                    .copy_from_slice(&fixture[0x400 + field..0x400 + field + 4]);
+            }
+        }
+    }
+
+    #[test]
     fn rejects_later_non_null_import_descriptor_missing_required_field() {
         for fixture in [PE32, PE64] {
             let second = 0x400_usize + IMPORT_DESCRIPTOR_BYTES;

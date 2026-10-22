@@ -1,19 +1,19 @@
 # STATUS — REL
 
 **Phase :** P1.5 (consolidation PE) ; pilotes EX-01 / EX-02 expérimentaux intégrés ; **P2 non engagé**.
-**Mis à jour :** 2026-10-22, base datée avant #172 : `main` `bca93dae5ef0001f9b1ba5c4348098259a4a70df`, #171 fusionnée. [CI PR #39709386568](https://github.com/ELITEAYOTO/REL/actions/runs/39709386568) Windows/Ubuntu réussie (15 artefacts), [fuzz #39709386566](https://github.com/ELITEAYOTO/REL/actions/runs/39709386566) réussi. CI `push` post-fusion non confirmée ; vérifier l'état live.
+**Mis à jour :** 2026-10-22, checkpoint après #172 : `main` `f70a002b6271523f0d16b2d59e36c4e972437bf6`. [CI de PR #39710790824](https://github.com/ELITEAYOTO/REL/actions/runs/39710790824) Windows/Ubuntu réussie (15 artefacts) et [fuzz #39710790731](https://github.com/ELITEAYOTO/REL/actions/runs/39710790731) réussi. CI `push` sur ce SHA non récupérable au contrôle ; ceci n'est pas un statut GitHub live.
 
 ## Fonctionne
 - P1 : inspection **statique** PE32/PE32+, CLI et manifeste `binary-manifest v1.0.0` préservé ; aucune entrée soumise n'est exécutée.
 - EX-01 : trois domaines bornés, preuves source non UTF-8 (#150). EX-02 : `rel-diff` strict `0.1` et `--partial` `0.2` expérimentaux (#149), avertissements/UNKNOWN conservés.
-- P1.5 : contrôles PE (#163–#171) intégrés : imports contigus, premiers descripteurs chevauchants et padding aligné ; #172 étudie un chevauchement de sections. Corpus représentatif et isolation globale toujours incomplets.
+- P1.5 : contrôles PE (#163–#172) intégrés : imports contigus, frontières et padding aligné, puis priorité d'ordre des sections (#172). Corpus représentatif et isolation globale encore incomplets.
 
 ## En cours
 - #9 : corpus PE représentatif, provenance et droits ; limites CPU/RAM/process-tree encore incomplètes malgré les garde-fous existants.
 - #8 : fuzz prolongé ; #14 : couverture EX-01 ; #68 : budgets/mesures EX-02 ; #69 : reproductibilité inter-CI et causes encore inconnues.
 
 ## Prochaine tâche
-- #9 / PR #172 (état de la branche, non preuve d'intégration) : défaut PE32 fail-first lorsque plusieurs sections couvrent le RVA initial et que la première correspondance Goblin est alignée ; préserver la priorité d'ordre, exiger CI Windows/Ubuntu, fuzz et `push` main.
+- #9 : après #172, évaluer la divergence de RVA pour sections atypiques sans généraliser Goblin, uniquement sur nouvelles preuves fail-first. En parallèle, corpus licite, bornes CPU/RAM/process-tree et fuzz long (#8/#9), sans affirmer la sécurité de tous les PE hostiles.
 - Autres axes si plus probants : corpus PE licite et provenance (#9), mesures CPU/RAM comparables et budgets justifiables (#68), fuzz prolongé (#8), dérive de builds inter-CI non expliquée (#69). Une PR ciblée à la fois, CI Windows/Ubuntu puis `main`.
 
 ## Bloquants
@@ -25,7 +25,7 @@
 - Aucun module spéculatif ni transition P2 Ghidra sans décision et validations correspondantes.
 
 ## Historique (10 entrées maximum)
-- 2026-10-22 · #172 : test-only de chevauchement à RVA d'import, PE32 fail-first `e0fec9c7`, CI #39710380761 (21 autres tests OK) ; correction minimale en validation.
+- 2026-10-22 · #172 : test PE32 rouge `e0fec9c7` → correction fusionnée `f70a002b` ; CI PR #39710790824 Windows/Ubuntu (15 artefacts) et fuzz #39710790731 réussis ; `push` main non confirmé.
 - 2026-10-22 · #171 : RVA d'import dans padding aligné, test rouge→vert ; fusion `bca93dae`, CI finale PR #39709386568 (15 artefacts) et fuzz #39709386566 réussis.
 - 2026-10-22 · #170 : premier descripteur à cheval sur la fin de section, test PE32 rouge, contrôle du premier octet RVA étendu avant parcours contigu ; preuves et CI détaillées dans PR.
 - 2026-10-22 · #169 : descripteurs suivants contigus hors frontière de section désormais précontrôlés, CI de PR Windows/Ubuntu et fuzzing réussis ; CI `push` distincte non confirmée.

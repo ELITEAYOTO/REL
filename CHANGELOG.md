@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased] — Traverse actual contiguous raw import records across section boundaries (P1.5)
+
+- Fail-first PE32 regression (PR #169) confirmed an accepted, truncated import observation when a malformed second descriptor lies beyond the first raw section's declared span but remains contiguous in file bytes consumed by Goblin. The controlled PE32/PE32+ positive case preserves valid imports and exports; no fixture bytes change.
+- After the first RVA maps, preflight validates sequential file-offset descriptor records up to the existing 52,428-record cap, instead of remapping every successor RVA. Preserve the initial RVA fallback, manifest v1.0.0, no additional dependency or full parser sandbox claim. Final OS/CI evidence is required before merge.
+
 ## [Unreleased] — Keep zero-Size import directories inside bounded preflight (P1.5)
 
 - A PE32/PE32+ in-memory regression demonstrates that a nonzero import RVA with declared `Size=0` can still expose imports through the backend, but a non-null descriptor with missing `Name` could silently truncate those observations.

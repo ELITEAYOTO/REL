@@ -111,8 +111,13 @@ fn validate_bounded_import_descriptors(
     section_count: usize,
     imports_rva: u32,
 ) -> Result<(), &'static str> {
-    let first_raw =
-        first_import_raw_offset(data, optional_start, sections_start, section_count, imports_rva);
+    let first_raw = first_import_raw_offset(
+        data,
+        optional_start,
+        sections_start,
+        section_count,
+        imports_rva,
+    );
     let Some(first_raw) = first_raw else {
         // Truly unmappable initial RVAs remain delegated to the backend.
         return Ok(());

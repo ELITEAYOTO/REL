@@ -288,6 +288,31 @@ fn import_descriptor_outside_raw_section_must_not_silently_truncate() {
                 "{label}: non-null unmappable second descriptor missing +{field} must not truncate accepted imports"
             );
         }
+
+        // A still narrower initial raw mapping (16 bytes instead of 20)
+        // spans only the first part of the first descriptor. Goblin's
+        // section alignment can still resolve that initial RVA and read
+        // its complete 20-byte record from the contiguous file.
+        let mut first_straddles = split.clone();
+        first_straddles[rdata + 8..rdata + 12].copy_from_slice(&16_u32.to_le_bytes());
+        first_straddles[rdata + 16..rdata + 20].copy_from_slice(&16_u32.to_le_bytes());
+        let still_valid = inspect(&first_straddles)
+            .expect("valid first descriptor at a raw-section boundary must parse");
+        assert_eq!(still_valid.imports, original.imports, "{label}");
+        assert_eq!(still_valid.exports, original.exports, "{label}");
+
+        for field in [12_usize, 16] {
+            let mut malformed = first_straddles.clone();
+            malformed[0x400 + field..0x400 + field + 4].fill(0);
+            assert!(
+                matches!(
+                    inspect(&malformed),
+                    Err(PeError::Parse(ref detail))
+                        if detail.contains("non-null import descriptor missing Name or FirstThunk")
+                ),
+                "{label}: first descriptor straddles raw section and misses +{field}; preflight must report the precise missing-field error"
+            );
+        }
     }
 }
 

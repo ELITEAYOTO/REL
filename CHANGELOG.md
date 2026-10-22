@@ -1,9 +1,14 @@
 # Changelog
 
+## [Unreleased] — Check initial import descriptors straddling a raw-section boundary (P1.5)
+
+- Test-only PE32/PE32+ positive controls retain imports and exports when the section contains only the first 16 bytes of the initial 20-byte descriptor; the strict backend still maps its initial RVA and reads the full contiguous record. Negative controls zero `Name` or `FirstThunk` and expose an accepted, incomplete import observation (PE32 fail-first SHA `9fa341ac1275c11c604b8d2cac23d31ca0ed9695`, Ubuntu CI #39707078470).
+- Map the first **byte** of the import RVA before the bounded sequential file-offset scan instead of requiring all 20 descriptor bytes to fit the section's advertised raw size. Preserve explicit fallback for truly unmappable initial RVAs, the scan cap, unchanged fixtures, and the immutable `binary-manifest v1.0.0`. This is no global import/CPU/RAM correctness or security guarantee.
+
 ## [Unreleased] — Traverse actual contiguous raw import records across section boundaries (P1.5)
 
 - Fail-first PE32 regression (PR #169) confirmed an accepted, truncated import observation when a malformed second descriptor lies beyond the first raw section's declared span but remains contiguous in file bytes consumed by Goblin. The controlled PE32/PE32+ positive case preserves valid imports and exports; no fixture bytes change.
-- After the first RVA maps, preflight validates sequential file-offset descriptor records up to the existing 52,428-record cap, instead of remapping every successor RVA. Preserve the initial RVA fallback, manifest v1.0.0, no additional dependency or full parser sandbox claim. Final OS/CI evidence is required before merge.
+- After the first RVA maps, preflight validates sequential file-offset descriptor records up to the existing 52,428-record cap, instead of remapping every successor RVA. Preserve the initial RVA fallback, manifest v1.0.0, no additional dependency or full parser sandbox claim. Final Windows/Ubuntu PR CI #39704450435 and bounded fuzz #39704450419 passed; distinct post-merge push CI must be assessed separately.
 
 ## [Unreleased] — Keep zero-Size import directories inside bounded preflight (P1.5)
 

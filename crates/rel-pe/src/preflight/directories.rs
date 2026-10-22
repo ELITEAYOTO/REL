@@ -49,6 +49,8 @@ fn raw_offset_for_rva(
 /// Follow the contiguous file records actually consumed by Goblin after
 /// mapping the initial import RVA. Remapping each next RVA can miss malformed
 /// records at raw-section boundaries while Goblin still reads their bytes.
+/// The first RVA needs to map only its first byte: Goblin can read a full
+/// 20-byte record past a shorter declared raw section using file alignment.
 /// Keep the initial unmappable-RVA fallback for compatibility.
 fn validate_bounded_import_descriptors(
     data: &[u8],
@@ -56,13 +58,8 @@ fn validate_bounded_import_descriptors(
     section_count: usize,
     imports_rva: u32,
 ) -> Result<(), &'static str> {
-    let Ok(first_raw) = raw_offset_for_rva(
-        data,
-        sections_start,
-        section_count,
-        imports_rva,
-        IMPORT_DESCRIPTOR_BYTES,
-    ) else {
+    let Ok(first_raw) = raw_offset_for_rva(data, sections_start, section_count, imports_rva, 1)
+    else {
         // The backend decides whether this initial layout can be parsed.
         return Ok(());
     };
@@ -271,6 +268,35 @@ mod tests {
             let mut empty = fixture.to_vec();
             empty[0x400..0x400 + IMPORT_DESCRIPTOR_BYTES].fill(0);
             assert_eq!(check(&empty), Ok(()));
+        }
+    }
+
+    #[test]
+    fn checks_first_import_descriptor_even_if_raw_section_covers_only_its_first_bytes() {
+        // Goblin maps RVA 0x2000 to file offset 0x400 under file-alignment
+        // rules and reads the whole descriptor even when the section declares
+        // only 16 raw bytes. The preflight must not skip its required fields.
+        for fixture in [PE32, PE64] {
+            let (opt, size) = fixture_fields(fixture);
+            let sections = opt + size;
+            let rdata = sections + SECTION_HEADER_SIZE;
+            assert_eq!(le_u32(fixture, rdata + 12), Some(0x2000));
+            assert_eq!(le_u32(fixture, rdata + 16), Some(0x400));
+
+            let mut shortened = modify_u32(fixture, rdata + 16, 16);
+            assert_eq!(
+                validate_bounded_import_descriptors(&shortened, sections, 2, 0x2000),
+                Ok(())
+            );
+            for field in [12_usize, 16] {
+                shortened[0x400 + field..0x400 + field + 4].fill(0);
+                assert_eq!(
+                    validate_bounded_import_descriptors(&shortened, sections, 2, 0x2000),
+                    Err("non-null import descriptor missing Name or FirstThunk")
+                );
+                shortened[0x400 + field..0x400 + field + 4]
+                    .copy_from_slice(&fixture[0x400 + field..0x400 + field + 4]);
+            }
         }
     }
 

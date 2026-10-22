@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] — Check file-aligned PE import RVA padding (P1.5)
+
+- Fail-first controlled PE32/PE32+ variants move an import descriptor to RVA `0x2014` while the section declares 16 raw bytes. The backend maps its file-aligned padding and reads imports; setting the descriptor's `Name` to zero was silently accepted on PE32 (test-only SHA `a246919e8342c53a3e8c43f3d8fd526d16967274`, Ubuntu CI #39708868057).
+- Extend the existing preflight only for clearly aligned, file-backed section padding matching the parser's bounded mapping rules; retain truly nonmappable delegation, unchanged original fixtures, manifest v1.0.0 and all scan/resource limits. This focused guard does **not** assert complete import extraction, generalized PE format validity or a CPU/RAM sandbox.
+
+
 ## [Unreleased] — Check initial import descriptors straddling a raw-section boundary (P1.5)
 
 - Test-only PE32/PE32+ positive controls retain imports and exports when the section contains only the first 16 bytes of the initial 20-byte descriptor; the strict backend still maps its initial RVA and reads the full contiguous record. Negative controls zero `Name` or `FirstThunk` and expose an accepted, incomplete import observation (PE32 fail-first SHA `9fa341ac1275c11c604b8d2cac23d31ca0ed9695`, Ubuntu CI #39707078470).

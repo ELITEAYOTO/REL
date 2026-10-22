@@ -233,7 +233,10 @@ fn import_descriptor_outside_raw_section_must_not_silently_truncate() {
         let sections = coff + 20 + optional_size;
         let rdata = sections + 40;
         let extra = sections + 80;
-        assert!(extra + 40 <= 0x200, "{label}: new section header needs space");
+        assert!(
+            extra + 40 <= 0x200,
+            "{label}: new section header needs space"
+        );
         assert_eq!(
             u16::from_le_bytes(fixture[coff + 2..coff + 4].try_into().unwrap()),
             2,

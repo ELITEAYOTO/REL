@@ -228,3 +228,49 @@ longer coverage measurements, minimized crashing regressions, verified
 redistribution rights and enforceable CPU/RSS/process-tree limits remain
 open in [#8](https://github.com/ELITEAYOTO/REL/issues/8) and
 [#9](https://github.com/ELITEAYOTO/REL/issues/9).
+
+## 300-second verified PE fuzz campaign on the enriched temporary corpus (2026-10-22, #8)
+
+A **real instrumented 300-second campaign** ran in
+[GitHub Actions #39727233949](https://github.com/ELITEAYOTO/REL/actions/runs/39727233949)
+with successful completion on experimental SHA
+`514ae50b595283c7a997caa3212ea8d76be5bdc9`.
+The connected GitHub tooling cannot dispatch `workflow_dispatch`; instead,
+the **existing** `fuzz-long.yml` was triggered via a temporary, exact-branch,
+file-path-scoped `push` rule in `experiment/p15-long-fuzz-20261022`,
+based on `main` `bc3225a3`. After the run, the isolated branch reference
+was reset to that stable `main` SHA with a checked lease. The workflow
+blob was compared to `main`: **identical**, manual-only again. No
+experimental workflow trigger or binary seed was merged into `main`.
+
+The archived `rel-fuzz-run-metadata.txt` records the 13 input filenames
+and SHA-256 hashes (three tracked canonical cases, two ignored TLS cases,
+eight #174 import-padding/overlap variants), `rustc 1.101.0-nightly`
+(commit `b6eeb93c9`), LLVM 23.1.4, `cargo-fuzz 0.13.2`,
+`pe_inspect`, deterministic mutation seed `20261018`,
+`-max_len=65536`, `-timeout=4`, `-rss_limit_mb=1500` and
+`-max_total_time=300`.
+
+The `rel-fuzz-long.log` confirms **2,449,702 executed inputs**, 301 s
+tool-reported elapsed, libFuzzer proxies `cov=2415`, `ft=5899`,
+3,101 new units added, final reduced corpus 1,119 entries / 2,363 KiB,
+8,138 average executions/s and tool-reported peak RSS **656 MiB**.
+Normal `DONE` termination and job success; **no crash reported** in
+this bounded run. GitHub artifact
+`rel-pe-fuzz-long-39727233949` (ID `12403407926`) was downloaded
+and inspected: the ZIP contains only the 1,953-byte metadata file and
+445,225-byte log, **no crash reproducer**. ZIP SHA-256
+`656827282d4239f0424c1b68d5ca85f1ff0bb7075f374cbd8673fd865277e0a7`.
+The earlier [exact new-main CI #39726036423](https://github.com/ELITEAYOTO/REL/actions/runs/39726036423)
+after #174 also passed Windows/Ubuntu and produced 15 standard artifacts,
+all tied to `bc3225a3`.
+
+This is **one hosted-runner observation**, not proof that the new seeds
+improved code coverage over a controlled baseline; libFuzzer `cov`
+is not a percent of source lines, and there is no repeated paired
+fixed-environment measurement. Absence of a crash is not proof of parser
+safety; the fuzzer's RSS option is not an enforceable REL process-tree
+CPU/RAM bound or a sandbox. No untrusted PE was executed as software.
+Broader redistributable corpus rights (#16), more long-run comparisons,
+regression minimization when a real failure is found, and resource
+enforcement (#8/#9/#68) remain open.

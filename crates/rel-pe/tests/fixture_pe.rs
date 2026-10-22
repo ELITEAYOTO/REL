@@ -191,7 +191,11 @@ fn nonzero_import_rva_with_zero_size_must_not_hide_malformed_descriptor() {
             "{label}: source RVA must be populated"
         );
         assert_eq!(
-            u32::from_le_bytes(fixture[import_entry + 4..import_entry + 8].try_into().unwrap()),
+            u32::from_le_bytes(
+                fixture[import_entry + 4..import_entry + 8]
+                    .try_into()
+                    .unwrap()
+            ),
             40,
             "{label}: source Size drifted"
         );

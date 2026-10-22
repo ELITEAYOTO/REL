@@ -328,6 +328,50 @@ mod tests {
     }
 
     #[test]
+    fn unmappable_imports_do_not_claim_alpha_scan_exhaustion() {
+        for fixture in [PE32, PE64] {
+            let (opt, size) = fixture_fields(fixture);
+            let dir_start = if le_u16(fixture, opt) == Some(0x10b) {
+                PE32_DIRECTORY_START
+            } else {
+                PE64_DIRECTORY_START
+            };
+            // The optional import table can refer to an unmappable RVA.
+            // This preflight delegates that case; the backend decides whether
+            // the overall PE is parseable.
+            let invalid_rva =
+                modify_u32(fixture, opt + dir_start + DATA_DIRECTORY_BYTES, 0xffff_fff0);
+            assert_eq!(check(&invalid_rva), Ok(()));
+
+            // The first descriptor is readable, but reducing its containing
+            // raw section to exactly one record makes the following RVA
+            // unresolvable. That is not evidence of hitting the 1 MiB cap.
+            let section_start = opt + size;
+            let import_rva = le_u32(fixture, opt + dir_start + DATA_DIRECTORY_BYTES).unwrap();
+            let section_count = le_u16(
+                fixture,
+                le_u32(fixture, 0x3c).unwrap() as usize + 4 + 2,
+            )
+            .unwrap() as usize;
+            let section = (0..section_count)
+                .map(|index| section_start + index * SECTION_HEADER_SIZE)
+                .find(|&header| {
+                    let va = le_u32(fixture, header + 12).unwrap();
+                    let raw_size = le_u32(fixture, header + 16).unwrap();
+                    import_rva >= va && import_rva - va < raw_size
+                })
+                .expect("tracked fixture import descriptor is raw-mappable");
+            let va = le_u32(fixture, section + 12).unwrap();
+            let one_descriptor = modify_u32(
+                fixture,
+                section + 16,
+                import_rva - va + IMPORT_DESCRIPTOR_BYTES as u32,
+            );
+            assert_eq!(check(&one_descriptor), Ok(()));
+        }
+    }
+
+    #[test]
     fn rejects_declared_oversized_export_directory() {
         let (opt, _) = fixture_fields(PE64);
         let bad = modify_u32(

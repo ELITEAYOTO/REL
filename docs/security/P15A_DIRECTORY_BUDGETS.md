@@ -219,7 +219,7 @@ that a malformed PE becomes valid, that Goblin accepts every such
 layout, or that the 1 MiB scan is a global CPU/RSS/security boundary.
 No fixture bytes, v1 manifest, dependency or worker policy changes.
 
-## Nonzero import RVA with Size zero (P1.5, #167 candidate)
+## Nonzero import RVA with Size zero (P1.5, #167 integrated)
 
 The import directory has two independently supplied fields: an RVA and
 a declared Size. The third-party PE backend can still enumerate ordinary
@@ -235,4 +235,8 @@ This is a **narrow consistency gate**, not a claim that the size field is
 truthful or that all imports are complete. Raw-unmappable entries still
 defer to Goblin per #166, and the existing 52,428-record alpha budget
 remains the same. No fixture, dependency, manifest schema or worker policy
-is changed.
+is changed. [PR #167](https://github.com/ELITEAYOTO/REL/pull/167) was merged
+at `7769ec37eebb5b656b1bb644526b1ba5c834fa3a`, with independent
+[postmerge Windows/Ubuntu CI #39701091132](https://github.com/ELITEAYOTO/REL/actions/runs/39701091132)
+completed successfully (15 standard artifacts). The complete red/green
+record and limits are retained in [issue #9](https://github.com/ELITEAYOTO/REL/issues/9).

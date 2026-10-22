@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased] — Distinguish unmappable PE import RVAs from descriptor scan exhaustion (P1.5)
+
+- Red/green PE32 and PE32+ regression for an unmappable initial import descriptor and a valid first descriptor followed by an unmappable slot; this situation was incorrectly reported as if the 1 MiB descriptor scan had been exhausted.
+- Restore preflight delegation to the backend on a raw-unmappable descriptor and reserve the cap diagnostic for actual traversal exhaustion. No new PE fixture, public v1 schema, dependency or resource limit.
+
 ## [Unreleased] — Bound import descriptor checks beyond understated Size (P1.5)
 
 - Reproduce a valid two-descriptor PE32/PE32+ whose import-directory `Size` advertises only the first record, then show that corrupting the second `Name` allows silent import truncation. Preserve the test-only fail-first evidence.

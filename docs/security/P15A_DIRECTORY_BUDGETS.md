@@ -199,3 +199,22 @@ imports are complete. A legitimate PE with unusually many import records
 could be rejected under this conservative alpha policy. Fixture bytes,
 `binary-manifest v1.0.0`, dependencies and source redistribution
 rights remain unchanged.
+
+## Unmappable import RVA is not scan-budget exhaustion (P1.5, #166)
+
+The bounded import-descriptor preflight introduced in #165 used `break`
+for a descriptor whose RVA could not be mapped to a raw section, and
+then returned the error reserved for consuming **all** 52,428 complete
+records without a zero terminator. This incorrectly reported an alpha
+scan-cap breach before that cap was reached, contrary to its documented
+backend-delegation policy.
+
+A test-only in-memory regression based on unchanged PE32 and PE32+
+fixtures exercises (1) an unmappable initial import RVA, and (2) a
+mapped valid first descriptor whose following descriptor leaves the
+section's reduced raw range. The preflight must defer these cases by
+returning `Ok(())` and leave final validity to Goblin. The real
+exhaustion path remains a separate explicit error. No claim is made
+that a malformed PE becomes valid, that Goblin accepts every such
+layout, or that the 1 MiB scan is a global CPU/RSS/security boundary.
+No fixture bytes, v1 manifest, dependency or worker policy changes.

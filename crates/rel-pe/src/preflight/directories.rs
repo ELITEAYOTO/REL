@@ -67,7 +67,9 @@ fn validate_bounded_import_descriptors(
             record_rva,
             IMPORT_DESCRIPTOR_BYTES,
         ) else {
-            break;
+            // This record is not raw-mappable; no scan budget was exhausted.
+            // Defer this layout to the parser, as the earlier preflight did.
+            return Ok(());
         };
         let descriptor =
             region(data, raw, IMPORT_DESCRIPTOR_BYTES).ok_or("truncated import descriptor")?;

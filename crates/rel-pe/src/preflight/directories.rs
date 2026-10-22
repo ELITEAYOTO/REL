@@ -58,13 +58,8 @@ fn validate_bounded_import_descriptors(
     section_count: usize,
     imports_rva: u32,
 ) -> Result<(), &'static str> {
-    let Ok(first_raw) = raw_offset_for_rva(
-        data,
-        sections_start,
-        section_count,
-        imports_rva,
-        1,
-    ) else {
+    let Ok(first_raw) = raw_offset_for_rva(data, sections_start, section_count, imports_rva, 1)
+    else {
         // The backend decides whether this initial layout can be parsed.
         return Ok(());
     };

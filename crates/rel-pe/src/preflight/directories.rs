@@ -366,7 +366,15 @@ mod tests {
                 section + 16,
                 import_rva - va + IMPORT_DESCRIPTOR_BYTES as u32,
             );
-            assert_eq!(check(&one_descriptor), Ok(()));
+            assert_eq!(
+                validate_bounded_import_descriptors(
+                    &one_descriptor,
+                    section_start,
+                    section_count,
+                    import_rva,
+                ),
+                Ok(())
+            );
         }
     }
 

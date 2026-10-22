@@ -317,6 +317,59 @@ fn import_descriptor_outside_raw_section_must_not_silently_truncate() {
 }
 
 #[test]
+fn import_rva_in_aligned_section_padding_must_not_hide_malformed_descriptor() {
+    // Goblin may map a raw RVA in the file-aligned padding following a
+    // section's short declared raw span. REL must not silently report
+    // missing imports when the backend still reads the full descriptor.
+    for (label, fixture, dir_start) in [("PE32", PE32, 96_usize), ("PE32+", PE64, 112)] {
+        let nt = u32::from_le_bytes(fixture[0x3c..0x40].try_into().unwrap()) as usize;
+        let coff = nt + 4;
+        let optional = nt + 24;
+        let optional_size =
+            u16::from_le_bytes(fixture[coff + 16..coff + 18].try_into().unwrap()) as usize;
+        let rdata = optional + optional_size + 40;
+        assert_eq!(
+            u32::from_le_bytes(fixture[rdata + 12..rdata + 16].try_into().unwrap()),
+            0x2000,
+            "{label}: reference section RVA changed"
+        );
+        assert_eq!(&fixture[0x414..0x428], &[0; 20], "{label}");
+        assert_eq!(&fixture[0x428..0x43c], &[0; 20], "{label}");
+
+        let mut aligned = fixture.to_vec();
+        aligned[optional + dir_start..optional + dir_start + 8].fill(0);
+        aligned[rdata + 16..rdata + 20].copy_from_slice(&16_u32.to_le_bytes());
+        aligned[optional + dir_start + 8..optional + dir_start + 12]
+            .copy_from_slice(&0x2014_u32.to_le_bytes());
+        aligned[0x414..0x428].copy_from_slice(&fixture[0x400..0x414]);
+
+        let valid = inspect(&aligned).expect("aligned-padding import directory should parse");
+        let original = inspect(fixture).expect("known synthetic source should parse");
+        assert_eq!(
+            valid.imports, original.imports,
+            "{label}: imports stay visible"
+        );
+        assert!(
+            valid.exports.is_empty(),
+            "{label}: export directory disabled"
+        );
+
+        for field in [12_usize, 16] {
+            let mut malformed = aligned.clone();
+            malformed[0x414 + field..0x414 + field + 4].fill(0);
+            assert!(
+                matches!(
+                    inspect(&malformed),
+                    Err(PeError::Parse(ref detail))
+                        if detail.contains("non-null import descriptor missing Name or FirstThunk")
+                ),
+                "{label}: mapped by Goblin but not raw-span preflight; missing +{field} must be rejected"
+            );
+        }
+    }
+}
+
+#[test]
 fn ordinal_import_is_flagged_without_changing_v1_import_strings() {
     // In both tracked 2-KiB fixtures the import descriptor starts at raw
     // 0x400, and .rdata RVA 0x2000 maps there. Change only the first

@@ -62,6 +62,19 @@ def derive_import_boundary(source: bytes, *, is_64: bool, overlap: bool,
     return bytes(data)
 
 
+# Frozen from the first passing, exact-commit CI smoke generation (run
+# 39725332645); a source-verified but unexpectedly changed mutation must fail.
+IMPORT_FUZZ_SHA256 = {
+    "imp-padding-valid-pe32.exe": "acd42b5a686e0b011d57faa1857474bc8123ffd660ad25e7e522a6c91a32e348",
+    "imp-padding-missing-name-pe32.exe": "859cd036657c81807e441536e52451d9490f98b0d4f0d9a1d3103427d8fd4144",
+    "imp-overlap-valid-pe32.exe": "b389693466eb54f93f3d0affba748ffbccdd113dab6656aa3e036d45568a2be6",
+    "imp-overlap-missing-name-pe32.exe": "a5a3d03804fb5103da66e6fdfbfb5f1da638e6d3b3488a49b1c8e7c1bea55bda",
+    "imp-padding-valid-pe64.exe": "b3b27209aec998d1ab440f7f20aea8c4b97aca32b0c72bad7f5d540edad5d178",
+    "imp-padding-missing-name-pe64.exe": "ddc9c9b7b2445b1f7818ab0e29569564f628bb3a568d55d95c9e2004289318d7",
+    "imp-overlap-valid-pe64.exe": "ea30bc03ea466769243d2fe23c1d07962c130ec33b9921da1689851e334a7d8b",
+    "imp-overlap-missing-name-pe64.exe": "5e219f2d4d6f68629897d8e0df19b6af689fee3dfbfbb54c3143a517e66e2adf",
+}
+
 def verified_import_fuzz_seeds() -> list[tuple[str, bytes, str, str]]:
     """Return (seed name, bytes, pinned source digest, derived digest)."""
     result = []
@@ -76,7 +89,10 @@ def verified_import_fuzz_seeds() -> list[tuple[str, bytes, str, str]]:
                 value = derive_import_boundary(
                     source, is_64=is_64, overlap=overlap, malformed=malformed
                 )
-                result.append((name, value, source_digest, hashlib.sha256(value).hexdigest()))
+                digest = hashlib.sha256(value).hexdigest()
+                require(digest == IMPORT_FUZZ_SHA256[name],
+                        f"{name}: generated source-derived SHA-256 mismatch")
+                result.append((name, value, source_digest, digest))
     require(len(result) == 8 and len({entry[0] for entry in result}) == 8,
             "derived seed identities")
     return result

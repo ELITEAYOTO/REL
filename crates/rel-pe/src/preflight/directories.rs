@@ -49,6 +49,8 @@ fn raw_offset_for_rva(
 /// Follow the contiguous file records actually consumed by Goblin after
 /// mapping the initial import RVA. Remapping each next RVA can miss malformed
 /// records at raw-section boundaries while Goblin still reads their bytes.
+/// The first RVA needs to map only its first byte: Goblin can read a full
+/// 20-byte record past a shorter declared raw section using file alignment.
 /// Keep the initial unmappable-RVA fallback for compatibility.
 fn validate_bounded_import_descriptors(
     data: &[u8],
@@ -61,7 +63,7 @@ fn validate_bounded_import_descriptors(
         sections_start,
         section_count,
         imports_rva,
-        IMPORT_DESCRIPTOR_BYTES,
+        1,
     ) else {
         // The backend decides whether this initial layout can be parsed.
         return Ok(());

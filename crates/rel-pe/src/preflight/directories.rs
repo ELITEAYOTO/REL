@@ -46,33 +46,35 @@ fn raw_offset_for_rva(
     Err("export directory cannot be mapped to raw section data")
 }
 
-/// Check contiguous raw-mapped import descriptors until their zero terminator
-/// or the alpha byte cap, independently of untrusted declared directory Size.
-/// Unmappable locations remain delegated to the backend for compatibility.
+/// Follow the contiguous file records actually consumed by Goblin after
+/// mapping the initial import RVA. Remapping each next RVA can miss malformed
+/// records at raw-section boundaries while Goblin still reads their bytes.
+/// Keep the initial unmappable-RVA fallback for compatibility.
 fn validate_bounded_import_descriptors(
     data: &[u8],
     sections_start: usize,
     section_count: usize,
     imports_rva: u32,
 ) -> Result<(), &'static str> {
+    let Ok(first_raw) = raw_offset_for_rva(
+        data,
+        sections_start,
+        section_count,
+        imports_rva,
+        IMPORT_DESCRIPTOR_BYTES,
+    ) else {
+        // The backend decides whether this initial layout can be parsed.
+        return Ok(());
+    };
     for index in 0..MAX_IMPORT_DESCRIPTOR_RECORDS {
-        let offset = (index * IMPORT_DESCRIPTOR_BYTES) as u32;
-        let record_rva = imports_rva
-            .checked_add(offset)
-            .ok_or("import descriptor RVA overflow")?;
-        let Ok(raw) = raw_offset_for_rva(
-            data,
-            sections_start,
-            section_count,
-            record_rva,
-            IMPORT_DESCRIPTOR_BYTES,
-        ) else {
-            // This record is not raw-mappable; no scan budget was exhausted.
-            // Defer this layout to the parser, as the earlier preflight did.
+        let raw = first_raw
+            .checked_add(index * IMPORT_DESCRIPTOR_BYTES)
+            .ok_or("import descriptor raw offset overflow")?;
+        // Goblin's strict parser itself rejects an out-of-file record; do
+        // not turn it into an inaccurate scan-exhaustion error.
+        let Some(descriptor) = region(data, raw, IMPORT_DESCRIPTOR_BYTES) else {
             return Ok(());
         };
-        let descriptor =
-            region(data, raw, IMPORT_DESCRIPTOR_BYTES).ok_or("truncated import descriptor")?;
         if descriptor.iter().all(|byte| *byte == 0) {
             return Ok(());
         }

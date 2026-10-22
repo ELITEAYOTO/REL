@@ -240,3 +240,9 @@ at `7769ec37eebb5b656b1bb644526b1ba5c834fa3a`, with independent
 [postmerge Windows/Ubuntu CI #39701091132](https://github.com/ELITEAYOTO/REL/actions/runs/39701091132)
 completed successfully (15 standard artifacts). The complete red/green
 record and limits are retained in [issue #9](https://github.com/ELITEAYOTO/REL/issues/9).
+
+## Sequential raw import records across section boundaries (P1.5, PR #169)
+
+The existing bounded preflight previously remapped each successive 20-byte import descriptor RVA to a section raw range. Goblin instead maps the **initial** import RVA once, then consumes consecutive 20-byte **file-offset** records. A controlled PE32/PE32+ derivative declares a smaller first raw section and a second, contiguous byte-level import descriptor outside its raw mapping; an adjacent section still maps DLL names, lookup tables and exports. The valid positive case parses, while a PE32 malformed second `Name=0` was accepted with potentially incomplete imports (fail-first test-only SHA `f5b0823878abb98e40c4b02efd0c496e2c94c533`, Ubuntu CI #39704144191).
+
+The candidate correction scans Goblin's same consecutive file bytes after a **mappable first** descriptor, within the existing 52,428-record bound; the initial RVA that cannot be mapped remains delegated for compatibility. A premature file end remains the strict backend's responsibility, not evidence of scan exhaustion. Positive and negative PE32/PE32+ regressions are in the same unchanged-fixture-derived test. This is not validation of every PE import layout, thunk traversal, process CPU/RAM, or source-binary rights. The candidate requires final Windows/Ubuntu CI and bounded fuzzing before integration; issue #9 stays open.

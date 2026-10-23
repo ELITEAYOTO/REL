@@ -70,9 +70,35 @@ def mixed_pair(count: int) -> tuple[dict, dict]:
     return make_side("a"), make_side("b")
 
 
+
+def check_report_delta_counts(
+    report: dict, expected_added: tuple[int, int, int, int, int],
+    expected_removed: tuple[int, int] | None = None,
+) -> None:
+    """Compare independent added/removed counts; legacy synthetic calls are symmetric."""
+    actual_added = (
+        len(report["imports"]["added"]), len(report["exports"]["added"]),
+        len(report["sections"]["added"]), len(report["sections"]["removed"]),
+        len(report["sections"]["changed"]),
+    )
+    if actual_added != expected_added:
+        raise AssertionError(f"metadata delta counts {actual_added} != {expected_added}")
+    # Original synthetic cases intentionally removed as many names as added.
+    if expected_removed is None:
+        expected_removed = expected_added[:2]
+    actual_removed = (
+        len(report["imports"]["removed"]), len(report["exports"]["removed"]),
+    )
+    if actual_removed != expected_removed:
+        raise AssertionError(
+            f"metadata removed counts {actual_removed} != {expected_removed}"
+        )
+
+
 def profile_once(
     binary: Path, left: Path, right: Path, expected: tuple[str, str],
     expected_counts: tuple[int, int, int, int, int],
+    expected_removed_counts: tuple[int, int] | None = None,
 ) -> dict:
     started = time.perf_counter()
     sampled_rss = None
@@ -134,19 +160,7 @@ def profile_once(
                 raise AssertionError("diff report lost the source manifest identities")
             if report["schema_version"] != "0.1.0-experimental":
                 raise AssertionError("unexpected report contract")
-            actual_counts = (
-                len(report["imports"]["added"]), len(report["exports"]["added"]),
-                len(report["sections"]["added"]), len(report["sections"]["removed"]),
-                len(report["sections"]["changed"]),
-            )
-            if actual_counts != expected_counts:
-                raise AssertionError(
-                    f"metadata delta counts {actual_counts} != {expected_counts}"
-                )
-            if len(report["imports"]["removed"]) != expected_counts[0]:
-                raise AssertionError("unexpected removed import count")
-            if len(report["exports"]["removed"]) != expected_counts[1]:
-                raise AssertionError("unexpected removed export count")
+            check_report_delta_counts(report, expected_counts, expected_removed_counts)
     return {
         "wall_ms": round(elapsed, 4),
         "report_bytes": report_bytes,

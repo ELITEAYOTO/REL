@@ -25,7 +25,7 @@
 - Aucun module spéculatif ni transition P2 Ghidra sans décision et validations correspondantes.
 
 ## Historique (10 entrées maximum)
-- 2026-10-23 · #177 (candidate) : profil EX-02 sur PE compilés, correctif des deltas asymétriques, CI intermédiaire Windows/Ubuntu #39903167630 réussie ; preuve native directe, pas de sandbox.
+- 2026-10-23 · #177 : profil EX-02 sur PE compilés, correctif des deltas asymétriques, CI intermédiaire Windows/Ubuntu #39903167630 réussie ; preuve native directe, pas de sandbox.
 - 2026-10-23 · #8 : second ABBA sur 600 000 entrées égales, CI #39900659837 PASS, initial +13 `cov`/+97 `ft`, gain final faible et incertain ; branche temporaire restaurée.
 - 2026-10-22 · #8 : première vraie campagne 300 s sur 13 seeds après #174, run #39727233949 SUCCESS, 2 449 702 cas, `cov=2415`, RSS observé 656 Mio ; aucun crash signalé, workflow manuel restauré.
 - 2026-10-22 · #174 : huit seeds PE bornés générés SHA-256, fusion `bc3225a3` ; CI `main` #39726036423 Windows/Ubuntu réussie, 15 artefacts.

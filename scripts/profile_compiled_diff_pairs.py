@@ -167,10 +167,15 @@ def run(inspector: Path, diff: Path, corpus: Path, oracle: Path,
         for left_id, right_id in PAIRS:
             left, right = manifests[left_id], manifests[right_id]
             expected = diff_counts(left, right)
+            expected_removed = (
+                len(set(left["imports"]) - set(right["imports"])),
+                len(set(left["exports"]) - set(right["exports"])),
+            )
             values = [
                 profile_once(
                     diff, work / f"{left_id}.json", work / f"{right_id}.json",
                     (source_hashes[left_id], source_hashes[right_id]), expected,
+                    expected_removed_counts=expected_removed,
                 )
                 for _ in range(warmup + samples)
             ][warmup:]
@@ -190,6 +195,7 @@ def run(inspector: Path, diff: Path, corpus: Path, oracle: Path,
                     key: len(right[key]) for key in ("imports", "exports", "sections")
                 },
                 "expected_delta_counts": expected,
+                "expected_removed_counts": expected_removed,
                 **summarize(values),
             })
     return result

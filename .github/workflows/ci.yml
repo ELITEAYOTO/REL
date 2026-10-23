@@ -72,7 +72,9 @@ jobs:
         if: runner.os == 'Linux'
         run: python scripts/test_manifest_diff_cli.py --binary target/release/rel-diff --inspector target/release/rel-inspect
       - name: EX-02 resource-profile output identity regressions
-        run: python scripts/test_profile_manifest_diff.py
+        run: |
+          python scripts/test_profile_manifest_diff.py
+          python scripts/test_profile_compiled_diff_pairs.py
       - name: EX-02 controlled metadata diff resource profile (Windows)
         if: runner.os == 'Windows'
         run: python scripts/profile_manifest_diff.py --binary target/release/rel-diff.exe --samples 3 --warmup 1 --output rel-diff-profile.json
@@ -231,6 +233,16 @@ jobs:
           python -m pip install pefile==2024.8.26
           python scripts/test_windows_diff_pairs_helpers.py
           python scripts/check_windows_diff_pairs.py --inspector target/release/rel-inspect.exe --diff target/release/rel-diff.exe --corpus corpus-pairs --output rel-ex02-compiler-pairs.json
+      - name: Profile independently verified compiler-built EX-02 PE pairs (Windows)
+        if: runner.os == 'Windows'
+        run: python scripts/profile_compiled_diff_pairs.py --inspector target/release/rel-inspect.exe --diff target/release/rel-diff.exe --corpus corpus-pairs --oracle rel-ex02-compiler-pairs.json --samples 7 --warmup 1 --output rel-ex02-compiler-resources.json
+      - name: Upload controlled EX-02 compiler-pair resource observations (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: rel-ex02-compiler-resource-windows
+          path: rel-ex02-compiler-resources.json
+          if-no-files-found: error
       - name: EX-02 byte-diagnostic unit regressions
         run: |
           python scripts/test_windows_diff_repro.py

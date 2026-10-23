@@ -71,3 +71,58 @@ l'arborescence de processus. Les vieux artefacts ne portent pas ces
 champs. L'intégration et les chiffres doivent être établis à partir des
 CI sur le HEAD de PR puis du nouveau `main`, et consignés dans
 [l'issue #68](https://github.com/ELITEAYOTO/REL/issues/68).
+
+
+## Profil de paires PE compilées, pas seulement de manifestes synthétiques (PR #177, 23 octobre 2026)
+
+Le programme `scripts/profile_compiled_diff_pairs.py` réutilise la CI Windows
+déjà chargée de construire et d'examiner statiquement huit PE32+ de la même
+source contrôlée `fixtures/probes/diff_version_probe.c` (MSVC et Clang-cl).
+**L'oracle indépendant `pefile` passe avant la mesure**. Le profileur exécute
+exclusivement les programmes de confiance `rel-inspect` (production de
+manifestes statiques) et `rel-diff` (comparaison), **jamais les PE étudiés**.
+Il revérifie les SHA-256 et les longueurs brutes des PE, exige des extractions
+sans avertissement, puis exige une concordance avec les empreintes de chaque
+PE dans le rapport d'oracle. La mesure est rejetée si ces preuves divergent.
+
+L'ancien contrôle de compte du profileur présumait des nombres d'ajouts et de
+retraits égaux, ce que le corpus compilé dément : pour v1→v4, deux exports
+sont ajoutés et aucun n'est retiré. Le défaut est attesté par l'échec
+Windows initial du step de profilage de
+[CI #39902810857](https://github.com/ELITEAYOTO/REL/actions/runs/39902810857),
+avec `unexpected removed export count`. Le contrôle compte désormais
+séparément les ajouts et les retraits, sans changer les anciens appels
+synthétiques ; les régressions couvrent notamment ce cas asymétrique.
+
+**Première preuve native intermédiaire**, SHA de branche
+`8af7f955c742adbd15000c64c04087b6ba08474c`, CI
+[#39903167630](https://github.com/ELITEAYOTO/REL/actions/runs/39903167630),
+artefact JSON `rel-ex02-compiler-resource-windows` (ID `12479542373`),
+archive ouverte et CRC vérifié, SHA-256 de l'archive
+`00679af92b6b3d17c7099ed4bc5afa1d81392cdb07e7bcbda30caba1b2f708ef`.
+Un échauffement, puis **sept invocations complètes** du processus `rel-diff`
+pour chacune des trois paires ; mesures natives obtenues par handle Windows
+`PeakWorkingSetSize` / `GetProcessTimes`, distinctes des sondages RSS.
+
+| Paire PE contrôlée | Taille du rapport (octets) | Médiane temps (ms) | Pic working set natif (octets) | CPU natif maximum (ms) |
+| --- | ---: | ---: | ---: | ---: |
+| MSVC v1 → v4 | 1 088 | 9,9831 | 4 358 144 | 15,625 |
+| Clang-cl v1 → v4 | 1 088 | 10,0733 | 4 358 144 | 15,625 |
+| MSVC v3 → Clang-cl v3 | 1 029 | 10,1428 | 4 337 664 | 46,875 |
+
+Les cas v1/v4 comportent chacun 35 imports, cinq sections et passent de
+un à trois exports. La comparaison v3 MSVC/Clang-cl conserve deux exports
+et contrôle les variations des cinq métadonnées de sections. Les identités
+du rapport JSON, des manifestes, du code source, du script de compilation,
+des PE et des binaires d'analyse sont conservées dans l'artefact.
+
+**Limites** : ces huit PE restent dérivés de quatre variantes d'une **seule
+source C**, sur un runner Windows hébergé. Sept échantillons ne caractérisent
+pas la dispersion sur d'autres matériels ou compilateurs ; les chiffres CPU
+Windows sont fortement quantifiés. Le working set et le CPU sont ceux du
+processus direct `rel-diff`, **pas des descendants**, et ne sont pas
+des limites imposées par le système. Les résultats ne constituent ni un
+corpus représentatif avec droits de redistribution réglés (#9/#16), ni une
+acceptation d'EX-02 ou une justification pour fixer un budget (#68).
+Les CI du HEAD final et de `main` doivent rester distinctes de cette
+première observation sur branche.

@@ -1,7 +1,7 @@
 # STATUS — REL
 
 **Phase :** P1.5 (consolidation PE) ; pilotes EX-01 / EX-02 expérimentaux intégrés ; **P2 non engagé**.
-**Mis à jour :** 2026-10-23, base `main` `ba7525e6e5c0f9ab610c228fc57b7e6ceadef997` après #175 ; [CI `push` exacte #39728694273](https://github.com/ELITEAYOTO/REL/actions/runs/39728694273) réussie Windows/Ubuntu (15 artefacts). Comparatif corpus PE 5 vs 13 seeds : 90 s [#39729649097](https://github.com/ELITEAYOTO/REL/actions/runs/39729649097) et 600 000 entrées [#39900659837](https://github.com/ELITEAYOTO/REL/actions/runs/39900659837), branches expérimentales restaurées ; aucun effet général démontré.
+**Mis à jour :** 2026-10-23, base `main` `9a938d38b6213c8988c4b091c474ae20d4e2c31e` après #176 ; [CI `push` #39901522416](https://github.com/ELITEAYOTO/REL/actions/runs/39901522416) Windows/Ubuntu réussie (15 artefacts). PR #177 : mesure EX-02 sur trois paires PE compilées, preuve CI intermédiaire Windows [#39903167630](https://github.com/ELITEAYOTO/REL/actions/runs/39903167630) ; valider le HEAD final avant intégration.
 
 ## Fonctionne
 - P1 : inspection **statique** PE32/PE32+, CLI et manifeste `binary-manifest v1.0.0` préservé ; aucune entrée soumise n'est exécutée.
@@ -10,10 +10,10 @@
 
 ## En cours
 - #9 : corpus PE représentatif, provenance et droits ; limites CPU/RAM/process-tree encore incomplètes malgré les garde-fous existants.
-- #8 : 300 s et deux ABBA expérimentaux (90 s puis 600 k exécutions) réalisés ; mesures répétées indépendantes et crash triage restent ouverts. #14 EX-01, #68 budgets, #69 reproductibilité encore ouverts.
+- #8 : fuzzing 300 s et deux comparatifs ABBA archivés ; #68 : PR #177 profile trois paires compilées (contrôle des deltas asymétriques), **pas** de plafond CPU/RAM global. #14 EX-01 et #69 toujours ouverts.
 
 ## Prochaine tâche
-- #8 : compléter les répétitions comparables avant d'inférer un gain de couverture final ; préserver les cas de régression. #9/#68 : corpus PE autorisé diversifié et budgets CPU/RAM/process-tree fondés sur mesures.
+- #68 : étendre les mesures comparables à des paires PE distinctes et autorisées ; documenter processus direct vs descendants sans extrapoler de budgets. #8/#9 : compléter le corpus et les campagnes avant acceptation.
 - Autres axes si plus probants : corpus PE licite et provenance (#9), mesures CPU/RAM comparables et budgets justifiables (#68), fuzz prolongé (#8), dérive de builds inter-CI non expliquée (#69). Une PR ciblée à la fois, CI Windows/Ubuntu puis `main`.
 
 ## Bloquants
@@ -25,6 +25,7 @@
 - Aucun module spéculatif ni transition P2 Ghidra sans décision et validations correspondantes.
 
 ## Historique (10 entrées maximum)
+- 2026-10-23 · #177 : profil EX-02 sur PE compilés, correctif des deltas asymétriques, CI intermédiaire Windows/Ubuntu #39903167630 réussie ; preuve native directe, pas de sandbox.
 - 2026-10-23 · #8 : second ABBA sur 600 000 entrées égales, CI #39900659837 PASS, initial +13 `cov`/+97 `ft`, gain final faible et incertain ; branche temporaire restaurée.
 - 2026-10-22 · #8 : première vraie campagne 300 s sur 13 seeds après #174, run #39727233949 SUCCESS, 2 449 702 cas, `cov=2415`, RSS observé 656 Mio ; aucun crash signalé, workflow manuel restauré.
 - 2026-10-22 · #174 : huit seeds PE bornés générés SHA-256, fusion `bc3225a3` ; CI `main` #39726036423 Windows/Ubuntu réussie, 15 artefacts.
@@ -34,4 +35,3 @@
 - 2026-10-22 · #169 : descripteurs suivants contigus hors frontière de section désormais précontrôlés, CI de PR Windows/Ubuntu et fuzzing réussis ; CI `push` distincte non confirmée.
 - 2026-10-22 · #167 : RVA d'import non nul et Size=0 précontrôlé, test rouge→vert ; CI `main` #39701091132 réussie (15 artefacts).
 - 2026-10-22 · #166 : RVA d'import non mappable ≠ épuisement du plafond de balayage ; CI `main` #39698862674 réussie.
-- 2026-10-22 · #165 : import table Size sous-déclaré : vérification bornée jusqu'au terminateur ; CI `main` #39695059523 réussie.

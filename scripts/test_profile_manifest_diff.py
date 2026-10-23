@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import unittest
 
-from profile_manifest_diff import summarize
+from profile_manifest_diff import check_report_delta_counts, summarize
 
 
 class ProfileResultTests(unittest.TestCase):
@@ -45,6 +45,19 @@ class ProfileResultTests(unittest.TestCase):
         self.assertEqual(windows_summary["max_windows_cpu_ms"], 4.0)
         self.assertIsNone(windows_summary["max_kernel_peak_rss_bytes"])
         self.assertIsNone(windows_summary["max_kernel_cpu_ms"])
+
+    def test_compiler_pair_asymmetric_additions_and_removals(self) -> None:
+        # A v1 -> v4 compiler pair can add two exports without removing any.
+        report = {
+            "imports": {"added": ["new"], "removed": ["old"]},
+            "exports": {"added": ["api2", "api3"], "removed": []},
+            "sections": {"added": [], "removed": [], "changed": []},
+        }
+        check_report_delta_counts(report, (1, 2, 0, 0, 0), (1, 0))
+        with self.assertRaisesRegex(AssertionError, "removed counts"):
+            check_report_delta_counts(report, (1, 2, 0, 0, 0))
+        with self.assertRaisesRegex(AssertionError, "delta counts"):
+            check_report_delta_counts(report, (0, 2, 0, 0, 0), (1, 0))
 
     def test_inconsistent_output_length_fails(self) -> None:
         with self.assertRaisesRegex(AssertionError, "different report bytes"):

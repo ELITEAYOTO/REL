@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased] — EX-02 controlled compiler-pair profiling (#177)
+
+- Add native Windows `rel-diff` resource observations for three source-controlled MSVC/Clang-cl PE pairs, derived by static `rel-inspect` and checked against the independent compiler PE oracle's exact raw SHA-256. PE inputs are **never executed**.
+- Fix the *measurement harness* assumption that added and removed metadata counts are symmetric; accept explicitly verified asymmetric deltas while retaining previous synthetic cases. Preserve `binary-manifest v1.0.0`, the 16 MiB serialized report bound and all production behavior.
+- Scope: small nonrepresentative compiler corpus and direct child CPU/working-set observations, **not** OS-enforced resource limits, process-tree isolation or evidence of broad hostile-PE safety.
+
+
 ## [Unreleased] — Honor PE import section-table precedence (P1.5, #172)
 
 - A test-only PE32/PE32+ synthetic overlap keeps a valid import descriptor in an earlier section's **file-aligned padding** but adds a later section whose strict raw mapping of the same RVA points to an unrelated zero record. Goblin reads the earlier section. The former REL preflight silently missed a malformed import `Name=0` in the earlier record: [fail-first CI #39710380761](https://github.com/ELITEAYOTO/REL/actions/runs/39710380761), test-only SHA `e0fec9c7e49f930155ad8995732537d76914979d`.

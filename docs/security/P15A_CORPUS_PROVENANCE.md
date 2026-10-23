@@ -274,3 +274,56 @@ CPU/RAM bound or a sandbox. No untrusted PE was executed as software.
 Broader redistributable corpus rights (#16), more long-run comparisons,
 regression minimization when a real failure is found, and resource
 enforcement (#8/#9/#68) remain open.
+
+## Same-input-budget ABBA follow-up (2026-10-23, #8)
+
+A second, **independent** Ubuntu Actions job
+[run #39900659837](https://github.com/ELITEAYOTO/REL/actions/runs/39900659837)
+used a temporarily added branch-only workflow at SHA
+`f9d2d8bf3b3af21a6314b3a97932ecf3f07b4ab8`, separate from
+the previous **equal-duration** 90-second ABBA
+[run #39729649097](https://github.com/ELITEAYOTO/REL/actions/runs/39729649097).
+This follow-up holds the **number of fuzzer executions** constant
+instead of wall time: exactly **600,000 per pass**, fresh corpus
+directories in A1–B1–B2–A2 order. A contains 3 tracked and 2 generated
+TLS seeds (5 inputs, 9,296 bytes); B adds the 8 pinned import
+padding/overlap seeds (13 inputs, 25,680 bytes). All input SHA-256 hashes
+are in the artifact metadata. One instrumented `pe_inspect` binary
+(SHA-256 `20cb128dbea86fb0c2e2af1406390d6417684f45998c55c038e864621995ce02`)
+was used for all four runs. Toolchain: Rust 1.101.0-nightly
+(`b6eeb93c9`, 2026-10-18), LLVM 23.1.4, cargo-fuzz 0.13.2,
+mutation seed `20261018`, maximum input length 65,536 bytes,
+4-second per-input timeout and libFuzzer RSS option 1,500 MiB.
+The 180-second per-pass safeguard did not truncate any run.
+
+| Run | Initial `cov` / `ft` | Final `cov` | Final `ft` | Executions | Peak RSS reported (MiB) |
+| --- | --- | ---: | ---: | ---: | ---: |
+| A1 (5) | 878 / 901 | 2,142 | 4,621 | 600,000 | 583 |
+| B1 (13) | 891 / 998 | 2,150 | 4,722 | 600,000 | 549 |
+| B2 (13) | 891 / 998 | 2,127 | 4,621 | 600,000 | 560 |
+| A2 (5) | 878 / 901 | 2,068 | 4,506 | 600,000 | 603 |
+
+The enhanced input set consistently starts with **+13 `cov` and
++97 `ft` instrumented units** on this one binary. After 600,000
+executions the two B results average `cov=2138.5` versus A
+`cov=2105` and `ft=4671.5` versus A `ft=4563.5`.
+Only two observations per variant on a single hosted runner are available;
+the *equal-duration* comparison had mixed final results. **These are
+neither coverage percentages, statistical significance, a generalized
+speedup, nor evidence of all-input safety or enforceable CPU/RAM caps.**
+
+The job succeeded with normal `DONE` and **no sanitizer crash observed**.
+The GitHub archive `rel-paired-fuzz-39900659837`
+(artifact ID `12478647770`) was downloaded and ZIP-CRC verified: four
+individual logs, all source/derived seed SHA-256 values and a pinned
+binary digest; no crash files. ZIP SHA-256
+`ede15d1f488a193eb8f74a2e0d806f73ee438f755c11da2da82a2710e5505bde`.
+The experimental branch was reset using the exact expected head SHA
+to existing `main` `ba7525e6e5c0f9ab610c228fc57b7e6ceadef997`;
+the temporary workflow is confirmed absent on that branch. No
+experimental workflow or source change was merged to production.
+
+The next evidence needed is more independent A/B replicates, legally
+cleared and realistic PE diversity (#9/#16), and direct/descendant
+memory and CPU enforcement supported by measurements (#68). Keep #8
+open; do not infer security from crash-free fuzzing.

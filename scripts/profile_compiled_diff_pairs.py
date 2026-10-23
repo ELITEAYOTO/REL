@@ -94,7 +94,35 @@ def static_inspect(inspector: Path, source: Path) -> tuple[dict, bytes]:
     return document, raw
 
 
-def run(inspector: Path, diff: Path, corpus: Path, samples: int, warmup: int) -> dict:
+def verify_oracle(oracle: Path, source_hashes: dict[str, str]) -> str:
+    """Tie profiled raw PE bytes to the earlier independent pefile oracle."""
+    if oracle.is_symlink() or not oracle.is_file() or oracle.stat().st_size > 2 * 1024 * 1024:
+        raise ValueError("missing, linked or oversized independent oracle report")
+    raw = oracle.read_bytes()
+    data = json.loads(raw)
+    if (
+        data.get("schema_version") != "rel-ex02-compiler-pair-evidence-v1"
+        or data.get("link_mode") != "standard"
+        or data.get("case_count") != 8
+        or not isinstance(data.get("cases"), list)
+        or len(data["cases"]) != 8
+    ):
+        raise ValueError("unrecognized or incomplete independent PE oracle")
+    seen = {}
+    for case in data["cases"]:
+        if not isinstance(case, dict) or not isinstance(case.get("id"), str):
+            raise ValueError("malformed independent PE oracle entry")
+        if case["id"] in seen:
+            raise ValueError("duplicate independent PE oracle entries")
+        seen[case["id"]] = case.get("sha256")
+    for name, digest in source_hashes.items():
+        if seen.get(name) != digest:
+            raise ValueError(f"{name}: profiled PE bytes differ from oracle")
+    return sha256(raw)
+
+
+def run(inspector: Path, diff: Path, corpus: Path, oracle: Path,
+        samples: int, warmup: int) -> dict:
     context, context_hash = capture_context(diff)
     inspector_hash = sha256(inspector.read_bytes())
     source_file = ROOT / "fixtures/probes/diff_version_probe.c"
@@ -135,6 +163,7 @@ def run(inspector: Path, diff: Path, corpus: Path, samples: int, warmup: int) ->
                 json.dumps(data, sort_keys=True, separators=(",", ":")) + "\n",
                 encoding="utf-8",
             )
+        result["independent_oracle_sha256"] = verify_oracle(oracle, source_hashes)
         for left_id, right_id in PAIRS:
             left, right = manifests[left_id], manifests[right_id]
             expected = diff_counts(left, right)
@@ -171,6 +200,7 @@ def main() -> None:
     parser.add_argument("--inspector", required=True, type=Path)
     parser.add_argument("--diff", required=True, type=Path)
     parser.add_argument("--corpus", required=True, type=Path)
+    parser.add_argument("--oracle", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--samples", type=int, default=7)
     parser.add_argument("--warmup", type=int, default=1)
@@ -179,7 +209,8 @@ def main() -> None:
         parser.error("samples must be [3,100] and warmup [0,20]")
     data = run(
         args.inspector.resolve(strict=True), args.diff.resolve(strict=True),
-        args.corpus.resolve(strict=True), args.samples, args.warmup,
+        args.corpus.resolve(strict=True), args.oracle.resolve(strict=True),
+        args.samples, args.warmup,
     )
     args.output.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
     print(f"EX-02 compiler-pair resource evidence: PASS ({len(PAIRS)} pairs x {args.samples} samples)")

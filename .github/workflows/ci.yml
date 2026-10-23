@@ -235,7 +235,7 @@ jobs:
           python scripts/check_windows_diff_pairs.py --inspector target/release/rel-inspect.exe --diff target/release/rel-diff.exe --corpus corpus-pairs --output rel-ex02-compiler-pairs.json
       - name: Profile independently verified compiler-built EX-02 PE pairs (Windows)
         if: runner.os == 'Windows'
-        run: python scripts/profile_compiled_diff_pairs.py --inspector target/release/rel-inspect.exe --diff target/release/rel-diff.exe --corpus corpus-pairs --samples 7 --warmup 1 --output rel-ex02-compiler-resources.json
+        run: python scripts/profile_compiled_diff_pairs.py --inspector target/release/rel-inspect.exe --diff target/release/rel-diff.exe --corpus corpus-pairs --oracle rel-ex02-compiler-pairs.json --samples 7 --warmup 1 --output rel-ex02-compiler-resources.json
       - name: Upload controlled EX-02 compiler-pair resource observations (Windows)
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6

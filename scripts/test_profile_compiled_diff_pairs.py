@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
 from profile_compiled_diff_pairs import (
-    PAIRS, diff_counts, static_inspect, validate_manifest,
+    PAIRS, diff_counts, static_inspect, validate_manifest, verify_oracle,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -91,7 +92,7 @@ class CompiledProfileTests(unittest.TestCase):
             class Result:
                 returncode = 0
                 stderr = b""
-                stdout = __import__("json").dumps(output).encode()
+                stdout = json.dumps(output).encode()
             with patch("profile_compiled_diff_pairs.subprocess.run", return_value=Result()) as call:
                 actual, original = static_inspect(Path("rel-inspect.exe"), path)
             self.assertEqual(actual, output)
@@ -103,6 +104,40 @@ class CompiledProfileTests(unittest.TestCase):
             with patch("profile_compiled_diff_pairs.subprocess.run") as call:
                 with self.assertRaisesRegex(ValueError, "non-symlink"):
                     static_inspect(Path("rel-inspect.exe"), Path(work))
+
+    def test_independent_oracle_must_match_exact_profiled_pe_bytes(self) -> None:
+        hashes = {"msvc-v1": "a" * 64, "clang-v3": "b" * 64}
+        oracle = {
+            "schema_version": "rel-ex02-compiler-pair-evidence-v1",
+            "link_mode": "standard",
+            "case_count": 8,
+            "cases": [
+                {"id": name, "sha256": hashes.get(name, "c" * 64)}
+                for name in ("msvc-v1", "msvc-v2", "msvc-v3", "msvc-v4",
+                             "clang-v1", "clang-v2", "clang-v3", "clang-v4")
+            ],
+        }
+        with tempfile.TemporaryDirectory() as root:
+            path = Path(root) / "oracle.json"
+            def write() -> None:
+                path.write_text(json.dumps(oracle), encoding="utf-8")
+            write()
+            self.assertEqual(verify_oracle(path, hashes),
+                             hashlib.sha256(path.read_bytes()).hexdigest())
+            oracle["cases"][0]["sha256"] = "0" * 64
+            write()
+            with self.assertRaisesRegex(ValueError, "differ from oracle"):
+                verify_oracle(path, hashes)
+            oracle["cases"][0]["sha256"] = "a" * 64
+            oracle["cases"][1]["id"] = "msvc-v1"
+            write()
+            with self.assertRaisesRegex(ValueError, "duplicate"):
+                verify_oracle(path, hashes)
+            oracle["cases"][1]["id"] = "msvc-v2"
+            oracle["case_count"] = 7
+            write()
+            with self.assertRaisesRegex(ValueError, "incomplete"):
+                verify_oracle(path, hashes)
 
     def test_ci_gate_after_compiler_oracle_and_before_corpus_rebuild(self) -> None:
         ci = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
